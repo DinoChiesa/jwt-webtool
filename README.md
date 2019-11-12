@@ -1,8 +1,8 @@
 # JWT Web tool
 
-This is the source code for a web tool that
-can decode JWT, verify signed JWT, decrypt encrypted JWT, and create signed or
-encrypted JWT.
+This is the source code for a web tool that can decode JWT, verify signed JWT,
+decrypt encrypted JWT, and create signed or encrypted JWT. It has some
+limitations!
 
 ![screengrab](images/screenshot-20191112-082746.png)
 
@@ -16,14 +16,37 @@ This tool is not an official Google product, nor is it part of an official Googl
 
 ## Limitations
 
-This tool is limited to handle:
- - signed JWT with ECDSA or RSA keys. No HMAC-signed JWT.
- - encrypted JWT that use RSA keys, and alg=RSA-OAEP-256. No other alg types for encrypted JWT.
-   (All types of enc)
+This tool has some limitations:
+ - For signed JWT, the tool handles JWT that use ECDSA or RSA keys. It does not
+   handle JWT that use HMAC-signing (HS256, HS384, HS512).
 
-This tool uses EcmaScript v9, and webcrypto, which means it will run only on
-modern, current browsers.
+ - For encrypted JWT, it handles JWT that use RSA keys, and alg=RSA-OAEP-256. It
+   does not support other alg types for encrypted JWT, such as "dir" or any of
+   the password-based Encryption.  It supports all types of enc.
 
+ - In either case (signed or encrypted), this tool does not handle crit headers,
+   nor will it extract the certificate from an x5c header. Nor will it check
+   thumprints of an x5t header.
+
+ - This tool uses EcmaScript v9, and webcrypto, which means it will run only on
+   modern, current browsers.
+
+## Purpose
+
+I built this as a handy tool for myself, as a developer dealing with JWT.
+The output of this repo is currently running [here](https://dinochiesa.github.io/jwt/).
+
+
+## Design
+
+This is a single-page web app. It has no "backend" supporting it. All JWT
+signing and verifying, or encrypting or decrypting, happens within the browser.
+Anything a user pastes into the UI never leaves the browser. It just needs a few
+static files.
+
+It may be nice to fork this and bundle it into an intranet, to
+allow developers within a company to experiment with JWT. As far as I'm
+concerned there's no security issue with using the [publicly hosted tool](https://dinochiesa.github.io/jwt/).
 
 ## Dependencies
 
@@ -83,3 +106,5 @@ npm run build
 ## Bugs
 
 * Today, there is no support for HMAC-signed JWT
+
+* Not possible to use an x509v3 certificate for the source of the public key.
