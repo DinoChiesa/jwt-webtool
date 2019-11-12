@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Online JWT tool</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/main.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An online tool to perform JWT verification, decoding, or generation. RSA keys and algorithms only." />
+  </head>
+
+  <!-- ======================================================= -->
+  <body>
+    <div class='container'>
+      <div class='banner'>
+        <h2>JWT Decoder, Verifier, Generator, Decryptor</h2>
+        <div>For information on JWT see <a href='https://tools.ietf.org/html/rfc7519'>IETF RFC 7519</a>.</div>
+        <div class="alert alert-warning alert-dismissible fade" role="alert" id="mainalert"></div>
+      </div>
+
+      <div class='panel-group'>
+        <div class='panel panel-left' id='panel_encoded'>
+          <p>Encoded Token <span class='length'></span>
+            <button type="button" class="btn btn-outline-secondary btn-md btn-copy" data-target="encodedjwt" title='copy to clipboard'>
+              <span class="oi oi-clipboard"></span>
+            </button>
+          </p>
+          <textarea rows=12 cols=34 id='encodedjwt' class='rawvalue'></textarea>
+        </div>
+
+        <div class='panel panel-center' id='panel_buttons'>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-encode" title='encode and sign a JWT'>
+            <span class="oi oi-arrow-thick-left"></span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-decode" title='decode a JWT'>
+            <span class="oi oi-arrow-thick-right"></span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-verify" title='verify the encoded JWT with the given public key'>
+            <span class="oi oi-check"></span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-regen" title='generate a new header and payload'>
+            <span class="oi oi-reload"></span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-newkeypair_rsa" title='generate a new RSA keypair'>
+            <span class="oi oi-key"></span>
+            <span style='display: block;'>RSA</span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-newkeypair_ec" title='generate a new EC keypair'>
+            <span class="oi oi-key"></span>
+            <span style='display: block;'>EC</span>
+          </button>
+        </div>
+
+        <div class='panel panel-right clearfix' id='panel_decoded'>
+          <div id='header'>
+            <p>Header <span class='length'></span>
+              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
+                      data-target="token-decoded-header" title="copy to clipboard">
+                <span class="oi oi-clipboard"></span>
+              </button>
+            </p>
+            <textarea rows=12 cols=34 id='token-decoded-header' class='jwt-header'></textarea>
+          </div>
+          <div id='payload'>
+            <p>Payload <span class='length'></span>
+              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
+                      data-target="token-decoded-payload" title="copy to clipboard">
+                <span class="oi oi-clipboard"></span>
+              </button>
+            </p>
+            <textarea rows=12 cols=34 id='token-decoded-payload' class='jwt-payload'></textarea>
+          </div>
+          <div id='privatekey' title='paste in your private key, it does not leave your browser'>
+            <p>Private Key
+              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
+                      data-target="ta_privatekey" title="copy to clipboard">
+                <span class="oi oi-clipboard"></span>
+              </button>
+            </p>
+            <textarea rows=12 cols=34 id='ta_privatekey'></textarea>
+          </div>
+          <div id='publickey'>
+            <p>Public Key
+              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
+                      data-target="ta_publickey" title="copy to clipboard">
+                <span class="oi oi-clipboard"></span>
+              </button>
+            </p>
+            <textarea rows=12 cols=34 id='ta_publickey'></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class='footer'>
+        <div>Notes</div>
+        <ol>
+          <li>This tool uses EcmaScript v9, and webcrypto, which means it will run only on modern, current browsers.</li>
+          <li>This page supports RSA or ECDSA keys and algorithms, for generating and verifying signed JWT. It supports RSA keys and RSA-OAEp-256 for generating or verifying encrypted JWT.  For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
+          <li><p style='margin-bottom:0;'>Signed JWT</p>
+            <ol type='a'>
+              <li>decode: paste in the signed JWT in the box on the left-hand side. The header and payload will automatically be decoded and displayed in the appropriate boxes. </li>
+              <li>verify: after pasting in the signed JWT, also paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>, and click the verify button (with a checkmark icon).</li>
+              <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>, and click the encode button (leftward pointing arrow).</li>
+            </ol>
+          </li>
+          <li><p style='margin-bottom:0;'>Encrypted JWT</p>
+            <ol type='a'>
+              <li>decode: paste in the encrypted JWT in the box on the left-hand side. The header will be decoded and displayed in the appropriate box. The payload is encrypted, so it cannot be decoded without the private key.</li>
+              <li>decrypt and verify: after pasting in the encrypted JWT, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>, and click the verify button (the button with the checkmark icon).</li>
+          <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>. Then, click the encode button (with the left-pointing arrow).</li>
+            </ol>
+          <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values.</li>
+          <li>You can generate a new keypair by clicking the appropriate RSA or EC button.</li>
+          <li>Information that you paste here, including JWT and keys, either private or public, never leaves your browser. Information from the decoding or decrypting also stays in the browser. Nothing gets posted to a server.</li>
+          <li>Ths page shows the header and payload "pretty-printed". The actual header and payload in a JWT do not have newlines.</li>
+          
+        </ol>
+      </div>
+
+      <div class='footer'>
+        <div>Credits</div>
+        <p>
+          This page uses the <a href='https://github.com/cisco/node-jose'>node-jose</a> library for JWT decoding, verification, and generation, online, in the browser page. It also uses <a href='https://codemirror.net/doc/manual.html'>CodeMirror</a> for the interactive editors, <a href='https://getbootstrap.com/docs/4.0'>Bootstrap 4.0</a> for styling, the <a href='https://useiconic.com/open/'>Open Iconic fonts</a> for button symbols, and <a href='https://jquery.com/'>jQuery</a> for interactivity. </p>
+
+        <p>The code for this page is <a href='https://github.com/DinoChiesa/jwt-webtool'>here</a>.</p>
+
+      </div>
+
+    </div>
+    <script src="js/main.js" charset="utf-8"></script>
+  </body>
+
+</html>

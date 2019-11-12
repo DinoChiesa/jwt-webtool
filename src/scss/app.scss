@@ -1,0 +1,199 @@
+@import "custom";
+
+body {
+  margin: 12px 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1540px;
+    padding: 0 15px;
+    margin: auto;
+    overflow: hidden;
+}
+
+textarea {
+  font-family: monospace;
+  max-width:876px;
+  width:100%;
+}
+
+.panel {
+  border-width: 1px 1px 1px 1px;
+  border-color: grey;
+  border-style: dotted;
+  padding: 0 8px;
+  font-size:160%;
+  p {
+    margin-bottom: 0.2rem;
+    color: #BDBDBD;
+  }
+}
+
+
+#panel_encoded > p > .length,
+#header > p > .length,
+#payload > p > .length {
+  font-size:60%;
+}
+
+.panel-left {
+  float: left;
+  width: 520px;
+  min-height: 720px;
+  margin: 2px 0;
+}
+.panel-center {
+  float: left;
+  width: 88px;
+  margin: 2px 0;
+}
+.panel-right {
+  min-width: 472px;
+  margin-left: 604px;
+}
+
+#panel_buttons {
+  border-width: 0;
+  > button {
+    margin-top: 20px;
+    width:4.2rem;
+  }
+}
+
+div.CodeMirror {
+  border: 1px dotted #ccc;
+  height: auto;
+}
+
+
+pre.CodeMirror-line > span {
+  /* all below, to handle really long JWTs */
+  white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  white-space: pre-wrap;       /* css-3 */
+  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+  white-space: -webkit-pre-wrap; /* Newer versions of Chrome/Safari*/
+  word-break: break-all;
+  /* white-space: normal; */
+}
+
+.rawvalue {
+  max-width: 1024px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px;
+  margin: 0 0 8px 0;
+  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+  font-size: 2rem;
+
+  /* all below, to handle really long JWTs */
+  white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  white-space: pre-wrap;       /* css-3 */
+  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+  white-space: -webkit-pre-wrap; /* Newer versions of Chrome/Safari*/
+  word-break: break-all;
+  white-space: normal;
+}
+
+.cm-jwt-header {
+  color: #fa003a;
+}
+.cm-jwt-payload {
+  color: #b100ff;
+}
+.cm-jwt-iv {
+  color: #FF948A;
+}
+.cm-jwt-key {
+  color: #89BB86;
+}
+.cm-jwt-signature, .cm-jwt-authtag {
+  color: #3184fb;
+}
+
+#privatekey, #publickey {
+  > .CodeMirror {
+    font-size: 84%;
+    max-height: 232px;
+  }
+}
+
+#privatekey  .CodeMirror-scroll {
+  max-height: 162px;
+}
+
+#publickey  .CodeMirror-scroll {
+  max-height: 216px;
+}
+
+#panel_decoded > div {
+  margin-bottom: 18px;
+}
+
+.banner > .alert {
+  margin: 0;
+  z-index: 10;
+}
+
+.btn-copy {
+  padding: 2px 6px;
+  margin: 0 4px;
+  float: right;
+  top: 8px;
+  position: relative;
+}
+
+.banner, .footer {
+  border: 1px dotted grey;
+}
+
+.banner {
+  margin-bottom:24px;
+  background-color: #DFDDDD;
+  height: 120px;
+}
+
+.footer {
+  margin-top:24px;
+  background-color: #ECECEC;
+  padding: 0 4px;
+  min-height: 120px;
+}
+
+.banner > h2, .banner > div {
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%)
+}
+.banner > h2, .footer > h2 {
+  top: 46px;
+}
+.banner > div {
+  top: 96px;
+}
+
+.alert.fade {
+  opacity: 0;
+  transition: opacity .85s linear;
+}
+
+.copy-to-clipboard-flash-bg {
+    animation-name: flashbg;
+    animation-timing-function: ease-out;
+    animation-duration: 1s;
+}
+
+@keyframes flashbg {
+    0% {
+        background: #539EDB;
+    }
+    100% {
+        background: transparent;
+    }
+}
