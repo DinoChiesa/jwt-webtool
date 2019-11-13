@@ -5,7 +5,7 @@
   "main": "webpack.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "webpack --debug --output-pathinfo --devtool source-map  --watch --colors",
+    "watch": "webpack --debug --output-pathinfo --devtool source-map --mode=development --watch --colors",
     "devbuild": "webpack --debug --output-pathinfo --devtool source-map --mode=development --progress --colors",
     "build": "rm -r dist/* && webpack --mode=production --progress --colors"
   },

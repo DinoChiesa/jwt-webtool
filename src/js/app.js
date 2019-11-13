@@ -249,14 +249,13 @@ function encodeJwt(event) {
   if (!header.typ) { header.typ = "JWT"; }
 
   var p = null;
+  // TODO: make this dependent upon UI switch, not inferred from the header contents
   if (header.enc && header.alg == 'RSA-OAEP-256') {
     p = jose.JWK.asKey(getPublicKey(), "pem")
       .then( encryptingKey => {
-        // if (encryptingKey.kid && !header.kid) {
-        //   header.kid = encryptingKey.kid;
-        // }
         let encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
-        cipher = jose.JWE.createEncrypt(encryptOptions, encryptingKey);
+            // createEncrypt will automatically inject the kid, unless I pass reference:false
+            cipher = jose.JWE.createEncrypt(encryptOptions, [{key:encryptingKey, reference:false}]);
         cipher.update(JSON.stringify(payload), "utf8");
         return cipher.final();
       });
@@ -266,14 +265,12 @@ function encodeJwt(event) {
     .then( signingKey => {
       if (!header.alg) { header.alg = selectAppropriateAlg(signingKey); }
       if ( ! isAppropriateAlg(header.alg, signingKey)) {
-        //throw "inappropriate algorithm specified in the header for the given key. Try: \"alg\":\"" + getAppropriateAlg(signingKey) + "\"";
+        // forcibly overwrite the alg
         header.alg = selectAppropriateAlg(signingKey);
       }
-      // if (signingKey.kid && !header.kid) {
-      //   header.kid = signingKey.kid;
-      // }
       let signOptions = {alg: header.alg, fields: header, format: 'compact'},
-          signer = jose.JWS.createSign(signOptions, signingKey);
+          // createSign will automatically inject the kid, unless I pass reference:false
+          signer = jose.JWS.createSign(signOptions, [{key:signingKey, reference:false}]);
       signer.update(JSON.stringify(payload), "utf8");
       return signer.final();
     });
@@ -314,6 +311,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   if (pHeader.alg === undefined) {
     reasons.push('the header lacks the required alg property');
   }
+
   if (acceptableAlgorithms.indexOf(pHeader.alg) < 0) {
     reasons.push('the algorithm is not acceptable');
   }
@@ -354,19 +352,18 @@ function verifyJwt(event) {
     $("#mainalert").addClass('fade').removeClass('show');
 
     return jose.JWK.asKey(getPublicKey(), "pem")
-      .then( publicKey => {
+      .then( publicKey =>
+             jose.JWS.createVerify(publicKey)
+             .verify(tokenString)
+             .then(function(result) {
+               // {result} is a Object with:
+               // *  header: the combined 'protected' and 'unprotected' header members
+               // *  payload: Buffer of the signed content
+               // *  signature: Buffer of the verified signature
+               // *  key: The key used to verify the signature
 
-        jose.JWS.createVerify(publicKey)
-          .verify(tokenString)
-          .then(function(result) {
-            // {result} is a Object with:
-            // *  header: the combined 'protected' and 'unprotected' header members
-            // *  payload: Buffer of the signed content
-            // *  signature: Buffer of the verified signature
-            // *  key: The key used to verify the signature
-
-            let parsedPayload = JSON.parse(result.payload),
-                reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableSigningAlgs(publicKey));
+               let parsedPayload = JSON.parse(result.payload),
+                   reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableSigningAlgs(publicKey));
             if (reasons.length == 0) {
               let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
               showDecoded();
@@ -379,8 +376,7 @@ function verifyJwt(event) {
           })
           .catch (e => {
             setAlert('Cannot verify: ' + e);
-          });
-      });
+          }));
   }
 
   // verification/decrypt of encrypted JWT
@@ -388,37 +384,39 @@ function verifyJwt(event) {
   if (matches && matches.length == 6) {
 
     return jose.JWK.asKey(getPrivateKey(), "pem")
-      .then( privateKey => jose.JWE.createDecrypt(privateKey) )
-      .then( decryptor => decryptor.decrypt( tokenString ) )
-      .then( result => {
-        // {result} is a Object with:
-        // *  header: the combined 'protected' and 'unprotected' header members
-        // *  protected: an array of the member names from the "protected" member
-        // *  key: Key used to decrypt
-        // *  payload: Buffer of the decrypted content
-        // *  plaintext: Buffer of the decrypted content (alternate)
-        let td = new TextDecoder('utf-8'),
-            stringPayload = td.decode(result.payload),
-            parsedPayload = JSON.parse(stringPayload),
-            prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
-            reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs.key),
-            elementId = 'token-decoded-payload',
-            flavor = 'payload';
-        editors[elementId].setValue(prettyPrintedJson);
-        $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
-        if (reasons.length == 0) {
-          let message = "The JWT has been decrypted successfully, and the times are valid.";
-          setAlert(message, 'success');
-        }
-        else {
-          let label = (reasons.length == 1)? 'Reason' : 'Reasons';
-          setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
-        }
-        return {};
-      })
+      .then( privateKey =>
+             jose.JWE.createDecrypt(privateKey)
+             .decrypt(tokenString)
+             .then( result => {
+               // {result} is a Object with:
+               // *  header: the combined 'protected' and 'unprotected' header members
+               // *  protected: an array of the member names from the "protected" member
+               // *  key: Key used to decrypt
+               // *  payload: Buffer of the decrypted content
+               // *  plaintext: Buffer of the decrypted content (alternate)
+               let td = new TextDecoder('utf-8'),
+                   stringPayload = td.decode(result.payload),
+                   parsedPayload = JSON.parse(stringPayload),
+                   prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
+                   reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(privateKey)),
+                   elementId = 'token-decoded-payload',
+                   flavor = 'payload';
+               editors[elementId].setValue(prettyPrintedJson);
+               $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
+               if (reasons.length == 0) {
+                 let message = "The JWT has been decrypted successfully, and the times are valid.";
+                 setAlert(message, 'success');
+               }
+               else {
+                 let label = (reasons.length == 1)? 'Reason' : 'Reasons';
+                 setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
+               }
+               return {};
+             }))
       .catch( e => {
         setAlert('Decryption failed. Bad key?');
         console.log('During decryption: ' + e);
+        console.log(e.stack);
       });
   }
 }
