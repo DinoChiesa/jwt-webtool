@@ -237,7 +237,6 @@ function encodeJwt(event) {
       }
       catch(e) {
         parseError = segment;
-        //console.log(e);
       }
     }
   });
@@ -253,10 +252,9 @@ function encodeJwt(event) {
   if (header.enc && header.alg == 'RSA-OAEP-256') {
     p = jose.JWK.asKey(getPublicKey(), "pem")
       .then( encryptingKey => {
-        // allow people to specify their own kid, but set the kid if there is none
-        if (encryptingKey.kid && !header.kid) {
-          header.kid = encryptingKey.kid;
-        }
+        // if (encryptingKey.kid && !header.kid) {
+        //   header.kid = encryptingKey.kid;
+        // }
         let encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
         cipher = jose.JWE.createEncrypt(encryptOptions, encryptingKey);
         cipher.update(JSON.stringify(payload), "utf8");
@@ -271,10 +269,9 @@ function encodeJwt(event) {
         //throw "inappropriate algorithm specified in the header for the given key. Try: \"alg\":\"" + getAppropriateAlg(signingKey) + "\"";
         header.alg = selectAppropriateAlg(signingKey);
       }
-      // allow people to specify their own kid, but set the kid if there is none
-      if (signingKey.kid && !header.kid) {
-        header.kid = signingKey.kid;
-      }
+      // if (signingKey.kid && !header.kid) {
+      //   header.kid = signingKey.kid;
+      // }
       let signOptions = {alg: header.alg, fields: header, format: 'compact'},
           signer = jose.JWS.createSign(signOptions, signingKey);
       signer.update(JSON.stringify(payload), "utf8");
