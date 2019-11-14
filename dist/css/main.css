@@ -8190,18 +8190,19 @@ textarea {
 
 .panel-center {
   float: left;
-  width: 88px;
-  margin: 2px 0; }
+  width: 114px;
+  margin: 2px 0;
+  border-width: 0; }
+  .panel-center > button {
+    margin-top: 14px;
+    width: 92px; }
+  .panel-center > select:not(:first-child) {
+    margin-top: 14px;
+    width: 92px; }
 
 .panel-right {
-  min-width: 472px;
-  margin-left: 604px; }
-
-#panel_buttons {
-  border-width: 0; }
-  #panel_buttons > button {
-    margin-top: 20px;
-    width: 4.2rem; }
+  min-width: 452px;
+  margin-left: 630px; }
 
 div.CodeMirror {
   border: 1px dotted #ccc;
@@ -8328,4 +8329,7 @@ pre.CodeMirror-line > span {
     background: #539EDB; }
   100% {
     background: transparent; } }
+
+.outdated {
+  background-color: #DCDCDC; }
 

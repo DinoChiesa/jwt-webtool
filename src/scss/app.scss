@@ -45,20 +45,22 @@ textarea {
 }
 .panel-center {
   float: left;
-  width: 88px;
+  width: 114px;
   margin: 2px 0;
-}
-.panel-right {
-  min-width: 472px;
-  margin-left: 604px;
-}
-
-#panel_buttons {
   border-width: 0;
   > button {
-    margin-top: 20px;
-    width:4.2rem;
+    margin-top: 14px;
+    width:92px;
   }
+  > select:not(:first-child) {
+    margin-top: 14px;
+    width:92px;
+  }
+}
+
+.panel-right {
+  min-width: 452px;
+  margin-left: 630px;
 }
 
 div.CodeMirror {
@@ -196,4 +198,8 @@ pre.CodeMirror-line > span {
     100% {
         background: transparent;
     }
+}
+
+.outdated {
+  background-color: #DCDCDC;
 }

@@ -29,6 +29,13 @@
         </div>
 
         <div class='panel panel-center' id='panel_buttons'>
+          <select class="form-control form-control-sm sel-variant">
+            <option>Signed</option>
+            <option>Encrypted</option>
+          </select>
+          <select class="form-control form-control-sm sel-alg">
+            <!-- options will be dynamically added -->
+          </select>
           <button type="button" class="btn btn-outline-secondary btn-lg btn-encode" title='encode and sign a JWT'>
             <span class="oi oi-arrow-thick-left"></span>
           </button>
@@ -41,13 +48,9 @@
           <button type="button" class="btn btn-outline-secondary btn-lg btn-regen" title='generate a new header and payload'>
             <span class="oi oi-reload"></span>
           </button>
-          <button type="button" class="btn btn-outline-secondary btn-lg btn-newkeypair_rsa" title='generate a new RSA keypair'>
+          <button type="button" class="btn btn-outline-secondary btn-lg btn-newkeypair" title='generate a new keypair'>
             <span class="oi oi-key"></span>
-            <span style='display: block;'>RSA</span>
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-lg btn-newkeypair_ec" title='generate a new EC keypair'>
-            <span class="oi oi-key"></span>
-            <span style='display: block;'>EC</span>
+            <span style='display: block;'>new</span>
           </button>
         </div>
 

@@ -30,6 +30,21 @@ const sampledata = {
 const rsaSigningAlgs = ['RS','PS'].reduce( (a, v) =>
     [...a, ...[256,384,512].map(x=>v+x)], []);
 
+const ecdsaSigningAlgs = ['ES'].reduce( (a, v) =>
+    [...a, ...[256,384,512].map(x=>v+x)], []);
+
+const hmacSigningAlgs = ['HS'].reduce( (a, v) =>
+    [...a, ...[256,384,512].map(x=>v+x)], []);
+
+const rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'];
+
+const contentEncryptionAlgs = [
+        'A128CBC-HS256',
+        'A256CBC-HS512',
+        'A128GCM',
+        'A256GCM'
+      ];
+
 let editors = {}; // codemirror editors
 
 CodeMirror.defineSimpleMode("encodedjwt", {
@@ -217,12 +232,20 @@ function getAcceptableSigningAlgs(key) {
 
 function getAcceptableEncryptionAlgs(key) {
   let keytype = key.kty;
-  if (keytype == 'RSA') return ['RSA-OAEP-256'];
+  if (keytype == 'RSA') return rsaKeyEncryptionAlgs;
   return ["NONE"];
 }
 
-function selectAppropriateAlg(key) {
+function pickSigningAlg(key) {
   return selectRandomValue(getAcceptableSigningAlgs(key));
+}
+
+function pickKeyEncryptionAlg(key) {
+  return selectRandomValue(getAcceptableEncryptionAlgs(key));
+}
+
+function pickContentEncryptionAlg() {
+  return selectRandomValue(contentEncryptionAlgs);
 }
 
 function encodeJwt(event) {
@@ -249,8 +272,7 @@ function encodeJwt(event) {
   if (!header.typ) { header.typ = "JWT"; }
 
   var p = null;
-  // TODO: make this dependent upon UI switch, not inferred from the header contents
-  if (header.enc && header.alg == 'RSA-OAEP-256') {
+  if (header.enc && header.alg) {
     p = jose.JWK.asKey(getPublicKey(), "pem")
       .then( encryptingKey => {
         let encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
@@ -263,10 +285,9 @@ function encodeJwt(event) {
   else {
     p = jose.JWK.asKey(getPrivateKey(), "pem")
     .then( signingKey => {
-      if (!header.alg) { header.alg = selectAppropriateAlg(signingKey); }
+      if (!header.alg) { header.alg = pickSigningAlg(signingKey); }
       if ( ! isAppropriateAlg(header.alg, signingKey)) {
-        // forcibly overwrite the alg
-        header.alg = selectAppropriateAlg(signingKey);
+        throw new Error('the alg specified in the header is not compatible with the key');
       }
       let signOptions = {alg: header.alg, fields: header, format: 'compact'},
           // createSign will automatically inject the kid, unless I pass reference:false
@@ -290,6 +311,10 @@ function encodeJwt(event) {
         showDecoded();
         setAlert("signed JWT", 'info');
       }
+    })
+    .then(() => {
+      $('#privatekey .CodeMirror-code').removeClass('outdated');
+      $('#publickey .CodeMirror-code').removeClass('outdated');
     })
     .catch( e => {
       console.log(e.stack);
@@ -375,7 +400,9 @@ function verifyJwt(event) {
             }
           })
           .catch (e => {
-            setAlert('Cannot verify: ' + e);
+            setAlert('Verification failed. Bad key?');
+            console.log('During verify: ' + e);
+            console.log(e.stack);
           }));
   }
 
@@ -460,32 +487,45 @@ function key2pem(flavor, keydata) {
   return `-----BEGIN ${flavor} KEY-----\n${body}\n-----END ${flavor} KEY-----`;
 }
 
-function getGenKeyParams(flavor) {
-  if (flavor == 'RSA') return {
+function getGenKeyParams(alg) {
+  if (alg.startsWith('RS') || alg.startsWith('PS')) return {
     name: "RSASSA-PKCS1-v1_5",
     modulusLength: 2048, //can be 1024, 2048, or 4096
     publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
     hash: {name: "SHA-256"}
   };
-  if (flavor == 'EC') return {
+  if (alg == 'ES256') return {
     name: "ECDSA",
-    namedCurve: selectRandomValue(['P-256', 'P-384', 'P-521'])
+    namedCurve: 'P-256'
+  };
+  if (alg == 'ES384') return {
+    name: "ECDSA",
+    namedCurve: 'P-384'
+  };
+  if (alg == 'ES512') return {
+    name: "ECDSA",
+    namedCurve: 'P-521'
   };
   throw new Error('invalid key flavor');
 }
 
-function newKeyPair(flavor) {
-  return function (event) {
-    let keyUse = ["sign", "verify"],
-        isExtractable = true,
-        genKeyParams = getGenKeyParams(flavor);
-    return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
-      .then(key => window.crypto.subtle.exportKey( "spki", key.publicKey )
-            .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
-            .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
-            .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
-      .then( () => $('#mainalert').removeClass('show').addClass('fade')) ;
-  };
+function newKeyPair(event) {
+  // let variant = $('.sel-variant').find(':selected').text().toLowerCase();
+  let alg = $('.sel-alg').find(':selected').text(),
+      //flavor = (alg.startsWith('ES')) ? 'EC' : 'RSA',
+      keyUse = ["sign", "verify"],
+      isExtractable = true,
+      genKeyParams = getGenKeyParams(alg);
+  return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
+    .then(key => window.crypto.subtle.exportKey( "spki", key.publicKey )
+          .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
+          .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
+          .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
+    .then( () => {
+      $('#mainalert').removeClass('show').addClass('fade');
+      $('#privatekey .CodeMirror-code').removeClass('outdated');
+      $('#publickey .CodeMirror-code').removeClass('outdated');
+    });
 }
 
 function showDecoded() {
@@ -534,6 +574,68 @@ function showDecoded() {
   setAlert("That does not appear to be a signed JWT");
 }
 
+function populateAlgorithmSelectOptions() {
+  let variant = $('.sel-variant').find(':selected').text().toLowerCase();
+  $('.sel-alg').find('option') .remove();
+  let a = (variant == 'signed') ? [...rsaSigningAlgs, ...ecdsaSigningAlgs] : rsaKeyEncryptionAlgs;
+  $.each(a, (val, text) =>
+         $('.sel-alg').append( $('<option></option>').val(val).html(text) ));
+}
+
+function keysAreCompatible(alg1, alg2) {
+  let prefix1 = alg1.substring(0, 2),
+      prefix2 = alg2.substring(0, 2);
+  if (['RS', 'PS'].indexOf(prefix1)>=0 &&
+      ['RS', 'PS'].indexOf(prefix2)>=0 ) return true;
+  if (prefix1 == 'ES') return alg1 == alg2;
+  return false;
+}
+
+function changeAlg(event) {
+  let $this = $(this),
+      newSelection = $this.find(':selected').text(),
+      previousSelection = $this.data('prev');
+  editors['token-decoded-header'].save();
+  let text = $('#token-decoded-header').val();
+  try {
+    let headerObj = JSON.parse(text);
+    headerObj.alg = newSelection;
+    editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+  }
+  catch(e) {
+    /* gulp */
+  }
+  if ( ! keysAreCompatible(newSelection, previousSelection)) {
+    $('#privatekey .CodeMirror-code').addClass('outdated');
+    $('#publickey .CodeMirror-code').addClass('outdated');
+  }
+  $this.data('prev', newSelection);
+}
+
+function changeVariant(event) {
+  let selection = this.value.toLowerCase();
+  editors['token-decoded-header'].save();
+  let text = $('#token-decoded-header').val();
+  try {
+    let headerObj = JSON.parse(text);
+    if (selection == 'encrypted') {
+      // swap in alg and enc
+      headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'});
+      headerObj.enc = pickContentEncryptionAlg();
+    }
+    else {
+      // select an appropriate alg and remove enc
+      headerObj.alg = pickSigningAlg({kty:'RSA'});
+      delete headerObj.enc;
+    }
+    editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+  }
+  catch(e) {
+    /* gulp */
+  }
+  populateAlgorithmSelectOptions();
+}
+
 function contriveJwt(event) {
     let now = Math.floor((new Date()).valueOf() / 1000),
         sub = selectRandomValue(sampledata.names),
@@ -545,7 +647,7 @@ function contriveJwt(event) {
           iat: now,
           exp: now + tenMinutes // always
         },
-        header = { /* will be filled in later */ };
+        header = { alg : $('.sel-alg').find(':selected').text() };
 
   if (randomBoolean()) {
     let propname = selectRandomValue(sampledata.props);
@@ -571,16 +673,21 @@ function decoratePayloadLine(instance, handle, lineElement) {
 }
 
 $(document).ready(function() {
-  let newRsaKeyPair = newKeyPair('RSA'),
-      newEcKeyPair = newKeyPair('EC');
-
   $( '.btn-copy' ).on('click', copyToClipboard);
   $( '.btn-encode' ).on('click', encodeJwt);
   $( '.btn-decode' ).on('click', decodeJwt);
   $( '.btn-verify' ).on('click', verifyJwt);
-  $( '.btn-newkeypair_rsa' ).on('click', newRsaKeyPair);
-  $( '.btn-newkeypair_ec' ).on('click', newEcKeyPair);
+  $( '.btn-newkeypair' ).on('click', newKeyPair);
+
   $( '.btn-regen' ).on('click', contriveJwt);
+  $( '.sel-variant').on('change', changeVariant);
+  $( '.sel-alg').on('change', changeAlg);
+
+  populateAlgorithmSelectOptions();
+
+  // store currently selected alg:
+  $( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
+
 
   $('#mainalert').addClass('fade');
   $('#mainalert').on('close.bs.alert', closeAlert);
@@ -639,7 +746,7 @@ $(document).ready(function() {
 
   editors['token-decoded-payload'].on('renderLine', decoratePayloadLine);
 
-  newRsaKeyPair()
+  newKeyPair()
     .then( _ => contriveJwt() );
 
 
