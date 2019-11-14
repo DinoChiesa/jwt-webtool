@@ -372,8 +372,8 @@ function verifyJwt(event) {
   editors.publickey.save();
   let tokenString = editors.encodedjwt.getValue(),
       matches = re.signed.jwt.exec(tokenString);
+  // verify a signed JWT
   if (matches && matches.length == 4) {
-    //$("#mainalert").hide();
     $("#mainalert").addClass('fade').removeClass('show');
 
     return jose.JWK.asKey(getPublicKey(), "pem")
@@ -580,6 +580,8 @@ function populateAlgorithmSelectOptions() {
   let a = (variant == 'signed') ? [...rsaSigningAlgs, ...ecdsaSigningAlgs] : rsaKeyEncryptionAlgs;
   $.each(a, (val, text) =>
          $('.sel-alg').append( $('<option></option>').val(val).html(text) ));
+  // store currently selected alg:
+  $( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -613,7 +615,9 @@ function changeAlg(event) {
 }
 
 function changeVariant(event) {
-  let selection = this.value.toLowerCase();
+  let selection = this.value.toLowerCase(),
+      priorAlgSelection = $('.sel-alg').data('prev');
+
   editors['token-decoded-header'].save();
   let text = $('#token-decoded-header').val();
   try {
@@ -634,6 +638,15 @@ function changeVariant(event) {
     /* gulp */
   }
   populateAlgorithmSelectOptions();
+
+  // There are two possibilities:
+  // 1. change from signed to encrypted, in which case we always need RSA keys.
+  // 2. change from encrypted to signed, in which case RS256 gets selected and again we need RSA keys.
+  // So just check if the prior alg was RSA.
+  if ( !priorAlgSelection.startsWith('PS') && !priorAlgSelection.startsWith('RS')) {
+    $('#privatekey .CodeMirror-code').addClass('outdated');
+    $('#publickey .CodeMirror-code').addClass('outdated');
+  }
 }
 
 function contriveJwt(event) {
@@ -684,10 +697,6 @@ $(document).ready(function() {
   $( '.sel-alg').on('change', changeAlg);
 
   populateAlgorithmSelectOptions();
-
-  // store currently selected alg:
-  $( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
-
 
   $('#mainalert').addClass('fade');
   $('#mainalert').on('close.bs.alert', closeAlert);
