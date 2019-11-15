@@ -618,22 +618,30 @@ function showDecoded() {
   let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
       matches = re.signed.jwt.exec(tokenString);
   if (matches && matches.length == 4) {
-    setAlert("a signed JWT", 'info');
+    setAlert("looks like a signed JWT", 'info');
     //$('#mainalert').hide();
     //$('#mainalert').removeClass('show').addClass('fade');
     let flavors = ['header','payload']; // cannot decode signature
     matches.slice(1,-1).forEach(function(item,index) {
       let json = atob(item),  // base64-decode
-          obj = JSON.parse(json),
           flavor = flavors[index],
-          prettyPrintedJson = JSON.stringify(obj,null,2),
-          flatJson = JSON.stringify(obj),
           elementId = 'token-decoded-' + flavor;
-      editors[elementId].setValue(prettyPrintedJson);
-      $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
+      try {
+        let obj = JSON.parse(json),
+            prettyPrintedJson = JSON.stringify(obj,null,2),
+            flatJson = JSON.stringify(obj);
+        editors[elementId].setValue(prettyPrintedJson);
+        $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
+      }
+      catch (e) {
+        // probably not json
+        setAlert("the "+ flavor +" may not be valid JSON", 'info');
+        editors[elementId].setValue(json);
+      }
     });
     return;
   }
+
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
     setAlert("an encrypted JWT", 'info');
@@ -641,12 +649,12 @@ function showDecoded() {
     // header
     let item = matches[1],
         json = atob(item),  // base64-decode
-        obj = JSON.parse(json),
+        elementId = 'token-decoded-header',
         flavor = 'header',
+        obj = JSON.parse(json),
         prettyPrintedJson = JSON.stringify(obj,null,2),
-        flatJson = JSON.stringify(obj),
-        elementId = 'token-decoded-header';
-      editors[elementId].setValue(prettyPrintedJson);
+        flatJson = JSON.stringify(obj);
+    editors[elementId].setValue(prettyPrintedJson);
     $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
     // must decrypt the ciphertext payload to display claims
     elementId = 'token-decoded-payload';
@@ -656,7 +664,8 @@ function showDecoded() {
     // do not attempt decrypt here
     return;
   }
-  setAlert("That does not appear to be a signed JWT");
+
+  setAlert("That does not appear to be a JWT");
 }
 
 function populateAlgorithmSelectOptions() {
