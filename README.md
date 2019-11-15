@@ -11,6 +11,12 @@ limitations!
 This code is Copyright (c) 2019 Google LLC, and is released under the Apache
 Source License v2.0. For information see the [LICENSE](LICENSE) file.
 
+## Purpose
+
+I built this as a tool that might be helpful to developers learning JWT, or
+experimenting with ways to use JWT.  The output of this repo is currently
+running [here](https://dinochiesa.github.io/jwt/).
+
 ## Disclaimer
 
 This tool is not an official Google product, nor is it part of an official
@@ -34,13 +40,6 @@ This tool has some limitations:
 
  - This tool uses EcmaScript v9, and webcrypto, which means it will run only on
    modern, current browsers.
-
-## Purpose
-
-I built this as a tool that might be helpful to developers learning JWT, or
-experimenting with ways to use JWT.  The output of this repo is currently
-running [here](https://dinochiesa.github.io/jwt/).
-
 
 ## Design
 
