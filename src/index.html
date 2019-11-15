@@ -91,6 +91,42 @@
             </p>
             <textarea rows=12 cols=34 id='ta_publickey'></textarea>
           </div>
+          <div id='symmetrickey'>
+            <p>Symmetric Key <span class='length'></span>
+              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
+                      data-target="ta_symmetrickey" title="copy to clipboard">
+                <span class="oi oi-clipboard"></span>
+              </button>
+            </p>
+            <input type='text' id='ta_symmetrickey'>
+            <div>
+              <span>Key Encoding:</span>
+              <select class="form-control form-control-sm sel-symkey-coding">
+                <option>UTF-8</option>
+                <option>Hex</option>
+                <option>Base64</option>
+                <option>PBKDF2</option>
+              </select>
+            </div>
+            <div id='pbkdf2_params'>
+            <div>
+              <span>iterations:</span>
+              <input type='number' id='ta_pbkdf2_iterations' value='10000'>
+            </div>
+            <div>
+              <span>salt:</span>
+              <input type='text' id='ta_pbkdf2_salt' value='abcdefg'>
+            </div>
+            <div>
+              <span>salt encoding:</span>
+              <select class="form-control form-control-sm sel-symkey-pbkdf2-salt-coding">
+                <option>UTF-8</option>
+                <option>Hex</option>
+                <option>Base64</option>
+              </select>
+            </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -98,12 +134,14 @@
         <div>Notes</div>
         <ol>
           <li>This tool uses EcmaScript v9, and webcrypto, which means it will run only on modern, current browsers.</li>
-          <li>This page supports RSA or ECDSA keys and algorithms, for generating and verifying signed JWT. It supports RSA keys and RSA-OAEP-256 for generating or verifying encrypted JWT.  For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
+          <li>This page supports RSA, HMAC, or ECDSA algorithms, for generating and verifying signed JWT. It supports RSA keys and RSA-OAEP-256 for generating or verifying encrypted JWT.  For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
+          <li>to use this, first select the variant of JWT: either Signed or Encrypted. Then select the algorithm.</li>
           <li><p style='margin-bottom:0;'>Signed JWT</p>
             <ol type='a'>
               <li>decode: paste in the signed JWT in the box on the left-hand side. The header and payload will automatically be decoded and displayed in the appropriate boxes. </li>
-              <li>verify: after pasting in the signed JWT, also paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>, and click the verify button (with a checkmark icon).</li>
-              <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>, and click the encode button (leftward pointing arrow).</li>
+              <li>verify: after pasting in the signed JWT, also specify your key: if using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>. Or, if you're using a symmetric algorithm, specify the symmetric key.
+                Finally, and click the verify button (with a checkmark icon).</li>
+              <li>create: select set the payload and the header in the boxes on the right hand side, and paste in your key: either a <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a> for asymmetric algorithms, or the symmetric key for symmetric algorithms. Then, click the encode button (leftward pointing arrow).</li>
             </ol>
           </li>
           <li><p style='margin-bottom:0;'>Encrypted JWT</p>
@@ -113,10 +151,10 @@
           <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>. Then, click the encode button (with the left-pointing arrow).</li>
             </ol>
           <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values.</li>
-          <li>You can generate a new keypair by clicking the appropriate RSA or EC button.</li>
+          <li>You can generate a new asymmetric keypair by clicking the key button.</li>
+          <li>When specifying the symmetric key, you need at least 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512, whether signing or verifying.</li>
           <li>Information that you paste here, including JWT and keys, either private or public, never leaves your browser. Information from the decoding or decrypting also stays in the browser. Nothing gets posted to a server.</li>
           <li>Ths page shows the header and payload "pretty-printed". The actual header and payload in a JWT do not have newlines.</li>
-
         </ol>
       </div>
 

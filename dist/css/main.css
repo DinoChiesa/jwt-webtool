@@ -8179,8 +8179,29 @@ textarea {
 
 #panel_encoded > p > .length,
 #header > p > .length,
-#payload > p > .length {
+#payload > p > .length,
+#symmetrickey > p > .length {
   font-size: 60%; }
+
+#symmetrickey > input {
+  width: 100%;
+  padding-left: 6px; }
+
+#symmetrickey > div {
+  margin-left: 32px; }
+  #symmetrickey > div span {
+    color: #BDBDBD;
+    font-size: 80%;
+    width: 200px;
+    display: inline-block; }
+  #symmetrickey > div input {
+    margin-left: 8px;
+    padding-left: 6px;
+    width: 440px; }
+  #symmetrickey > div select {
+    margin-left: 8px;
+    width: 180px;
+    display: inline-block; }
 
 .panel-left {
   float: left;
