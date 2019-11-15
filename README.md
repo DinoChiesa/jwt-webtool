@@ -17,12 +17,14 @@ This tool is not an official Google product, nor is it part of an official Googl
 ## Limitations
 
 This tool has some limitations:
- - For signed JWT, the tool handles JWT that use ECDSA or RSA keys. It does not
-   handle JWT that use HMAC-signing (HS256, HS384, HS512).
+ - For signed JWT, the tool handles JWT that use ECDSA (ES256, ES384, ES512),
+   RSA (RS256, RS384, RS512, PS256, PS384, PS512) or HMAC algorithms
+   (HS256, HS384, HS512).
 
- - For encrypted JWT, it handles JWT that use RSA keys, and alg=RSA-OAEP-256. It
+ - For encrypted JWT, it handles JWT that use RSA keys, and RSA algorithms
+   (RSA-OAEP, RSA-OAEP-256). It
    does not support other alg types for encrypted JWT, such as "dir" or any of
-   the password-based Encryption.  It supports all types of enc.
+   the password-based Encryption (PBES2). It supports all types of enc.
 
  - In either case (signed or encrypted), this tool does not handle crit headers,
    nor will it extract the certificate from an x5c header. Nor will it check
@@ -33,7 +35,8 @@ This tool has some limitations:
 
 ## Purpose
 
-I built this as a handy tool for myself, as a developer dealing with JWT.
+I built this as a tool that might be helpful to developers learning JWT, or 
+experimenting with ways to use JWT.
 The output of this repo is currently running [here](https://dinochiesa.github.io/jwt/).
 
 
@@ -105,6 +108,6 @@ npm run build
 
 ## Bugs
 
-* Today, there is no support for HMAC-signed JWT
+* Today, there is limited support for key-encryption algorithms. Missing are: PBES2, AES based algorithms, and Elliptic Curve.
 
-* Not possible to use an x509v3 certificate for the source of the public key.
+* It is not possible to use an x509v3 certificate for the source of the public key.
