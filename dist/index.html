@@ -98,14 +98,14 @@
                 <span class="oi oi-clipboard"></span>
               </button>
             </p>
-            <input type='text' id='ta_symmetrickey'>
+            <input type='text' id='ta_symmetrickey' value='Secret123!'>
             <div>
               <span>Key Encoding:</span>
               <select class="form-control form-control-sm sel-symkey-coding">
-                <option>UTF-8</option>
-                <option>Hex</option>
-                <option>Base64</option>
-                <option>PBKDF2</option>
+                <option value='UTF-8'>UTF-8</option>
+                <option value='Hex'>Hex</option>
+                <option value='Base64'>Base64</option>
+                <option value='PBKDF2'>PBKDF2</option>
               </select>
             </div>
             <div id='pbkdf2_params'>
@@ -152,8 +152,8 @@
             </ol>
           <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values.</li>
           <li>You can generate a new asymmetric keypair by clicking the key button.</li>
-          <li>When specifying the symmetric key, you need at least 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512, whether signing or verifying.</li>
-          <li>Information that you paste here, including JWT and keys, either private or public, never leaves your browser. Information from the decoding or decrypting also stays in the browser. Nothing gets posted to a server.</li>
+          <li>When specifying the symmetric key, you need at least 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512, whether signing or verifying. The <a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will generate keys of the appropriate size. If you choose a different coding system, you need to ensure minimum key size yourself. </li>
+          <li>Information that you paste here, including JWT and keys, whether secret, private or public, never leaves your browser. Information from the decoding or decrypting also stays in the browser. Nothing gets posted to a server. Still, you should take care not to use this site for private information. </li>
           <li>Ths page shows the header and payload "pretty-printed". The actual header and payload in a JWT do not have newlines.</li>
         </ol>
       </div>

@@ -685,6 +685,9 @@ function checkSymmetryChange(newalg, oldalg) {
     $('#privatekey').hide();
     $('#publickey').hide();
     $('#symmetrickey').show();
+    $('.sel-symkey-coding option[value=PBKDF2]')
+      .prop('selected', true)
+      .trigger("change");
     return true;
   }
   if (prefix2 == 'HS' && prefix1 != 'HS') {
@@ -756,6 +759,9 @@ function changeVariant(event) {
       // swap in alg and enc
       headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'});
       headerObj.enc = pickContentEncryptionAlg();
+      $('#privatekey').show();
+      $('#publickey').show();
+      $('#symmetrickey').hide();
     }
     else {
       // select an appropriate alg and remove enc
@@ -768,6 +774,8 @@ function changeVariant(event) {
     /* gulp */
   }
   populateAlgorithmSelectOptions();
+
+  ///xxx
 
   // There are two possibilities:
   // 1. change from signed to encrypted, in which case we always need RSA keys.

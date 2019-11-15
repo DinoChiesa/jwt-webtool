@@ -8185,19 +8185,21 @@ textarea {
 
 #symmetrickey > input {
   width: 100%;
-  padding-left: 6px; }
+  padding-left: 6px;
+  font-family: monospace; }
 
 #symmetrickey > div {
   margin-left: 32px; }
   #symmetrickey > div span {
     color: #BDBDBD;
     font-size: 80%;
-    width: 200px;
+    width: 140px;
     display: inline-block; }
   #symmetrickey > div input {
     margin-left: 8px;
     padding-left: 6px;
-    width: 440px; }
+    width: 440px;
+    font-family: monospace; }
   #symmetrickey > div select {
     margin-left: 8px;
     width: 180px;

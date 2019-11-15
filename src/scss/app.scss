@@ -34,26 +34,28 @@ textarea {
 #header > p > .length,
 #payload > p > .length,
 #symmetrickey > p > .length {
-  font-size:60%;
+  font-size: 60%;
 }
 
 #symmetrickey {
   > input {
     width: 100%;
-    padding-left:6px;
+    padding-left: 6px;
+    font-family: monospace;
   }
   > div {
     margin-left: 32px;
     span {
       color: #BDBDBD;
-      font-size:80%;
-      width:200px;
+      font-size: 80%;
+      width: 140px;
       display: inline-block;
     }
     input {
-      margin-left:8px;
-      padding-left:6px;
+      margin-left: 8px;
+      padding-left: 6px;
       width: 440px;
+      font-family: monospace;
     }
     select {
       margin-left:8px;
@@ -62,7 +64,6 @@ textarea {
     }
   }
 }
-
 
 .panel-left {
   float: left;
