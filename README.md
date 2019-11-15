@@ -4,27 +4,29 @@ This is the source code for a web tool that can decode JWT, verify signed JWT,
 decrypt encrypted JWT, and create signed or encrypted JWT. It has some
 limitations!
 
-![screengrab](images/screenshot-20191112-082746.png)
+![screengrab](images/screenshot-20191115-083624.png)
 
 ## License
 
-This code is Copyright (c) 2019 Google LLC, and is released under the Apache Source License v2.0. For information see the [LICENSE](LICENSE) file.
+This code is Copyright (c) 2019 Google LLC, and is released under the Apache
+Source License v2.0. For information see the [LICENSE](LICENSE) file.
 
 ## Disclaimer
 
-This tool is not an official Google product, nor is it part of an official Google product.
+This tool is not an official Google product, nor is it part of an official
+Google product.
 
 ## Limitations
 
 This tool has some limitations:
  - For signed JWT, the tool handles JWT that use ECDSA (ES256, ES384, ES512),
-   RSA (RS256, RS384, RS512, PS256, PS384, PS512) or HMAC algorithms
-   (HS256, HS384, HS512).
+   RSA (RS256, RS384, RS512, PS256, PS384, PS512) or HMAC algorithms (HS256,
+   HS384, HS512).
 
  - For encrypted JWT, it handles JWT that use RSA keys, and RSA algorithms
-   (RSA-OAEP, RSA-OAEP-256). It
-   does not support other alg types for encrypted JWT, such as "dir" or any of
-   the password-based Encryption (PBES2). It supports all types of enc.
+   (RSA-OAEP, RSA-OAEP-256). It does not support other alg types for encrypted
+   JWT, such as "dir" or any of the password-based Encryption (PBES2). It
+   supports all types of enc.
 
  - In either case (signed or encrypted), this tool does not handle crit headers,
    nor will it extract the certificate from an x5c header. Nor will it check
@@ -35,9 +37,9 @@ This tool has some limitations:
 
 ## Purpose
 
-I built this as a tool that might be helpful to developers learning JWT, or 
-experimenting with ways to use JWT.
-The output of this repo is currently running [here](https://dinochiesa.github.io/jwt/).
+I built this as a tool that might be helpful to developers learning JWT, or
+experimenting with ways to use JWT.  The output of this repo is currently
+running [here](https://dinochiesa.github.io/jwt/).
 
 
 ## Design
