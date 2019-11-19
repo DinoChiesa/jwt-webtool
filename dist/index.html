@@ -133,7 +133,7 @@
       <div class='footer'>
         <div>Notes</div>
         <ol>
-          <li>This tool uses EcmaScript v9, and webcrypto, which means it will run only on modern, current browsers.</li>
+          <li>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</li>
           <li>This page supports RSA, HMAC, or ECDSA algorithms, for generating and verifying signed JWT. It supports RSA keys and RSA-OAEP-256 for generating or verifying encrypted JWT.  For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
           <li>to use this, first select the variant of JWT: either Signed or Encrypted. Then select the algorithm.</li>
           <li><p style='margin-bottom:0;'>Signed JWT</p>
@@ -155,6 +155,9 @@
           <li>When specifying the symmetric key, you need at least 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512, whether signing or verifying. The <a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will generate keys of the appropriate size. If you choose a different coding system, you need to ensure minimum key size yourself. </li>
           <li>Information that you paste here, including JWT and keys, whether secret, private or public, never leaves your browser. Information from the decoding or decrypting also stays in the browser. Nothing gets posted to a server. Still, you should take care not to use this site for private information. </li>
           <li>Ths page shows the header and payload "pretty-printed". The actual header and payload in a JWT do not have newlines.</li>
+          <li>There's a shortcut: if you open the url with <tt>&lt;baseurl&gt;?JWT_HERE</tt>, it will decode *that* JWT.   It
+            might save you the step of pasting in your encoded JWT, if you open this page from a program. If you're paranoid you can also use
+            the # as a separator. </li>
         </ol>
       </div>
 

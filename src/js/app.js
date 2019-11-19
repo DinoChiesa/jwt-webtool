@@ -27,20 +27,17 @@ const sampledata = {
         types : ['number', 'string', 'object', 'array', 'boolean']
       };
 
-const rsaSigningAlgs = ['RS','PS'].reduce( (a, v) =>
+function algPermutations(prefixes) {
+  return prefixes.reduce( (a, v) =>
     [...a, ...[256,384,512].map(x=>v+x)], []);
+}
 
-const ecdsaSigningAlgs = ['ES'].reduce( (a, v) =>
-    [...a, ...[256,384,512].map(x=>v+x)], []);
-
-const hmacSigningAlgs = ['HS'].reduce( (a, v) =>
-    [...a, ...[256,384,512].map(x=>v+x)], []);
-
-const signingAlgs = [...rsaSigningAlgs, ...ecdsaSigningAlgs, ...hmacSigningAlgs];
-
-const rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'];
-
-const contentEncryptionAlgs = [
+const rsaSigningAlgs = algPermutations(['RS','PS']),
+      ecdsaSigningAlgs = algPermutations(['ES']),
+      hmacSigningAlgs = algPermutations(['HS']),
+      signingAlgs = [...rsaSigningAlgs, ...ecdsaSigningAlgs, ...hmacSigningAlgs],
+      rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'],
+      contentEncryptionAlgs = [
         'A128CBC-HS256',
         'A256CBC-HS512',
         'A128GCM',
@@ -208,7 +205,7 @@ function getPublicKey() {
 }
 
 function currentKid() {
-  let s = (new Date()).toISOString(); // 2019-09-04T21:29:23.428Z
+  let s = (new Date()).toISOString(); // ex: 2019-09-04T21:29:23.428Z
   let re = new RegExp('[-:TZ\\.]', 'g');
   return s.replace(re, '');
 }
@@ -238,7 +235,7 @@ function copyToClipboard(event) {
     success = document.execCommand("copy");
     if (success) {
       // Animation to indicate copy.
-      // CodeMirror obscures the original textarea, and appends a div as next sibling.
+      // CodeMirror obscures the original textarea, and appends a div as the next sibling.
       // We want to flash THAT.
       let $cmdiv = $source.next();
       if ($cmdiv.prop('tagName').toLowerCase() == 'div' && $cmdiv.hasClass('CodeMirror')) {
@@ -366,7 +363,7 @@ function encodeJwt(event) {
 
   return p
     .then( jwt => {
-      editors.encodedjwt.setValue(jwt);
+      //editors.encodedjwt.setValue(jwt);
       $('#panel_encoded > p > span.length').text('(' + jwt.length + ' bytes)');
       editors.encodedjwt.setValue(jwt);
       editors.encodedjwt.save();
@@ -570,7 +567,7 @@ function key2pem(flavor, keydata) {
 
 function getGenKeyParams(alg) {
   if (alg.startsWith('RS') || alg.startsWith('PS')) return {
-    name: "RSASSA-PKCS1-v1_5",
+    name: "RSASSA-PKCS1-v1_5", // this name also works for RSA-PSS !
     modulusLength: 2048, //can be 1024, 2048, or 4096
     publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
     hash: {name: "SHA-256"}
@@ -644,8 +641,8 @@ function showDecoded() {
 
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
+    // can decode the header. Need to decrypt to 'decode' the payload.
     setAlert("an encrypted JWT", 'info');
-    //$('#mainalert').removeClass('show').addClass('fade');
     // header
     let item = matches[1],
         json = atob(item),  // base64-decode
@@ -757,6 +754,7 @@ function changeAlg(event) {
 }
 
 function changeVariant(event) {
+  // change signed to encrypted or vice versa
   let selection = this.value.toLowerCase(),
       priorAlgSelection = $('.sel-alg').data('prev');
 
@@ -783,8 +781,6 @@ function changeVariant(event) {
     /* gulp */
   }
   populateAlgorithmSelectOptions();
-
-  ///xxx
 
   // There are two possibilities:
   // 1. change from signed to encrypted, in which case we always need RSA keys.
@@ -832,6 +828,16 @@ function decoratePayloadLine(instance, handle, lineElement) {
   });
 }
 
+function looksLikeJwt(possibleJwt) {
+  if ( ! possibleJwt) return false;
+  if (possibleJwt == '') return false;
+  let matches = re.signed.jwt.exec(possibleJwt);
+  if (matches && matches.length == 4) { return true; }
+  matches = re.encrypted.jwt.exec(possibleJwt);
+  if (matches && matches.length == 6) { return true; }
+  return false;
+}
+
 $(document).ready(function() {
   $( '.btn-copy' ).on('click', copyToClipboard);
   $( '.btn-encode' ).on('click', encodeJwt);
@@ -850,11 +856,11 @@ $(document).ready(function() {
   $('#mainalert').addClass('fade');
   $('#mainalert').on('close.bs.alert', closeAlert);
 
+  // editor for the encoded JWT (left hand column)
   editors.encodedjwt = CodeMirror.fromTextArea(document.getElementById('encodedjwt'), {
     mode: 'encodedjwt',
     lineWrapping: true
   });
-
   editors.encodedjwt.on('inputRead', function(cm, event) {
     /* event -> object{
        origin: string, can be '+input', '+move' or 'paste'
@@ -869,11 +875,12 @@ $(document).ready(function() {
     }
   });
 
+  // create editors for the public and private keys
   ['private', 'public'].forEach( flavor => {
     let keytype = flavor+'key', // private || public
         elementId = 'ta_'+ keytype;
     editors[keytype] = CodeMirror.fromTextArea(document.getElementById(elementId), {
-      mode: 'encodedjwt',
+      mode: 'encodedjwt', // not really
       lineWrapping: true
     });
     editors[keytype].on('inputRead', function(cm, event) {
@@ -888,6 +895,7 @@ $(document).ready(function() {
 
   });
 
+  // create CM editors for decoded (JSON) payload and header
   ['header', 'payload'].forEach( portion => {
     let elementId = 'token-decoded-' + portion;
     editors[elementId] = CodeMirror.fromTextArea(document.getElementById(elementId), {
@@ -902,26 +910,36 @@ $(document).ready(function() {
     });
   });
 
+  // to label fields in the decoded payload. We don't do the same in the header.
   editors['token-decoded-payload'].on('renderLine', decoratePayloadLine);
-
   $('#symmetrickey').hide();
-
-  // let $ta = $('#symmetrickey > textarea');
-  // $ta.data('val', '');
-  // $ta.on("change keyup paste", function() {
-  //   var currentVal = $ta.val();
-  //   var priorVal = $ta.data('val');
-  //   // suppress multiple triggers
-  //   if(currentVal == priorVal) {
-  //       return;
-  //   }
-  //
-  //   $ta.data('val', currentVal);
-  //   $('#symmetrickey > p > .length').text('(' + currentVal.length + ' characters)');
-  // });
   $('#pbkdf2_params').hide();
 
-  newKeyPair()
-    .then( _ => contriveJwt() );
+  // handle inbound query or hash
+  let inboundJwt = window.location.hash,
+      hash = {},
+      fnStartsWith = function(s, searchString, position) {
+        position = position || 0;
+        return s.lastIndexOf(searchString, position) === position;
+      };
+
+  if ( ! inboundJwt || inboundJwt === '') {
+    inboundJwt = window.location.search.replace('?', '');
+  }
+
+  if (looksLikeJwt(inboundJwt)) {
+    newKeyPair()
+      .then( _ => {
+        editors.encodedjwt.setValue(inboundJwt);
+        editors.encodedjwt.save();
+        showDecoded();
+        $('#privatekey .CodeMirror-code').addClass('outdated');
+        $('#publickey .CodeMirror-code').addClass('outdated');
+      });
+  }
+  else {
+    newKeyPair()
+      .then( _ => contriveJwt() );
+  }
 
 });

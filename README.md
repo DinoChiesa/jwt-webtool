@@ -48,6 +48,11 @@ signing and verifying, or encrypting or decrypting, happens within the browser.
 Anything a user pastes into the UI never leaves the browser. It just needs a few
 static files.
 
+There's a shortcut: if you open the url with <baseurl>?JWT_HERE, it will decode *that* JWT.   It
+saves you a step, pasting in your own JWT. If you're paranoid you can also use
+the # as a separator. 
+
+
 It may be nice to fork this and bundle it into an intranet, to
 allow developers within a company to experiment with JWT. As far as I'm
 concerned there's no security issue with using the [publicly hosted tool](https://dinochiesa.github.io/jwt/).
