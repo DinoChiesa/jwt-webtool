@@ -616,19 +616,25 @@ function showDecoded() {
       matches = re.signed.jwt.exec(tokenString);
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", 'info');
-    //$('#mainalert').hide();
-    //$('#mainalert').removeClass('show').addClass('fade');
+    $('.sel-variant option[value=Signed]')
+      .prop('selected', true)
+      .trigger("change");
     let flavors = ['header','payload']; // cannot decode signature
     matches.slice(1,-1).forEach(function(item,index) {
       let json = atob(item),  // base64-decode
           flavor = flavors[index],
           elementId = 'token-decoded-' + flavor;
       try {
-        let obj = JSON.parse(json),
+        let obj = JSON.parse(json), // may throw
             prettyPrintedJson = JSON.stringify(obj,null,2),
             flatJson = JSON.stringify(obj);
         editors[elementId].setValue(prettyPrintedJson);
         $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
+        if (flavor == 'header' && obj.alg) {
+          $('.sel-alg option[value='+ obj.alg +']')
+            .prop('selected', true)
+            .trigger("change");
+        }
       }
       catch (e) {
         // probably not json
@@ -643,21 +649,37 @@ function showDecoded() {
   if (matches && matches.length == 6) {
     // can decode the header. Need to decrypt to 'decode' the payload.
     setAlert("an encrypted JWT", 'info');
+    $('.sel-variant option[value=Encrypted]')
+      .prop('selected', true)
+      .trigger("change");
     // header
     let item = matches[1],
         json = atob(item),  // base64-decode
         elementId = 'token-decoded-header',
-        flavor = 'header',
-        obj = JSON.parse(json),
-        prettyPrintedJson = JSON.stringify(obj,null,2),
-        flatJson = JSON.stringify(obj);
-    editors[elementId].setValue(prettyPrintedJson);
-    $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
-    // must decrypt the ciphertext payload to display claims
-    elementId = 'token-decoded-payload';
-    flavor = 'payload';
-    editors[elementId].setValue('?ciphertext?');
-    $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
+        flavor = 'header';
+    try {
+      let obj = JSON.parse(json),
+          prettyPrintedJson = JSON.stringify(obj,null,2),
+          flatJson = JSON.stringify(obj);
+      editors[elementId].setValue(prettyPrintedJson);
+      $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
+      // must decrypt the ciphertext payload to display claims
+      elementId = 'token-decoded-payload';
+      flavor = 'payload';
+      editors[elementId].setValue('?ciphertext?');
+      $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
+      if (obj.alg) {
+        $('.sel-alg option[value='+ obj.alg +']')
+          .prop('selected', true)
+          .trigger("change");
+      }
+    }
+    catch (e) {
+      // probably not json
+      setAlert("the "+ flavor +" may not be valid JSON", 'info');
+      editors[elementId].setValue(json);
+    }
+
     // do not attempt decrypt here
     return;
   }
