@@ -850,6 +850,43 @@ function decoratePayloadLine(instance, handle, lineElement) {
   });
 }
 
+// function decorateEncodedToken(instance, handle, lineElement) {
+//   $(lineElement).find('span.cm-jwt-header').each( (ix, element) => {
+//     let $this = $(element);
+//     $this.hover(
+//       () => {
+//         $this.after($('<div>encoded JWT header</div>'));
+//       },
+//       () => {
+//         $this.next('div').remove();
+//       }
+//     );
+//   });
+//  $(lineElement).find('span.cm-jwt-payload').each( (ix, element) => {
+//     let $this = $(element);
+//     $this.hover(
+//       () => {
+//         $this.after($('<div>encoded JWT payload</div>'));
+//       },
+//       () => {
+//         $this.next('div').remove();
+//       }
+//     );
+//   });
+//  $(lineElement).find('span.cm-jwt-signature').each( (ix, element) => {
+//     let $this = $(element);
+//     $this.hover(
+//       () => {
+//         $this.after($('<div>encoded JWT signature</div>'));
+//       },
+//       () => {
+//         $this.next('div').remove();
+//       }
+//     );
+//   });
+// }
+
+
 function looksLikeJwt(possibleJwt) {
   if ( ! possibleJwt) return false;
   if (possibleJwt == '') return false;
@@ -896,6 +933,7 @@ $(document).ready(function() {
       setTimeout(decodeJwt, 220);
     }
   });
+  //editors.encodedjwt.on('renderLine', decorateEncodedToken);
 
   // create editors for the public and private keys
   ['private', 'public'].forEach( flavor => {

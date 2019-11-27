@@ -8356,3 +8356,20 @@ pre.CodeMirror-line > span {
 .outdated {
   background-color: #DCDCDC; }
 
+/*
+span.cm-jwt-header + div,
+span.cm-jwt-payload + div,
+span.cm-jwt-signature + div {
+  position: absolute;
+  z-index: 99;
+  display:inline-block;
+  top: 2px;
+  left: 10px;
+  background: #C9D7E5;
+  border: 1px dotted #0c0c0c;
+  font-family: Roboto, sans-serif;
+  font-size: 12pt;
+  padding:0 6px;
+} 
+*/
+
