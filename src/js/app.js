@@ -470,7 +470,7 @@ function verifyJwt(event) {
               showDecoded();
               setAlert(message, 'success');
               // programmatically select the alg
-              $('.sel-alg option[value='+ result.header.alg +']').prop('selected', true);
+              $('.sel-alg option[value="'+ result.header.alg +'"]').prop('selected', true);
             }
             else {
               let label = (reasons.length == 1)? 'Reason' : 'Reasons';
@@ -631,7 +631,7 @@ function showDecoded() {
         editors[elementId].setValue(prettyPrintedJson);
         $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
         if (flavor == 'header' && obj.alg) {
-          $('.sel-alg option[value='+ obj.alg +']')
+          $('.sel-alg option[value="'+ obj.alg +'"]')
             .prop('selected', true)
             .trigger("change");
         }
@@ -669,7 +669,7 @@ function showDecoded() {
       editors[elementId].setValue('?ciphertext?');
       $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
       if (obj.alg) {
-        $('.sel-alg option[value='+ obj.alg +']')
+        $('.sel-alg option[value="'+ obj.alg +'"]')
           .prop('selected', true)
           .trigger("change");
       }
@@ -677,7 +677,7 @@ function showDecoded() {
     catch (e) {
       // probably not json
       setAlert("the "+ flavor +" may not be valid JSON", 'info');
-      editors[elementId].setValue(json);
+      //editors[elementId].setValue(json);
     }
 
     // do not attempt decrypt here
