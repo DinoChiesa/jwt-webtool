@@ -8338,6 +8338,16 @@ pre.CodeMirror-line > span {
 .banner > div {
   top: 96px; }
 
+.banner > div#buildversion {
+  top: 112px;
+  /* left: 90%; */
+  margin-right: 6px;
+  right: 38px;
+  transform: none;
+  text-align: right;
+  font-size: 75%;
+  font-style: italic; }
+
 .alert.fade {
   opacity: 0;
   transition: opacity .85s linear; }
@@ -8370,8 +8380,11 @@ span.cm-jwt-signature + div {
   font-family: Roboto, sans-serif;
   font-size: 12pt;
   padding:0 6px;
-} 
+}
 */
+#symmetrickey input[disabled] {
+  color: #636C77;
+  background-color: #E9ECEF; }
 
 
 /*# sourceMappingURL=main.css.map*/

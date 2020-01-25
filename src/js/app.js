@@ -1,16 +1,17 @@
-/* global atob, Buffer, TextDecoder */
+/* global atob, Buffer, TextDecoder, BUILD_VERSION */
 
 import 'bootstrap';
 import CodeMirror from 'codemirror/lib/codemirror.js';
 import $ from "jquery";
 import jose from "node-jose";
 
-/* this is horrendous */
-
 require('codemirror/mode/javascript/javascript');
 require('codemirror/addon/mode/simple');
 
 const tenMinutes = 10 * 60;
+const ITERATION_DEFAULT = 8192,
+      ITERATION_MAX = 100001,
+      ITERATION_MIN = 50;
 const re = {
         signed : {
           jwt : new RegExp('^([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$'),
@@ -37,6 +38,8 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
       hmacSigningAlgs = algPermutations(['HS']),
       signingAlgs = [...rsaSigningAlgs, ...ecdsaSigningAlgs, ...hmacSigningAlgs],
       rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'],
+      pbes2KeyEncryptionAlgs = [  "PBES2-HS256+A128KW", "PBES2-HS384+A192KW", "PBES2-HS512+A256KW" ],
+      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs, '??'],
       contentEncryptionAlgs = [
         'A128CBC-HS256',
         'A256CBC-HS512',
@@ -142,20 +145,35 @@ function selectRandomValue (a) {
   return a[n];
 }
 
+function hmacToKeyBits(alg) {
+  switch(alg) {
+  case 'HS256' : return 256;
+  case 'HS384' : return 384;
+  case 'HS512' : return 512;
+  }
+  return 9999999;
+}
+
 function algToKeyBits(alg) {
-  return (alg == 'HS256') ? 256 :
-    (alg == 'HS384') ? 384 :
-    (alg == 'HS512') ? 512 : 999999;
+  if (alg.startsWith('PBES2')) {
+    let hmac = alg.substring(6, 11);
+    return hmacToKeyBits(hmac);
+  }
+  return hmacToKeyBits(alg);
 }
 
 function getPbkdf2IterationCount() {
   let icountvalue = $('#ta_pbkdf2_iterations').val(),
-      icount = 8192;
+      icount = ITERATION_DEFAULT;
   try {
     icount = Number.parseInt(icountvalue, 10);
   }
   catch (exc1) {
-    setAlert("defaulting to iteration count: "+ icount);
+    setAlert("not a number? defaulting to iteration count: "+ icount);
+  }
+  if (icount > ITERATION_MAX || icount < ITERATION_MIN) {
+    icount = ITERATION_DEFAULT;
+    setAlert("iteration count out of range. defaulting to: "+ icount);
   }
   return icount;
 }
@@ -274,6 +292,7 @@ function isAppropriateAlg(alg, key) {
 function getAcceptableEncryptionAlgs(key) {
   let keytype = key.kty;
   if (keytype == 'RSA') return rsaKeyEncryptionAlgs;
+  if (keytype == 'oct') return pbes2KeyEncryptionAlgs; // eventually extend this to dir, A128KW, etc
   return ["NONE"];
 }
 
@@ -323,9 +342,23 @@ function encodeJwt(event) {
   let {header, payload} = values;
   if (!header.typ) { header.typ = "JWT"; }
 
-  var p = null;
+  let p = null;
   if (header.enc && header.alg) {
-    p = jose.JWK.asKey(getPublicKey(), "pem")
+
+    if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
+      // overwrite the header values with values from the inputs
+      header.p2c = getPbkdf2IterationCount();
+      header.p2s = getPbkdf2SaltBuffer().toString('base64');
+
+      let keyBuffer = Buffer.from($('#ta_symmetrickey').val(), 'utf-8');
+      p = jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: 'enc' });
+
+    }
+    else {
+      p = jose.JWK.asKey(getPublicKey(), "pem");
+    }
+
+    p = p
       .then( encryptingKey => {
         let encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
             // createEncrypt will automatically inject the kid, unless I pass reference:false
@@ -369,6 +402,7 @@ function encodeJwt(event) {
       editors.encodedjwt.save();
       if ( header.enc ) {
         // re-format the decoded JSON, incl added or modified properties like kid, alg
+        showDecoded();
         setAlert("encrypted JWT", 'info');
       }
       else {
@@ -456,7 +490,7 @@ function verifyJwt(event) {
       .then( key =>
              jose.JWS.createVerify(key)
              .verify(tokenString)
-             .then(function(result) {
+             .then( result => {
                // {result} is a Object with:
                // *  header: the combined 'protected' and 'unprotected' header members
                // *  payload: Buffer of the signed content
@@ -465,32 +499,43 @@ function verifyJwt(event) {
 
                let parsedPayload = JSON.parse(result.payload),
                    reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableSigningAlgs(key));
-            if (reasons.length == 0) {
-              let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
-              showDecoded();
-              setAlert(message, 'success');
-              // programmatically select the alg
-              $('.sel-alg option[value="'+ result.header.alg +'"]').prop('selected', true);
-            }
-            else {
-              let label = (reasons.length == 1)? 'Reason' : 'Reasons';
-              setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
-            }
-          })
-          .catch (e => {
-            setAlert('Verification failed. Bad key?');
-            console.log('During verify: ' + e);
-            console.log(e.stack);
-          }));
+               if (reasons.length == 0) {
+                 let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
+                 showDecoded();
+                 setAlert(message, 'success');
+                 selectAlgorithm(result.header.alg);
+               }
+               else {
+                 let label = (reasons.length == 1)? 'Reason' : 'Reasons';
+                 setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
+               }
+             })
+             .catch( e => {
+               setAlert('Verification failed. Bad key?');
+               console.log('During verify: ' + e);
+               console.log(e.stack);
+             }));
   }
 
   // verification/decrypt of encrypted JWT
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
+    let p = null;
+    let json = atob(matches[1]);  // base64-decode
+    let header = JSON.parse(json);
 
-    return jose.JWK.asKey(getPrivateKey(), "pem")
-      .then( privateKey =>
-             jose.JWE.createDecrypt(privateKey)
+    if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
+      let password = $('#ta_symmetrickey').val();
+      let keyBuffer = Buffer.from(password, 'utf-8');
+      p = jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: 'enc' });
+    }
+    else {
+      p = jose.JWK.asKey(getPrivateKey(), "pem");
+    }
+
+    return p
+      .then( decryptionKey =>
+             jose.JWE.createDecrypt(decryptionKey)
              .decrypt(tokenString)
              .then( result => {
                // {result} is a Object with:
@@ -503,7 +548,7 @@ function verifyJwt(event) {
                    stringPayload = td.decode(result.payload),
                    parsedPayload = JSON.parse(stringPayload),
                    prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
-                   reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(privateKey)),
+                   reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(decryptionKey)),
                    elementId = 'token-decoded-payload',
                    flavor = 'payload';
                editors[elementId].setValue(prettyPrintedJson);
@@ -610,6 +655,16 @@ function newKeyPair(event) {
   }
 }
 
+function selectAlgorithm(algName) {
+  let $option = $('.sel-alg option[value="'+ algName +'"]');
+  if ( ! $option.length) {
+    $option = $('.sel-alg option[value="??"]');
+  }
+  $option
+    .prop('selected', true)
+    .trigger("change");
+}
+
 function showDecoded() {
   editors.encodedjwt.save();
   let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
@@ -631,9 +686,7 @@ function showDecoded() {
         editors[elementId].setValue(prettyPrintedJson);
         $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
         if (flavor == 'header' && obj.alg) {
-          $('.sel-alg option[value="'+ obj.alg +'"]')
-            .prop('selected', true)
-            .trigger("change");
+          selectAlgorithm(obj.alg);
         }
       }
       catch (e) {
@@ -669,9 +722,7 @@ function showDecoded() {
       editors[elementId].setValue('?ciphertext?');
       $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
       if (obj.alg) {
-        $('.sel-alg option[value="'+ obj.alg +'"]')
-          .prop('selected', true)
-          .trigger("change");
+        selectAlgorithm(obj.alg);
       }
     }
     catch (e) {
@@ -689,12 +740,16 @@ function showDecoded() {
 
 function populateAlgorithmSelectOptions() {
   let variant = $('.sel-variant').find(':selected').text().toLowerCase();
-  $('.sel-alg').find('option') .remove();
-  let a = (variant == 'signed') ? signingAlgs : rsaKeyEncryptionAlgs;
+  $('.sel-alg').find('option').remove();
+  let a = (variant == 'signed') ? signingAlgs : keyEncryptionAlgs;
   $.each(a, (val, text) =>
          $('.sel-alg').append( $('<option></option>').val(text).html(text) ));
   // store currently selected alg:
-  $( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
+  //$( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
+  $( '.sel-alg').data("prev", 'NONE');
+  // $('.sel-alg').trigger('change'); // not sure why this does not work
+
+  onChangeAlg.call(document.getElementsByClassName('sel-alg')[0], null);
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -706,25 +761,6 @@ function keysAreCompatible(alg1, alg2) {
   return false;
 }
 
-function checkSymmetryChange(newalg, oldalg) {
-  let prefix1 = newalg.substring(0, 2),
-      prefix2 = oldalg.substring(0, 2);
-  if (prefix1 == 'HS' && prefix2 != 'HS') {
-    $('#privatekey').hide();
-    $('#publickey').hide();
-    $('#symmetrickey').show();
-    $('.sel-symkey-coding option[value=PBKDF2]')
-      .prop('selected', true)
-      .trigger("change");
-    return true;
-  }
-  if (prefix2 == 'HS' && prefix1 != 'HS') {
-    $('#privatekey').show();
-    $('#publickey').show();
-    $('#symmetrickey').hide();
-    return true;
-  }
-}
 
 function changeSymmetricKeyCoding(event) {
   let $this = $(this),
@@ -742,67 +778,131 @@ function changeSymmetricKeyCoding(event) {
   $this.data('prev', newSelection);
 }
 
-function changeAlg(event) {
-  let $this = $(this),
-      newSelection = $this.find(':selected').text(),
-      previousSelection = $this.data('prev');
-  editors['token-decoded-header'].save();
-  let headerText = $('#token-decoded-header').val();
-  try {
-    let headerObj = JSON.parse(headerText);
-    headerObj.alg = newSelection;
-    editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
-  }
-  catch(e) {
-    /* gulp */
-  }
-
-  if (newSelection != previousSelection) {
-    if (newSelection.startsWith('HS')) {
-      $('.btn-newkeypair').hide();
+function checkSymmetryChange(newalg, oldalg) {
+  let newPrefix = newalg.substring(0, 2),
+      oldPrefix = oldalg && oldalg.substring(0, 2);
+  if (newPrefix == 'HS' || newPrefix == 'PB') {
+    $('.btn-newkeypair').hide();
+    if (oldPrefix != 'HS' & oldPrefix != 'PB') {
+      $('#privatekey').hide();
+      $('#publickey').hide();
+      $('#symmetrickey').show();
+      $('.sel-symkey-coding option[value=PBKDF2]')
+        .prop('selected', true)
+        .trigger("change");
+      if (newPrefix == 'PB') {
+        //$('.sel-symkey-coding').disable(); // always PBKDF2!
+        $('.sel-symkey-coding').prop("disabled", true);
+      }
+      else {
+        // $('.sel-symkey-coding').enable();
+        $('.sel-symkey-coding').prop("disabled", false);
+      }
+      return true;
     }
-    else {
-      $('.btn-newkeypair').show();
-    }
   }
-
-  checkSymmetryChange(newSelection, previousSelection);
-
-  if ( ! keysAreCompatible(newSelection, previousSelection)) {
-    $('#privatekey .CodeMirror-code').addClass('outdated');
-    $('#publickey .CodeMirror-code').addClass('outdated');
-  }
-  $this.data('prev', newSelection);
-}
-
-function changeVariant(event) {
-  // change signed to encrypted or vice versa
-  let selection = this.value.toLowerCase(),
-      priorAlgSelection = $('.sel-alg').data('prev');
-
-  editors['token-decoded-header'].save();
-  let text = $('#token-decoded-header').val();
-  try {
-    let headerObj = JSON.parse(text);
-    if (selection == 'encrypted') {
-      // swap in alg and enc
-      headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'});
-      headerObj.enc = pickContentEncryptionAlg();
+  else {
+    $('.btn-newkeypair').show();
+    if (newPrefix == 'RS' || newPrefix == 'PS') {
       $('#privatekey').show();
       $('#publickey').show();
       $('#symmetrickey').hide();
+      return true;
     }
-    else {
-      // select an appropriate alg and remove enc
-      headerObj.alg = pickSigningAlg({kty:'RSA'});
-      delete headerObj.enc;
-    }
-    editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
   }
-  catch(e) {
-    /* gulp */
+}
+
+function initialized() {
+  return !!editors['token-decoded-header'];
+}
+
+function onChangeAlg(event) {
+  let $this = $(this),
+      newSelection = $this.find(':selected').text(),
+      previousSelection = $this.data('prev'),
+      headerObj = null;
+
+  if ( ! initialized()) { return ; }
+
+  if (newSelection != previousSelection) {
+
+    checkSymmetryChange(newSelection, previousSelection);
+
+    // apply newly selected alg to the displayed header
+    editors['token-decoded-header'].save();
+    let headerText = $('#token-decoded-header').val();
+    try {
+      headerObj = JSON.parse(headerText);
+      headerObj.alg = newSelection;
+      editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+    }
+    catch(e) {
+      /* gulp */
+    }
+
+    if ( ! keysAreCompatible(newSelection, previousSelection)) {
+      $('#privatekey .CodeMirror-code').addClass('outdated');
+      $('#publickey .CodeMirror-code').addClass('outdated');
+    }
+    $this.data('prev', newSelection);
+  }
+  if (newSelection.startsWith('PB')) {
+    if (headerObj){
+      $('#ta_pbkdf2_iterations').val(headerObj.p2c);
+      $('#ta_pbkdf2_salt').val(headerObj.p2s);
+      // always base64
+      $('.sel-symkey-pbkdf2-salt-coding option[value="Base64"]')
+        .prop('selected', true)
+        .trigger("change");
+      // user can change these but it probably won't work
+    }
+  }
+  else {
+    // nop
+  }
+}
+
+function onChangeVariant(event) {
+  // change signed to encrypted or vice versa
+  let $this = $(this),
+      newSelection = $this.find(':selected').text().toLowerCase(),
+      previousSelection = $this.data('prev'),
+      priorAlgSelection = $('.sel-alg').data('prev');
+
+  editors['token-decoded-header'].save();
+  let headerText = $('#token-decoded-header').val();
+  if (newSelection != previousSelection) {
+    try {
+      let headerObj = JSON.parse(headerText);
+      if (newSelection == 'encrypted') {
+        // swap in alg and enc
+        headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'}); // not always !
+        headerObj.enc = pickContentEncryptionAlg();
+        $('#privatekey').show();
+        $('#publickey').show();
+        $('#symmetrickey').hide();
+      }
+      else {
+        // select an appropriate alg and remove enc
+        headerObj.alg = pickSigningAlg({kty:'RSA'});
+        // these fields can never be used with signed JWT
+        delete headerObj.enc;
+        delete headerObj.p2s;
+        delete headerObj.p2c;
+        // populateAlgorithmSelectOptions() - called below - will trigger the
+        // onChangeAlg fn which will do the right thing for symmetry change, etc.
+      }
+      editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+    }
+    catch(e) {
+      /* gulp */
+    }
+    $this.data('prev', newSelection);
   }
   populateAlgorithmSelectOptions();
+
+  // This used to be appropriate logic, but since adding PBES2, at
+  // least the comment is no longer accurate.  In any case things seem to be working.
 
   // There are two possibilities:
   // 1. change from signed to encrypted, in which case we always need RSA keys.
@@ -886,7 +986,6 @@ function decoratePayloadLine(instance, handle, lineElement) {
 //   });
 // }
 
-
 function looksLikeJwt(possibleJwt) {
   if ( ! possibleJwt) return false;
   if (possibleJwt == '') return false;
@@ -898,6 +997,7 @@ function looksLikeJwt(possibleJwt) {
 }
 
 $(document).ready(function() {
+  $( '#version_id').text(BUILD_VERSION);
   $( '.btn-copy' ).on('click', copyToClipboard);
   $( '.btn-encode' ).on('click', encodeJwt);
   $( '.btn-decode' ).on('click', decodeJwt);
@@ -905,8 +1005,8 @@ $(document).ready(function() {
   $( '.btn-newkeypair' ).on('click', newKeyPair);
 
   $( '.btn-regen' ).on('click', contriveJwt);
-  $( '.sel-variant').on('change', changeVariant);
-  $( '.sel-alg').on('change', changeAlg);
+  $( '.sel-variant').on('change', onChangeVariant);
+  $( '.sel-alg').on('change', onChangeAlg);
 
   populateAlgorithmSelectOptions();
 

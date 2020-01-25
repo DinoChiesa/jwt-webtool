@@ -4,6 +4,9 @@ const path = require('path');
 const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const childProcess = require('child_process');
+const packageVersion = require("./package.json").version;
+const buildVersion = childProcess.execSync('git rev-list HEAD --count').toString();
 
 function makeConfig(mode) {
   let config = {
@@ -38,6 +41,7 @@ function makeConfig(mode) {
           new CopyPlugin([
             { from: 'src/index.html', to: 'index.html' },
           ]),
+
           /* use jQuery as Global */
           new webpack.ProvidePlugin({
             jQuery: "jquery",
@@ -48,6 +52,9 @@ function makeConfig(mode) {
           new MiniCssExtractPlugin({
             filename: 'css/[name].css'
           }),
+          new webpack.DefinePlugin({
+            BUILD_VERSION: JSON.stringify(packageVersion + '.' + buildVersion)
+          })
         ]
       };
 

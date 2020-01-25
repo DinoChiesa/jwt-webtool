@@ -16,6 +16,7 @@
         <h2>JWT Decoder, Verifier, Generator, Decryptor</h2>
         <div>For information on JWT see <a href='https://tools.ietf.org/html/rfc7519'>IETF RFC 7519</a>.</div>
         <div class="alert alert-warning alert-dismissible fade" role="alert" id="mainalert"></div>
+        <div id='buildversion'>version <span id='version_id'>??</span></div>
       </div>
 
       <div class='panel-group'>
@@ -120,9 +121,9 @@
             <div>
               <span>salt encoding:</span>
               <select class="form-control form-control-sm sel-symkey-pbkdf2-salt-coding">
-                <option>UTF-8</option>
-                <option>Hex</option>
-                <option>Base64</option>
+                <option value='UTF-8'>UTF-8</option>
+                <option value='Hex'>Hex</option>
+                <option value='Base64'>Base64</option>
               </select>
             </div>
             </div>

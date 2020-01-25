@@ -1,6 +1,6 @@
 {
   "name": "jwt-webtool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "webpack.config.js",
   "scripts": {
@@ -24,10 +24,11 @@
     "popper.js": "^1.16.0"
   },
   "devDependencies": {
+    "child_process": "^1.0.2",
     "copy-webpack-plugin": "^5.0.5",
-    "css-loader": "^0.28.11",
+    "css-loader": "^3.4.2",
     "mini-css-extract-plugin": "^0.8.0",
-    "node-sass": "^4.13.0",
+    "node-sass": "^4.13.1",
     "precss": "^3.1.2",
     "sass-loader": "^6.0.7",
     "style-loader": "^0.19.1",
