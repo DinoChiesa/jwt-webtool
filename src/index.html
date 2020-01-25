@@ -135,7 +135,7 @@
         <div>Notes</div>
         <ol>
           <li>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</li>
-          <li>This page supports RSA, HMAC, or ECDSA algorithms, for generating and verifying signed JWT. It supports RSA keys and RSA-OAEP-256 for generating or verifying encrypted JWT.  For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
+          <li>This page supports RSA, HMAC, or ECDSA algorithms, for generating and verifying signed JWT.  for generating or verifying encrypted JWT, it supports RSA keys and RSA-OAEP-256, as well as PBES2 algorithms.  For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
           <li>to use this, first select the variant of JWT: either Signed or Encrypted. Then select the algorithm.</li>
           <li><p style='margin-bottom:0;'>Signed JWT</p>
             <ol type='a'>
@@ -148,8 +148,8 @@
           <li><p style='margin-bottom:0;'>Encrypted JWT</p>
             <ol type='a'>
               <li>decode: paste in the encrypted JWT in the box on the left-hand side. The header will be decoded and displayed in the appropriate box. The payload is encrypted, so it cannot be decoded without the private key.</li>
-              <li>decrypt and verify: after pasting in the encrypted JWT, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>, and click the verify button (the button with the checkmark icon).</li>
-          <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>. Then, click the encode button (with the left-pointing arrow).</li>
+              <li>decrypt and verify: after pasting in the encrypted JWT, if you are using an RSA algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>. If using PBES2, key in your password and the salt and iteration count.  The keys and passwords never leave your browser. Then click the verify button (the button with the checkmark icon).</li>
+          <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>, or specify the password-based key parameters. Then, click the encode button (with the left-pointing arrow).</li>
             </ol>
           <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values.</li>
           <li>You can generate a new asymmetric keypair by clicking the key button.</li>
