@@ -656,13 +656,16 @@ function newKeyPair(event) {
 }
 
 function selectAlgorithm(algName) {
-  let $option = $('.sel-alg option[value="'+ algName +'"]');
-  if ( ! $option.length) {
-    $option = $('.sel-alg option[value="??"]');
+  let currentlySelectedAlg = $('.sel-alg').find(':selected').text().toLowerCase();
+  if (algName.toLowerCase() != currentlySelectedAlg) {
+    let $option = $('.sel-alg option[value="'+ algName +'"]');
+    if ( ! $option.length) {
+      $option = $('.sel-alg option[value="??"]');
+    }
+    $option
+      .prop('selected', true)
+      .trigger("change");
   }
-  $option
-    .prop('selected', true)
-    .trigger("change");
 }
 
 function showDecoded() {
@@ -671,9 +674,13 @@ function showDecoded() {
       matches = re.signed.jwt.exec(tokenString);
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", 'info');
-    $('.sel-variant option[value=Signed]')
-      .prop('selected', true)
-      .trigger("change");
+    let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
+    if (currentlySelectedVariant != "signed") {
+      $('.sel-variant option[value=Signed]')
+        .prop('selected', true)
+        .trigger("change");
+    }
+
     let flavors = ['header','payload']; // cannot decode signature
     matches.slice(1,-1).forEach(function(item,index) {
       let json = atob(item),  // base64-decode
@@ -702,9 +709,12 @@ function showDecoded() {
   if (matches && matches.length == 6) {
     // can decode the header. Need to decrypt to 'decode' the payload.
     setAlert("an encrypted JWT", 'info');
-    $('.sel-variant option[value=Encrypted]')
-      .prop('selected', true)
-      .trigger("change");
+    let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
+    if (currentlySelectedVariant != "encrypted") {
+      $('.sel-variant option[value=Encrypted]')
+        .prop('selected', true)
+        .trigger("change");
+    }
     // header
     let item = matches[1],
         json = atob(item),  // base64-decode
@@ -749,7 +759,8 @@ function populateAlgorithmSelectOptions() {
   $( '.sel-alg').data("prev", 'NONE');
   // $('.sel-alg').trigger('change'); // not sure why this does not work
 
-  onChangeAlg.call(document.getElementsByClassName('sel-alg')[0], null);
+  //onChangeAlg.call(document.getElementsByClassName('sel-alg')[0], null);
+  onChangeAlg.call(document.querySelector('.sel-alg'), null);
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -787,11 +798,15 @@ function checkSymmetryChange(newalg, oldalg) {
       $('#privatekey').hide();
       $('#publickey').hide();
       $('#symmetrickey').show();
-      $('.sel-symkey-coding option[value=PBKDF2]')
-        .prop('selected', true)
-        .trigger("change");
+
       if (newPrefix == 'PB') {
         //$('.sel-symkey-coding').disable(); // always PBKDF2!
+        let currentlySelectedCoding = $('.sel-symkey-coding').find(':selected').text().toLowerCase();
+        if (currentlySelectedCoding != "pbkdf2") {
+          $('.sel-symkey-coding option[value=PBKDF2]')
+            .prop('selected', true)
+            .trigger("change");
+        }
         $('.sel-symkey-coding').prop("disabled", true);
       }
       else {
