@@ -53,6 +53,16 @@
             <span class="oi oi-key"></span>
             <!-- <span style='display: block;'>new</span>  -->
           </button>
+          <div style='font-size:60%; margin-top:20px;'>overrides:</div>
+          <div style='font-size:60%; margin-bottom:6px;'>exp:</div>
+          <select class="form-control form-control-sm sel-expiry" title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
+            <option value='do nothing'>do nothing</option>
+            <option value='no expiry'>no expiry</option>
+            <option value='5mins'>5mins</option>
+            <option value='30mins'>30mins</option>
+          </select>
+          <span style='font-size:60%; margin-right:6px;'>iat:</span>
+          <input id='chk-iat' type='checkbox' />
         </div>
 
         <div class='panel panel-right clearfix' id='panel_decoded'>

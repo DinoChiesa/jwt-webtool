@@ -244,7 +244,9 @@ function copyToClipboard(event) {
     editors[sourceElement].save();
   }
 
-  let textToCopy = ($source[0].tagName == 'TEXTAREA') ? $source.val() : $source.text();
+  //let textToCopy = $source.val();
+  // in which case do I need text() ?
+  let textToCopy = ($source[0].tagName == 'TEXTAREA' || $source[0].tagName == 'INPUT') ? $source.val() : $source.text();
 
   $("body").append($temp);
   $temp.val(textToCopy).select();
@@ -260,6 +262,12 @@ function copyToClipboard(event) {
         $cmdiv.addClass('copy-to-clipboard-flash-bg')
           .delay('1000')
           .queue( _ => $cmdiv.removeClass('copy-to-clipboard-flash-bg').dequeue() );
+      }
+      else {
+        // no codemirror (probably the secretkey field, which is just an input)
+        $source.addClass('copy-to-clipboard-flash-bg')
+          .delay('1000')
+          .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
       }
     }
   }
@@ -342,9 +350,28 @@ function encodeJwt(event) {
   let {header, payload} = values;
   if (!header.typ) { header.typ = "JWT"; }
 
+  // optionally set expiry in payload
+  let desiredExpiryOverride = $('.sel-expiry').find(':selected').text().toLowerCase();
+  if (desiredExpiryOverride == "no expiry") {
+    delete payload.exp;
+  }
+  else {
+    let matches = (new RegExp('^([1-9][0-9])*mins$')).exec(desiredExpiryOverride);
+    if (matches && matches.length == 2) {
+      // forcibly set payload
+      payload.exp = Math.floor((new Date()).valueOf() / 1000) +
+        parseInt(matches[1], 10) * 60;
+    }
+  }
+
+  let wantIssuedTime = $('#chk-iat').prop('checked');
+  if (wantIssuedTime) {
+    payload.iat = Math.floor((new Date()).valueOf() / 1000);
+  }
+
   let p = null;
   if (header.enc && header.alg) {
-
+    // create encrypted JWT
     if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
       // overwrite the header values with values from the inputs
       header.p2c = getPbkdf2IterationCount();
@@ -368,6 +395,7 @@ function encodeJwt(event) {
       });
   }
   else {
+    // create signed JWT
     if (isSymmetric(header.alg)) {
       p = getSymmetricKeyBuffer(header.alg)
         .then( keyBuffer => checkKeyLength(header.alg, keyBuffer))
