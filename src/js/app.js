@@ -356,7 +356,7 @@ function encodeJwt(event) {
     delete payload.exp;
   }
   else {
-    let matches = (new RegExp('^([1-9][0-9])*mins$')).exec(desiredExpiryOverride);
+    let matches = (new RegExp('^([1-9][0-9]*)mins$')).exec(desiredExpiryOverride);
     if (matches && matches.length == 2) {
       // forcibly set payload
       payload.exp = Math.floor((new Date()).valueOf() / 1000) +
