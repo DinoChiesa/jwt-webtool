@@ -666,7 +666,7 @@ function newKeyPair(event) {
     setAlert("can't do that for HS algorithms");
   }
   else {
-      //flavor = (alg.startsWith('ES')) ? 'EC' : 'RSA',
+    //flavor = (alg.startsWith('ES')) ? 'EC' : 'RSA',
     let keyUse = ["sign", "verify"],
       isExtractable = true,
       genKeyParams = getGenKeyParams(alg);
@@ -846,7 +846,7 @@ function checkSymmetryChange(newalg, oldalg) {
   }
   else {
     $('.btn-newkeypair').show();
-    if (newPrefix == 'RS' || newPrefix == 'PS') {
+    if (newPrefix == 'RS' || newPrefix == 'PS' || newPrefix == 'ES') {
       $('#privatekey').show();
       $('#publickey').show();
       $('#symmetrickey').hide();
