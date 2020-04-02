@@ -210,23 +210,43 @@ async function getSymmetricKeyBuffer(alg) {
   throw new Error('unknown key encoding: ' + coding);  // will not happen
 }
 
+function looksLikePem(s) {
+  return s.startsWith('-----BEGIN') && s.endsWith(' KEY-----') &&
+    (s.indexOf(' PUBLIC KEY')>=10 || s.indexOf(' PRIVATE KEY') >=10 );
+}
+
+function looksLikeJwks(s) {
+  try {
+    s = JSON.parse(s);
+    return ((s.keys) && (s.keys.length > 0) && s.keys[0].kty) ? s : null;
+  }
+  catch (exc1) {
+    return false;
+  }
+}
+
 function getPrivateKey() {
   editors.privatekey.save();
   let keyvalue = $('#ta_privatekey').val();
-  return keyvalue;
+  return jose.JWK.asKey(keyvalue, "pem");
 }
 
-function getPublicKey() {
+function getPublicKey(header) {
   editors.publickey.save();
-  let keyvalue = $('#ta_publickey').val();
-  return keyvalue;
+  let fieldvalue = $('#ta_publickey').val().trim();
+  if (looksLikePem(fieldvalue)) {
+    return jose.JWK.asKey(fieldvalue, "pem");
+  }
+
+  return jose.JWK.asKeyStore(fieldvalue)
+      .then(keystore => keystore.get(header));
 }
 
-function currentKid() {
-  let s = (new Date()).toISOString(); // ex: 2019-09-04T21:29:23.428Z
-  let re = new RegExp('[-:TZ\\.]', 'g');
-  return s.replace(re, '');
-}
+// function currentKid() {
+//   let s = (new Date()).toISOString(); // ex: 2019-09-04T21:29:23.428Z
+//   let re = new RegExp('[-:TZ\\.]', 'g');
+//   return s.replace(re, '');
+// }
 
 function capitalize(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
@@ -382,7 +402,7 @@ function encodeJwt(event) {
 
     }
     else {
-      p = jose.JWK.asKey(getPublicKey(), "pem");
+      p = getPublicKey(header);
     }
 
     p = p
@@ -402,7 +422,7 @@ function encodeJwt(event) {
         .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "sig" }));
     }
     else {
-      p = jose.JWK.asKey(getPrivateKey(), "pem");
+      p = getPrivateKey();
     }
     p = p
     .then( signingKey => {
@@ -511,7 +531,7 @@ function verifyJwt(event) {
         .then( keyBuffer => jose.JWK.asKey({kty:'oct', k: keyBuffer, use:'sig'}));
     }
     else {
-      p = jose.JWK.asKey(getPublicKey(), "pem");
+      p = getPublicKey(header);
     }
 
     return p
@@ -535,7 +555,7 @@ function verifyJwt(event) {
                }
                else {
                  let label = (reasons.length == 1)? 'Reason' : 'Reasons';
-                 setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
+                 setAlert('The signature verifies, but the JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
                }
              })
              .catch( e => {
@@ -558,7 +578,7 @@ function verifyJwt(event) {
       p = jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: 'enc' });
     }
     else {
-      p = jose.JWK.asKey(getPrivateKey(), "pem");
+      p = getPrivateKey();
     }
 
     return p
@@ -645,40 +665,31 @@ function getGenKeyParams(alg) {
     publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
     hash: {name: "SHA-256"}
   };
-  if (alg == 'ES256') return {
-    name: "ECDSA",
-    namedCurve: 'P-256'
-  };
-  if (alg == 'ES384') return {
-    name: "ECDSA",
-    namedCurve: 'P-384'
-  };
-  if (alg == 'ES512') return {
-    name: "ECDSA",
-    namedCurve: 'P-521'
-  };
+  if (alg == 'ES256') return { name: "ECDSA", namedCurve: 'P-256' };
+  if (alg == 'ES384') return { name: "ECDSA", namedCurve: 'P-384' };
+  if (alg == 'ES512') return { name: "ECDSA", namedCurve: 'P-521' };
   throw new Error('invalid key flavor');
 }
 
 function newKeyPair(event) {
   let alg = $('.sel-alg').find(':selected').text();
-  if (alg.startsWith('HS')) {
-    setAlert("can't do that for HS algorithms");
+  if (alg.startsWith('HS') || alg.startsWith('PB')) {
+    setAlert("can't do that for HS or PB algorithms");
   }
   else {
-    //flavor = (alg.startsWith('ES')) ? 'EC' : 'RSA',
-    let keyUse = ["sign", "verify"],
-      isExtractable = true,
-      genKeyParams = getGenKeyParams(alg);
-  return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
-    .then(key => window.crypto.subtle.exportKey( "spki", key.publicKey )
-          .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
-          .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
-          .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
-    .then( () => {
-      $('#mainalert').removeClass('show').addClass('fade');
-      $('#privatekey .CodeMirror-code').removeClass('outdated');
-      $('#publickey .CodeMirror-code').removeClass('outdated');
+    // this works with EC or RSA
+    let keyUse = ["sign", "verify"], // irrelevant for our purposes (PEM Export)
+        isExtractable = true,
+        genKeyParams = getGenKeyParams(alg);
+    return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
+      .then(key => window.crypto.subtle.exportKey( "spki", key.publicKey )
+            .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
+            .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
+            .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
+      .then( () => {
+        $('#mainalert').removeClass('show').addClass('fade');
+        $('#privatekey .CodeMirror-code').removeClass('outdated');
+        $('#publickey .CodeMirror-code').removeClass('outdated');
     });
   }
 }
@@ -745,7 +756,7 @@ function showDecoded() {
     }
     // header
     let item = matches[1],
-        json = atob(item),  // base64-decode
+        json = atob(item),  // base64-decode (maybe not suitable for JWT?)
         elementId = 'token-decoded-header',
         flavor = 'header';
     try {
@@ -1083,15 +1094,32 @@ $(document).ready(function() {
     let keytype = flavor+'key', // private || public
         elementId = 'ta_'+ keytype;
     editors[keytype] = CodeMirror.fromTextArea(document.getElementById(elementId), {
-      mode: 'encodedjwt', // not really
+      mode: 'encodedjwt', // not really, its just plaintext
       lineWrapping: true
     });
     editors[keytype].on('inputRead', function(cm, event) {
       if (event.origin == 'paste') {
         setTimeout(function() {
           editors[keytype].save();
-          let keyvalue = $('#ta_' + keytype).val();
-          updateKeyValue(flavor, reformIndents(keyvalue));
+          let fieldvalue = $('#ta_' + keytype).val();
+          if (looksLikePem(fieldvalue)) {
+            //$('#publickey-label').text('Public Key');
+            editors[keytype].setOption('mode', 'encodedjwt');
+            updateKeyValue(flavor, reformIndents(fieldvalue));
+          }
+          else {
+            let possiblyJwks = looksLikeJwks(fieldvalue);
+            if (possiblyJwks) {
+              //$('#publickey-label').text('JWKS');
+              editors[keytype].setOption('mode', 'javascript');
+              let prettyPrintedJson = JSON.stringify(possiblyJwks,null,2);
+              editors[keytype].setValue(prettyPrintedJson);
+            }
+            else {
+              // meh, not sure what to do here
+             // $('#publickey-label').text('Public Key');
+            }
+          }
         }, 220);
       }
     });

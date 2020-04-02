@@ -94,7 +94,7 @@
             <textarea rows=12 cols=34 id='ta_privatekey'></textarea>
           </div>
           <div id='publickey'>
-            <p>Public Key
+            <p><span id='publickey-label'>Public Key (PEM or JWKS)</span>
               <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="ta_publickey" title="copy to clipboard">
                 <span class="oi oi-clipboard"></span>
@@ -150,7 +150,7 @@
           <li><p style='margin-bottom:0;'>Signed JWT</p>
             <ol type='a'>
               <li>decode: paste in the signed JWT in the box on the left-hand side. The header and payload will automatically be decoded and displayed in the appropriate boxes. </li>
-              <li>verify: after pasting in the signed JWT, also specify your key: if using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>. Or, if you're using a symmetric algorithm, specify the symmetric key.
+              <li>verify: after pasting in the signed JWT, also specify your key: if using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a> into the box labeled "Public Key". Or paste a JWKS into that box. Or, if you're using a symmetric algorithm, specify the symmetric key.
                 Finally, and click the verify button (with a checkmark icon).</li>
               <li>create: select set the payload and the header in the boxes on the right hand side, and paste in your key: either a <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a> for asymmetric algorithms, or the symmetric key for symmetric algorithms. Then, click the encode button (leftward pointing arrow).</li>
             </ol>
@@ -159,7 +159,7 @@
             <ol type='a'>
               <li>decode: paste in the encrypted JWT in the box on the left-hand side. The header will be decoded and displayed in the appropriate box. The payload is encrypted, so it cannot be decoded without the private key.</li>
               <li>decrypt and verify: after pasting in the encrypted JWT, if you are using an RSA algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>. If using PBES2, key in your password and the salt and iteration count.  The keys and passwords never leave your browser. Then click the verify button (the button with the checkmark icon).</li>
-          <li>create: set the payload and the header in the boxes on the right hand side, and paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>, or specify the password-based key parameters. Then, click the encode button (with the left-pointing arrow).</li>
+              <li>create: set the payload and the header in the boxes on the right hand side. If you're using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a> into the box labeled "Public Key", or paste a JWKS into that box. (With this second option you need to specify a <tt>kid</tt> or <tt>x5t</tt> field in the JWT header). If you're using a symmetric algorithm, specify the password-based key parameters. Then, click the encode button (with the left-pointing arrow).</li>
             </ol>
           <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values.</li>
           <li>You can generate a new asymmetric keypair by clicking the key button.</li>
