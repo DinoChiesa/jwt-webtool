@@ -690,6 +690,7 @@ function newKeyPair(event) {
         $('#mainalert').removeClass('show').addClass('fade');
         $('#privatekey .CodeMirror-code').removeClass('outdated');
         $('#publickey .CodeMirror-code').removeClass('outdated');
+        editors.publickey.setOption('mode', 'encodedjwt');
     });
   }
 }
