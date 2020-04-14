@@ -30,11 +30,11 @@
         </div>
 
         <div class='panel panel-center' id='panel_buttons'>
-          <select class="form-control form-control-sm sel-variant">
+          <select class="form-control form-control-sm sel-variant" id='sel-variant'>
             <option value='Signed'>Signed</option>
             <option value='Encrypted'>Encrypted</option>
           </select>
-          <select class="form-control form-control-sm sel-alg">
+          <select class="form-control form-control-sm sel-alg" id='sel-alg'>
             <!-- options will be dynamically added -->
           </select>
           <button type="button" class="btn btn-outline-secondary btn-lg btn-encode" title='encode and sign a JWT'>
@@ -56,11 +56,13 @@
           <div style='font-size:60%; margin-top:20px;'
                title='these apply only when generating JWT'>overrides:</div>
           <div style='font-size:60%; margin-bottom:6px;'>exp:</div>
-          <select class="form-control form-control-sm sel-expiry" title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
+          <select class="form-control form-control-sm sel-expiry" id='sel-expiry' title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
             <option value='do nothing'>do nothing</option>
             <option value='no expiry'>no expiry</option>
-            <option value='5mins'>5mins</option>
-            <option value='30mins'>30mins</option>
+            <option value='10 seconds'>10 seconds</option>
+            <option value='60 seconds'>60 seconds</option>
+            <option value='5 minutes'>5 minutes</option>
+            <option value='30 minutes'>30 minutes</option>
           </select>
           <span style='font-size:60%; margin-right:6px;'>iat:</span>
           <input id='chk-iat' type='checkbox' />

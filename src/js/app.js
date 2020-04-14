@@ -1,14 +1,20 @@
+
 /* global atob, Buffer, TextDecoder, BUILD_VERSION */
 
 import 'bootstrap';
 import CodeMirror from 'codemirror/lib/codemirror.js';
 import $ from "jquery";
 import jose from "node-jose";
+import LocalStorage from './LocalStorage.js';
+
+const html5AppId = '6C1D8CB8-32F0-417A-BBEC-484BEC9CE937';
+const storage = LocalStorage.init(html5AppId);
+let datamodel = { 'sel-variant': '', 'sel-alg': '', 'sel-expiry': 10, 'chk-iat': true };
 
 require('codemirror/mode/javascript/javascript');
 require('codemirror/addon/mode/simple');
 
-const tenMinutes = 10 * 60;
+const tenMinutesInSeconds = 10 * 60;
 const ITERATION_DEFAULT = 8192,
       ITERATION_MAX = 100001,
       ITERATION_MIN = 50;
@@ -39,7 +45,7 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
       signingAlgs = [...rsaSigningAlgs, ...ecdsaSigningAlgs, ...hmacSigningAlgs],
       rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'],
       pbes2KeyEncryptionAlgs = [  "PBES2-HS256+A128KW", "PBES2-HS384+A192KW", "PBES2-HS512+A256KW" ],
-      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs, '??'],
+      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs],
       contentEncryptionAlgs = [
         'A128CBC-HS256',
         'A256CBC-HS512',
@@ -63,6 +69,19 @@ CodeMirror.defineSimpleMode("encodedjwt", {
     }
   ]
 });
+
+function quantify(quantity, term) {
+  let termIsPlural = term.endsWith('s');
+  let quantityIsPlural = (quantity != 1 && quantity != -1);
+
+  if (termIsPlural && !quantityIsPlural)
+    return term.slice(0, -1);
+
+  if ( ! termIsPlural && quantityIsPlural)
+    return term + 's';
+
+  return term;
+}
 
 function reformIndents(s) {
   let s2 = s.split(new RegExp('\n', 'g'))
@@ -376,11 +395,12 @@ function encodeJwt(event) {
     delete payload.exp;
   }
   else {
-    let matches = (new RegExp('^([1-9][0-9]*)mins$')).exec(desiredExpiryOverride);
-    if (matches && matches.length == 2) {
-      // forcibly set payload
-      payload.exp = Math.floor((new Date()).valueOf() / 1000) +
-        parseInt(matches[1], 10) * 60;
+    let matches = (new RegExp('^([1-9][0-9]*) (minutes|seconds)$')).exec(desiredExpiryOverride);
+    if (matches && matches.length == 3) {
+      let now = Math.floor((new Date()).valueOf() / 1000),
+          factor = (matches[2] == 'minutes') ? 60 : 1;
+      // the following may override an explicitly-provided value
+      payload.exp = now + parseInt(matches[1], 10) * factor;
     }
   }
 
@@ -473,7 +493,7 @@ function decodeJwt(event) {
 }
 
 function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
-  let now = Math.floor((new Date()).valueOf() / 1000),
+  let nowSeconds = Math.floor((new Date()).valueOf() / 1000),
       gracePeriod = 0,
       wantCheckIat = true,
       reasons = [];
@@ -489,23 +509,35 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
 
   // 8.1 expired time 'exp' check
   if (pPayload.exp !== undefined && typeof pPayload.exp == "number") {
-    if (pPayload.exp + gracePeriod < now) {
-      reasons.push('the token is expired');
+    let expiry = new Date(pPayload.exp * 1000),
+        expiresString = expiry.toISOString(),
+        delta = nowSeconds - pPayload.exp,
+        timeUnit = quantify(delta, 'seconds');
+    if (delta > 0) {
+      reasons.push(`the expiry time (${expiresString}) is in the past, ${delta} ${timeUnit} ago`);
     }
   }
 
   // 8.2 not before time 'nbf' check
   if (pPayload.nbf !== undefined && typeof pPayload.nbf == "number") {
-    if (now < pPayload.nbf - gracePeriod) {
-      reasons.push('the not-before time is in the future');
+    let notBefore = new Date(pPayload.nbf * 1000),
+        notBeforeString = notBefore.toISOString(),
+        delta = pPayload.nbf - nowSeconds,
+        timeUnit = quantify(delta, 'seconds');
+    if (delta > 0) {
+      reasons.push(`the not-before time (${notBeforeString}) is in the future, in ${delta} ${timeUnit}`);
     }
   }
 
   // 8.3 issued at time 'iat' check
   if (wantCheckIat) {
     if (pPayload.iat !== undefined && typeof pPayload.iat == "number") {
-      if (now < pPayload.iat - gracePeriod) {
-        reasons.push('the issued-at time is in the future');
+    let issuedAt = new Date(pPayload.iat * 1000),
+        issuedAtString = issuedAt.toISOString(),
+        delta = pPayload.iat - nowSeconds,
+        timeUnit = quantify(delta, 'seconds');
+      if (delta > 0) {
+        reasons.push(`the issued-at time (${issuedAtString}) is in the future, in ${delta} ${timeUnit}`);
       }
     }
   }
@@ -871,6 +903,17 @@ function initialized() {
   return !!editors['token-decoded-header'];
 }
 
+function onChangeIat(event) {
+  let wantIat = $('#chk-iat').prop('checked');
+  saveSetting('chk-iat', String(wantIat));
+}
+
+function onChangeExpiry(event) {
+  let $this = $(this),
+      selectedExpiry = $this.find(':selected').text();
+  saveSetting('sel-expiry', selectedExpiry);
+}
+
 function onChangeAlg(event) {
   let $this = $(this),
       newSelection = $this.find(':selected').text(),
@@ -915,12 +958,13 @@ function onChangeAlg(event) {
   else {
     // nop
   }
+  saveSetting('sel-alg', newSelection);
 }
 
 function onChangeVariant(event) {
   // change signed to encrypted or vice versa
   let $this = $(this),
-      newSelection = $this.find(':selected').text().toLowerCase(),
+      newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
       priorAlgSelection = $('.sel-alg').data('prev');
 
@@ -929,7 +973,7 @@ function onChangeVariant(event) {
   if (newSelection != previousSelection) {
     try {
       let headerObj = JSON.parse(headerText);
-      if (newSelection == 'encrypted') {
+      if (newSelection == 'Encrypted') {
         // swap in alg and enc
         headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'}); // not always !
         headerObj.enc = pickContentEncryptionAlg();
@@ -967,21 +1011,27 @@ function onChangeVariant(event) {
     $('#privatekey .CodeMirror-code').addClass('outdated');
     $('#publickey .CodeMirror-code').addClass('outdated');
   }
+  saveSetting('sel-variant', newSelection);
 }
 
 function contriveJwt(event) {
-    let now = Math.floor((new Date()).valueOf() / 1000),
+    let nowSeconds = Math.floor((new Date()).valueOf() / 1000),
         sub = selectRandomValue(sampledata.names),
         aud = selectRandomValueExcept(sampledata.names, sub),
         payload = {
           iss:"DinoChiesa.github.io",
           sub,
           aud,
-          iat: now,
-          exp: now + tenMinutes // always
+          iat: nowSeconds,
+          exp: nowSeconds + tenMinutesInSeconds // always
         },
         header = { alg : $('.sel-alg').find(':selected').text() };
 
+  if ( keyEncryptionAlgs.indexOf(header.alg) >=0) {
+    if ( ! header.enc ) {
+      header.enc = selectRandomValue(contentEncryptionAlgs);
+    }
+  }
   if (randomBoolean()) {
     let propname = selectRandomValue(sampledata.props);
     payload[propname] = generateRandomValue(null, null, propname);
@@ -1051,6 +1101,42 @@ function looksLikeJwt(possibleJwt) {
   return false;
 }
 
+function retrieveLocalState() {
+    Object.keys(datamodel)
+    .forEach(key => {
+      var value = storage.get(key);
+      if (key.startsWith('chk-')) {
+        datamodel[key] = Boolean(value);
+      }
+      else {
+        datamodel[key] = value;
+      }
+    });
+}
+
+function saveSetting(key, value) {
+  datamodel[key] = value;
+  storage.store(key, value);
+}
+
+function applyState() {
+    Object.keys(datamodel)
+    .forEach(key => {
+      var value = datamodel[key];
+      var $item = $('#' + key);
+      if (key.startsWith('sel-')) {
+        // selection
+        $item.find("option[value='"+value+"']").prop('selected', 'selected');
+      }
+      else if (key.startsWith('chk-')) {
+        $item.prop("checked", Boolean(value));
+      }
+      else {
+        $item.val(value);
+      }
+    });
+}
+
 $(document).ready(function() {
   $( '#version_id').text(BUILD_VERSION);
   $( '.btn-copy' ).on('click', copyToClipboard);
@@ -1060,8 +1146,10 @@ $(document).ready(function() {
   $( '.btn-newkeypair' ).on('click', newKeyPair);
 
   $( '.btn-regen' ).on('click', contriveJwt);
-  $( '.sel-variant').on('change', onChangeVariant);
-  $( '.sel-alg').on('change', onChangeAlg);
+  $( '#sel-variant').on('change', onChangeVariant);
+  $( '#sel-alg').on('change', onChangeAlg);
+  $( '#sel-expiry').on('change', onChangeExpiry);
+  $( '#chk-iat').on('change', onChangeIat);
 
   populateAlgorithmSelectOptions();
 
@@ -1174,4 +1262,8 @@ $(document).ready(function() {
       .then( _ => contriveJwt() );
   }
 
+  retrieveLocalState();
+  applyState();
+  onChangeVariant.call(document.querySelector('#sel-variant'), null);
+  onChangeAlg.call(document.querySelector('#sel-alg'), null);
 });
