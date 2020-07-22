@@ -591,10 +591,11 @@ function verifyJwt(event) {
                }
              })
              .catch( e => {
-               setAlert('Verification failed. Bad key?');
-               console.log('During verify: ' + e);
-               console.log(e.stack);
-             }));
+               setAlert('Verification failed. Bad key? ' + e.message);
+             }))
+      .catch( e => {
+        setAlert('error verifying: ' + e.message);
+      });
   }
 
   // verification/decrypt of encrypted JWT
