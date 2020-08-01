@@ -298,18 +298,41 @@ function copyToClipboard(event) {
       // We want to flash THAT.
       let $cmdiv = $source.next();
       if ($cmdiv.prop('tagName').toLowerCase() == 'div' && $cmdiv.hasClass('CodeMirror')) {
-        $cmdiv.addClass('copy-to-clipboard-flash-bg')
-          .delay('1000')
-          .queue( _ => $cmdiv.removeClass('copy-to-clipboard-flash-bg').dequeue() );
+        // There seems to be  a bug in Chrome which recomputes the font size, seemingly incorrectly,
+        // after removing the copy-to-clipboard-flash-bg class. So this logic just leaves it there.
+        // It needs to be removed _prior_ to adding it the next time.
+
+        // $cmdiv
+        //   .removeClass('dummy')
+        //   .addClass('copy-to-clipboard-flash-bg')
+        //   .delay('1200')
+        //   .queue( _ => $cmdiv
+        //           .removeClass('copy-to-clipboard-flash-bg')
+        //           .dequeue() )
+        //   .delay('3')
+        //   .queue( _ => $cmdiv
+        //           .addClass('dummy')
+        //           .dequeue() );
+        $cmdiv
+          .removeClass('copy-to-clipboard-flash-bg')
+          .delay('6')
+          .queue( _ => $cmdiv
+                  .addClass('copy-to-clipboard-flash-bg')
+                  .dequeue() );
       }
       else {
         // no codemirror (probably the secretkey field, which is just an input)
-        $source.addClass('copy-to-clipboard-flash-bg')
-          .delay('1000')
-          .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
+        // $source.addClass('copy-to-clipboard-flash-bg')
+        //   .delay('1800')
+        //   .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
+        $source
+          .removeClass('copy-to-clipboard-flash-bg')
+          .delay('6')
+          .queue( _ => $source.addClass('copy-to-clipboard-flash-bg').dequeue() );
       }
     }
   }
+
   catch (e) {
     success = false;
   }
