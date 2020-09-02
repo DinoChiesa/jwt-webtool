@@ -25,10 +25,10 @@
   },
   "devDependencies": {
     "child_process": "^1.0.2",
-    "copy-webpack-plugin": "^5.0.5",
+    "copy-webpack-plugin": "^6.1.0",
     "css-loader": "^3.4.2",
     "mini-css-extract-plugin": "^0.8.0",
-    "node-sass": "^4.13.1",
+    "node-sass": "^4.14.1",
     "precss": "^3.1.2",
     "sass-loader": "^6.0.7",
     "style-loader": "^0.19.1",

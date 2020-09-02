@@ -38,9 +38,9 @@ function makeConfig(mode) {
             }]
         },
         plugins: [
-          new CopyPlugin([
-            { from: 'src/index.html', to: 'index.html' },
-          ]),
+          new CopyPlugin({patterns:[
+            { from: 'src/index.html', to: 'index.html' }
+          ]}),
 
           /* use jQuery as Global */
           new webpack.ProvidePlugin({
