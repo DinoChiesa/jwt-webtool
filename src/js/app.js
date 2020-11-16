@@ -230,8 +230,17 @@ async function getSymmetricKeyBuffer(alg) {
 }
 
 function looksLikePem(s) {
-  return s.startsWith('-----BEGIN') && s.endsWith(' KEY-----') &&
-    (s.indexOf(' PUBLIC KEY')>=10 || s.indexOf(' PRIVATE KEY') >=10 );
+  s = s.trim();
+  let looksLike =
+    (s.startsWith('-----BEGIN PRIVATE KEY-----') &&
+     s.endsWith('-----END PRIVATE KEY-----')) ||
+    (s.startsWith('-----BEGIN PUBLIC KEY-----') &&
+     s.endsWith('-----END PUBLIC KEY-----')) ||
+    (s.startsWith('-----BEGIN RSA PUBLIC KEY-----') &&
+     s.endsWith('-----END RSA PUBLIC KEY-----')) ||
+    (s.startsWith('-----BEGIN RSA PRIVATE KEY-----') &&
+     s.endsWith('-----END RSA PRIVATE KEY-----'));
+  return looksLike;
 }
 
 function looksLikeJwks(s) {
@@ -1216,21 +1225,20 @@ $(document).ready(function() {
           editors[keytype].save();
           let fieldvalue = $('#ta_' + keytype).val();
           if (looksLikePem(fieldvalue)) {
-            //$('#publickey-label').text('Public Key');
             editors[keytype].setOption('mode', 'encodedjwt');
             updateKeyValue(flavor, reformIndents(fieldvalue));
           }
           else {
             let possiblyJwks = looksLikeJwks(fieldvalue);
             if (possiblyJwks) {
-              //$('#publickey-label').text('JWKS');
               editors[keytype].setOption('mode', 'javascript');
               let prettyPrintedJson = JSON.stringify(possiblyJwks,null,2);
               editors[keytype].setValue(prettyPrintedJson);
             }
             else {
               // meh, not sure what to do here
-             // $('#publickey-label').text('Public Key');
+              // $('#publickey-label').text('Public Key');
+              //debugger;
             }
           }
         }, 220);
