@@ -6,7 +6,8 @@ import $ from "jquery";
 import jose from "node-jose";
 import LocalStorage from './LocalStorage.js';
 
-const html5AppId = '6C1D8CB8-32F0-417A-BBEC-484BEC9CE937';
+const html5AppId = '2084664E-BF2B-4C76-BD5F-1087502F580B';
+
 const storage = LocalStorage.init(html5AppId);
 let datamodel = {
       'sel-variant': '',
@@ -1257,35 +1258,37 @@ function applyState() {
     Object.keys(datamodel)
     .forEach(key => {
       var value = datamodel[key];
-      var $item = $('#' + key);
-      if (key.startsWith('sel-alg-')) {
-        // selection
-        let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase(),
-            storedVariant = key.substr(8);
-        if (storedVariant == currentlySelectedVariant) {
-          $item = $('#sel-alg');
+      if (value) {
+        var $item = $('#' + key);
+        if (key.startsWith('sel-alg-')) {
+          // selection
+          let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase(),
+              storedVariant = key.substr(8);
+          if (storedVariant == currentlySelectedVariant) {
+            $item = $('#sel-alg');
+            $item.find("option[value='"+value+"']").prop('selected', 'selected');
+          }
+        }
+        else if (key.startsWith('sel-')) {
+          // selection
           $item.find("option[value='"+value+"']").prop('selected', 'selected');
+          if (key == 'sel-variant') {
+            onChangeVariant.call(document.querySelector('#sel-variant'), null);
+          }
         }
-      }
-      else if (key.startsWith('sel-')) {
-        // selection
-        $item.find("option[value='"+value+"']").prop('selected', 'selected');
-        if (key == 'sel-variant') {
-          onChangeVariant.call(document.querySelector('#sel-variant'), null);
+        else if (key.startsWith('chk-')) {
+          $item.prop("checked", Boolean(value));
         }
-      }
-      else if (key.startsWith('chk-')) {
-        $item.prop("checked", Boolean(value));
-      }
-      else if (key == 'encodedjwt') {
-        if (value) { parseAndDisplayToken(value); }
-      }
-      else if (key == 'ta_publickey' || key == 'ta_privatekey') {
-        let keytype = key.substr(3);
-        editors[keytype].setValue(value); // will update the visible text area
-      }
-      else {
-        $item.val(value);
+        else if (key == 'encodedjwt') {
+          if (value) { parseAndDisplayToken(value); }
+        }
+        else if (key == 'ta_publickey' || key == 'ta_privatekey') {
+          let keytype = key.substr(3);
+          editors[keytype].setValue(value); // will update the visible text area
+        }
+        else {
+          $item.val(value);
+        }
       }
     });
 }
