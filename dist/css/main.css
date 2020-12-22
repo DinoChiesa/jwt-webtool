@@ -8302,6 +8302,11 @@ pre.CodeMirror-line > span {
 #panel_decoded > div {
   margin-bottom: 18px; }
 
+.banner {
+  margin-bottom: 24px;
+  background-color: #DFDDDD;
+  height: 138px; }
+
 .banner > .alert {
   margin: 0;
   z-index: 10; }
@@ -8315,11 +8320,6 @@ pre.CodeMirror-line > span {
 
 .banner, .footer {
   border: 1px dotted grey; }
-
-.banner {
-  margin-bottom: 24px;
-  background-color: #DFDDDD;
-  height: 120px; }
 
 .footer {
   margin-top: 24px;
@@ -8341,7 +8341,7 @@ pre.CodeMirror-line > span {
   top: 96px; }
 
 .banner > div#buildversion {
-  top: 100px;
+  top: 118px;
   left: 0%;
   position: relative;
   margin-right: 6px;
