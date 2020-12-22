@@ -42,6 +42,7 @@ textarea {
     width: 100%;
     padding-left: 6px;
     font-family: monospace;
+    background-color: white; /* must be explicit to allow flash? */
   }
   > div {
     margin-left: 32px;
@@ -74,22 +75,22 @@ textarea {
 
 .panel-center {
   float: left;
-  width: 114px;
+  width: 162px;
   margin: 2px 0;
   border-width: 0;
   > button {
     margin-top: 14px;
-    width:92px;
+    width:140px;
   }
   > select:not(:first-child) {
     margin-top: 14px;
-    width:92px;
+    width:140px;
   }
 }
 
 .panel-right {
   min-width: 452px;
-  margin-left: 630px;
+  margin-left: 678px;
 }
 
 div.CodeMirror {
@@ -170,7 +171,7 @@ pre.CodeMirror-line > span {
   z-index: 10;
 }
 
-.btn-copy {
+.btn-copy, .btn-newkey, .btn-newpayload {
   padding: 2px 6px;
   margin: 0 4px;
   float: right;

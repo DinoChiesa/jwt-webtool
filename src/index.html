@@ -57,10 +57,6 @@
           <button type="button" class="btn btn-outline-secondary btn-lg btn-regen" title='generate a new header and payload'>
             <span class="oi oi-reload"></span>
           </button>
-          <button type="button" class="btn btn-outline-secondary btn-lg btn-newkeypair" title='generate a new keypair'>
-            <span class="oi oi-key"></span>
-            <!-- <span style='display: block;'>new</span>  -->
-          </button>
           <div style='font-size:60%; margin-top:20px;'
                title='these apply only when generating JWT'>overrides:</div>
           <div style='font-size:60%; margin-bottom:6px;'>exp:</div>
@@ -92,15 +88,27 @@
                       data-target="token-decoded-payload" title="copy to clipboard">
                 <span class="oi oi-clipboard"></span>
               </button>
+              <button type="button" class="btn btn-outline-secondary btn-md btn-newpayload"
+                      data-target="dummy"
+                      title='generate a new payload'>
+                <span class="oi oi-reload"></span>
+              </button>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-payload' class='jwt-payload'></textarea>
           </div>
           <div id='privatekey' title='paste in your private key, it does not leave your browser'>
             <p>Private Key
-              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
+              <button type="button" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="ta_privatekey" title="copy to clipboard">
                 <span class="oi oi-clipboard"></span>
               </button>
+
+              <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
+                      data-target="dummy"
+                      title='generate a new keypair'>
+                <span class="oi oi-reload"></span>
+              </button>
+
             </p>
             <textarea rows=12 cols=34 id='ta_privatekey'></textarea>
           </div>
@@ -119,11 +127,16 @@
                       data-target="ta_symmetrickey" title="copy to clipboard">
                 <span class="oi oi-clipboard"></span>
               </button>
+              <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
+                      data-target="dummy"
+                      title='generate a new random key'>
+                <span class="oi oi-reload"></span>
+              </button>
             </p>
-            <input type='text' id='ta_symmetrickey' value='Secret123!'>
+            <input type='text' id='ta_symmetrickey' value='Key-Must-Be-at-least-32-bytes-in-length!' spellcheck="false">
             <div>
               <span>Key Encoding:</span>
-              <select class="form-control form-control-sm sel-symkey-coding">
+              <select id='sel-symkey-coding' class="form-control form-control-sm sel-symkey-coding">
                 <option value='UTF-8'>UTF-8</option>
                 <option value='Hex'>Hex</option>
                 <option value='Base64'>Base64</option>
@@ -155,7 +168,7 @@
       <div class='footer'>
         <div>Notes</div>
         <ol>
-          <li>Information that you paste here, including JWT and keys, whether secret, private or public, <strong>never leaves your browser</strong>. Information from the decoding or decrypting also stays in the browser. Nothing gets posted to a server. Still, you should take care. It's good hygiene to never submit private information, production private keys, or production credentials or tokens to a site you do not own. </li>
+          <li>Information that you paste here, including JWT and keys, whether secret, private or public, <strong>never leaves your browser</strong>. Information from the decoding or decrypting also stays in the browser. This page does use LocalStorage. But nothing gets posted to a server. Still, you should take care. It's good hygiene to never submit private information, production private keys, or production credentials or tokens to a website you do not own or trust.</li>
           <li>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</li>
           <li>For generating and verifying signed JWT, this page supports RSA, HMAC, or ECDSA algorithms. For generating or verifying encrypted JWT, it supports RSA keys and RSA-OAEP-256, as well as PBES2 algorithms. For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
           <li>to use this, first select the variant of JWT: either Signed or Encrypted. Then select the algorithm.</li>
@@ -173,8 +186,8 @@
               <li>decrypt and verify: after pasting in the encrypted JWT, if you are using an RSA algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>. If using PBES2, key in your password and the salt and iteration count.  The keys and passwords never leave your browser. Then click the verify button (the button with the checkmark icon).</li>
               <li>create: set the payload and the header in the boxes on the right hand side. If you're using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a> into the box labeled "Public Key", or paste a JWKS into that box. (With this second option you need to specify a <tt>kid</tt> or <tt>x5t</tt> field in the JWT header). If you're using a symmetric algorithm, specify the password-based key parameters. Then, click the encode button (with the left-pointing arrow).</li>
             </ol>
-          <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values.</li>
-          <li>You can generate a new asymmetric keypair by clicking the key button.</li>
+          <li>On initial page load, the browser will generate a new RSA keypair and insert it into the appropriate boxes, and then generate a contrived JWT. You can replace either or both with your own values. OR it will retrieve your previously used key from LocalStorage.</li>
+          <li>You can generate a new asymmetric keypair, or a new symmetric key, by clicking the "key regen" button.</li>
           <li>When specifying the symmetric key, you need at least 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512, whether signing or verifying. The <a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will generate keys of the appropriate size. If you choose a different coding system, you need to ensure minimum key size yourself. </li>
           <li>Ths page shows the header and payload "pretty-printed". The actual header and payload in a JWT do not have newlines.</li>
           <li>There's a shortcut: if you open the url with <tt>&lt;baseurl&gt;?JWT_HERE</tt>, it will decode *that* JWT.   It

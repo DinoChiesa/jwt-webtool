@@ -50,7 +50,7 @@ static files.
 
 There's a shortcut: if you open the url with <baseurl>?JWT_HERE, it will decode *that* JWT.   It
 saves you a step, pasting in your own JWT. If you're paranoid you can also use
-the # as a separator. 
+the # as a separator.
 
 
 It may be nice to fork this and bundle it into an intranet, to

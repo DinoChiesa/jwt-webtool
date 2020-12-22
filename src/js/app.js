@@ -1,4 +1,3 @@
-
 /* global atob, Buffer, TextDecoder, BUILD_VERSION */
 
 import 'bootstrap';
@@ -9,7 +8,16 @@ import LocalStorage from './LocalStorage.js';
 
 const html5AppId = '6C1D8CB8-32F0-417A-BBEC-484BEC9CE937';
 const storage = LocalStorage.init(html5AppId);
-let datamodel = { 'sel-variant': '', 'sel-alg': '', 'sel-expiry': 10, 'chk-iat': true };
+let datamodel = {
+      'sel-variant': '',
+      'encodedjwt' : '',
+      'ta_publickey' : '',
+      'ta_privatekey' : '',
+      'ta_symmetrickey' : '',
+      'sel-expiry': 10,
+      'sel-symkey-coding' : '',
+      'chk-iat': true
+    };
 
 require('codemirror/mode/javascript/javascript');
 require('codemirror/addon/mode/simple');
@@ -29,7 +37,7 @@ const re = {
         }
       };
 const sampledata = {
-        names : ['audrey', 'olaf', 'vinit', 'antonio', 'alma', 'ming', 'naimish', 'anna', 'sheniqua', 'tamara', 'kina', 'maxine' ],
+        names : ['audrey', 'olaf', 'antonio', 'alma', 'ming', 'naimish', 'anna', 'sheniqua', 'tamara', 'kina', 'maxine', 'arya', 'asa', 'idris', 'evander', 'natalia' ],
         props : ['propX', 'propY', 'aaa', 'version', 'entitlement', 'alpha', 'classid'],
         types : ['number', 'string', 'object', 'array', 'boolean']
       };
@@ -51,6 +59,11 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
         'A256CBC-HS512',
         'A128GCM',
         'A256GCM'
+      ],
+      pwComponents = [
+        ['Vaguely', 'Undoubtedly', 'Indisputably'],
+        ['Salty', 'Fresh', 'Ursine', 'Excessive', 'Daring', 'Delightful', 'Stable', 'Evolving'],
+        ['Mirror', 'Caliper', 'Postage', 'Return', 'Roadway', 'Passage', 'Statement', 'Toolbox', 'Paradox']
       ];
 
 let editors = {}; // codemirror editors
@@ -90,13 +103,13 @@ function reformIndents(s) {
   return s2.trim();
 }
 
-function randomString(){
+function randomString() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
 function randomNumber() {
   let min = (randomBoolean())? 10: 100,
-      max = (randomBoolean())? 10000: 1000;
+      max = (randomBoolean())? 100000: 1000;
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
@@ -162,6 +175,22 @@ function selectRandomValue (a) {
   let L = a.length,
       n = Math.floor(Math.random() * L);
   return a[n];
+}
+
+function randomOctetKey() {
+  var array = new Uint8Array(48);
+  window.crypto.getRandomValues(array);
+  return array;
+}
+
+function randomPassword() {
+  return pwComponents
+    .map(selectRandomValue)
+    .join('-') +
+    '-' +
+    randomNumber().toFixed(0).padStart(4, '0').substr(-4) +
+    '-' +
+    randomNumber().toFixed(0).padStart(7, '0').substr(-7);
 }
 
 function hmacToKeyBits(alg) {
@@ -255,7 +284,7 @@ function looksLikeJwks(s) {
 
 function getPrivateKey() {
   editors.privatekey.save();
-  let keyvalue = $('#ta_privatekey').val();
+  let keyvalue = $('#ta_privatekey').val().trim();
   return jose.JWK.asKey(keyvalue, "pem");
 }
 
@@ -294,14 +323,16 @@ function copyToClipboard(event) {
 
   //let textToCopy = $source.val();
   // in which case do I need text() ?
-  let textToCopy = ($source[0].tagName == 'TEXTAREA' || $source[0].tagName == 'INPUT') ? $source.val() : $source.text();
+  let sourceType = $source[0].tagName;
+  let textToCopy = (sourceType == 'TEXTAREA' || sourceType.tagName == 'INPUT') ? $source.val() : $source.text();
 
   $("body").append($temp);
   $temp.val(textToCopy).select();
   let success;
   try {
     success = document.execCommand("copy");
-    if (success) {
+
+    //if (success)
       // Animation to indicate copy.
       // CodeMirror obscures the original textarea, and appends a div as the next sibling.
       // We want to flash THAT.
@@ -331,15 +362,19 @@ function copyToClipboard(event) {
       }
       else {
         // no codemirror (probably the secretkey field, which is just an input)
+        $source.addClass('copy-to-clipboard-flash-bg');
+        setTimeout( _ => $source.removeClass('copy-to-clipboard-flash-bg'), 1800);
+
         // $source.addClass('copy-to-clipboard-flash-bg')
         //   .delay('1800')
         //   .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
-        $source
-          .removeClass('copy-to-clipboard-flash-bg')
-          .delay('6')
-          .queue( _ => $source.addClass('copy-to-clipboard-flash-bg').dequeue() );
+
+        // $source
+        //   .removeClass('copy-to-clipboard-flash-bg')
+        //   .delay('6')
+        //   .queue( _ => $source.addClass('copy-to-clipboard-flash-bg').dequeue() );
       }
-    }
+
   }
 
   catch (e) {
@@ -502,7 +537,8 @@ function encodeJwt(event) {
       editors.encodedjwt.save();
       if ( header.enc ) {
         // re-format the decoded JSON, incl added or modified properties like kid, alg
-        showDecoded();
+        showDecoded(true);
+        editors['token-decoded-payload'].setValue(JSON.stringify(payload, null, 2));
         setAlert("encrypted JWT", 'info');
       }
       else {
@@ -614,8 +650,12 @@ function verifyJwt(event) {
                if (reasons.length == 0) {
                  let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
                  showDecoded();
-                 setAlert(message, 'success');
+                 if (event) {
+                   setAlert(message, 'success');
+                 }
                  selectAlgorithm(result.header.alg);
+                 $('#privatekey .CodeMirror-code').removeClass('outdated');
+                 $('#publickey .CodeMirror-code').removeClass('outdated');
                }
                else {
                  let label = (reasons.length == 1)? 'Reason' : 'Reasons';
@@ -668,7 +708,11 @@ function verifyJwt(event) {
                $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
                if (reasons.length == 0) {
                  let message = "The JWT has been decrypted successfully, and the times are valid.";
-                 setAlert(message, 'success');
+                 if (event) {
+                   setAlert(message, 'success');
+                 }
+                 $('#privatekey .CodeMirror-code').removeClass('outdated');
+                 $('#publickey .CodeMirror-code').removeClass('outdated');
                }
                else {
                  let label = (reasons.length == 1)? 'Reason' : 'Reasons';
@@ -714,6 +758,7 @@ function updateKeyValue(flavor /* public || private */, keyvalue) {
   if (editor) {
     editor.setValue(keyvalue);
     editor.save();
+    saveSetting('ta_'+ flavor +'key', keyvalue);
   }
 }
 
@@ -736,13 +781,43 @@ function getGenKeyParams(alg) {
   throw new Error('invalid key flavor');
 }
 
-function newKeyPair(event) {
+function maybeNewKey() {
   let alg = $('.sel-alg').find(':selected').text();
   if (alg.startsWith('HS') || alg.startsWith('PB')) {
-    setAlert("can't do that for HS or PB algorithms");
+    if ( ! $('#ta_symmetrickey').val()) {
+      return newKey(null);
+    }
   }
   else {
-    // this works with EC or RSA
+    editors.privatekey.save();
+    editors.publickey.save();
+    let privatekey = $('#ta_privatekey').val().trim();
+    let publickey = $('#ta_publickey').val().trim();
+    if ( ! privatekey || !publickey) {
+      return newKey(null);
+    }
+  }
+}
+
+function newKey(event) {
+  let alg = $('.sel-alg').find(':selected').text();
+  if (alg.startsWith('HS') || alg.startsWith('PB')) {
+    let coding = $('.sel-symkey-coding').find(':selected').text().toLowerCase();
+    let keyString = null;
+    if (coding == 'utf-8' || coding == 'pbkdf2') {
+      keyString = randomPassword();
+    }
+    else if (coding == 'base64' || coding == 'hex') {
+      keyString = Buffer.from(randomOctetKey()).toString(coding);
+    }
+    if (keyString) {
+      $('#ta_symmetrickey').val(keyString);
+      saveSetting('ta_symmetrickey', keyString); // for reload
+    }
+  }
+
+  else {
+    // this works with either EC or RSA key types
     let keyUse = ["sign", "verify"], // irrelevant for our purposes (PEM Export)
         isExtractable = true,
         genKeyParams = getGenKeyParams(alg);
@@ -755,7 +830,7 @@ function newKeyPair(event) {
         $('#mainalert').removeClass('show').addClass('fade');
         $('#privatekey .CodeMirror-code').removeClass('outdated');
         $('#publickey .CodeMirror-code').removeClass('outdated');
-        editors.publickey.setOption('mode', 'encodedjwt');
+        editors.publickey.setOption('mode', 'encodedjwt'); // why only publickey, not privatekey?
     });
   }
 }
@@ -773,10 +848,12 @@ function selectAlgorithm(algName) {
   }
 }
 
-function showDecoded() {
+function showDecoded(skipEncryptedPayload) {
   editors.encodedjwt.save();
+
   let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
       matches = re.signed.jwt.exec(tokenString);
+  saveSetting('encodedjwt', tokenString); // for reload
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", 'info');
     let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
@@ -830,15 +907,18 @@ function showDecoded() {
           prettyPrintedJson = JSON.stringify(obj,null,2),
           flatJson = JSON.stringify(obj);
       editors[elementId].setValue(prettyPrintedJson);
-      $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
-      // must decrypt the ciphertext payload to display claims
-      elementId = 'token-decoded-payload';
-      flavor = 'payload';
-      editors[elementId].setValue('?ciphertext?');
-      $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
+      $('#' + flavor + ' > p > .length').text('(' + flatJson.length + '' + 'bytes)');
+      if ( ! skipEncryptedPayload) {
+        // must decrypt the ciphertext payload to display claims
+        elementId = 'token-decoded-payload';
+        flavor = 'payload';
+        editors[elementId].setValue('?ciphertext?');
+        $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
+      }
       if (obj.alg) {
         selectAlgorithm(obj.alg);
       }
+
     }
     catch (e) {
       // probably not json
@@ -865,7 +945,8 @@ function populateAlgorithmSelectOptions() {
   // $('.sel-alg').trigger('change'); // not sure why this does not work
 
   //onChangeAlg.call(document.getElementsByClassName('sel-alg')[0], null);
-  onChangeAlg.call(document.querySelector('.sel-alg'), null);
+  // dino - 20201222-1115 - maybe
+  //onChangeAlg.call(document.querySelector('.sel-alg'), null);
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -880,10 +961,11 @@ function keysAreCompatible(alg1, alg2) {
 
 function changeSymmetricKeyCoding(event) {
   let $this = $(this),
-      newSelection = $this.find(':selected').text().toLowerCase(),
+      newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev');
   if (newSelection != previousSelection) {
-    if (newSelection == 'pbkdf2') {
+    $('#ta_symmetrickey').addClass('outdated');
+    if (newSelection == 'PBKDF2') {
       // display the salt and iteration count
       $('#pbkdf2_params').show();
     }
@@ -892,13 +974,14 @@ function changeSymmetricKeyCoding(event) {
     }
   }
   $this.data('prev', newSelection);
+  saveSetting('sel-symkey-coding', newSelection);
 }
 
 function checkSymmetryChange(newalg, oldalg) {
   let newPrefix = newalg.substring(0, 2),
       oldPrefix = oldalg && oldalg.substring(0, 2);
   if (newPrefix == 'HS' || newPrefix == 'PB') {
-    $('.btn-newkeypair').hide();
+    //$('.btn-newkeypair').hide();
     if (oldPrefix != 'HS' & oldPrefix != 'PB') {
       $('#privatekey').hide();
       $('#publickey').hide();
@@ -922,7 +1005,7 @@ function checkSymmetryChange(newalg, oldalg) {
     }
   }
   else {
-    $('.btn-newkeypair').show();
+    //$('.btn-newkeypair').show();
     if (newPrefix == 'RS' || newPrefix == 'PS' || newPrefix == 'ES') {
       $('#privatekey').show();
       $('#publickey').show();
@@ -955,6 +1038,7 @@ function onChangeAlg(event) {
 
   if ( ! initialized()) { return ; }
 
+  maybeNewKey();
   if (newSelection != previousSelection) {
 
     checkSymmetryChange(newSelection, previousSelection);
@@ -1031,6 +1115,7 @@ function onChangeVariant(event) {
     }
     $this.data('prev', newSelection);
   }
+
   populateAlgorithmSelectOptions();
 
   // This used to be appropriate logic, but since adding PBES2, at
@@ -1047,7 +1132,7 @@ function onChangeVariant(event) {
   saveSetting('sel-variant', newSelection);
 }
 
-function contriveJwt(event) {
+function contrivePayload() {
     let nowSeconds = Math.floor((new Date()).valueOf() / 1000),
         sub = selectRandomValue(sampledata.names),
         aud = selectRandomValueExcept(sampledata.names, sub),
@@ -1057,17 +1142,28 @@ function contriveJwt(event) {
           aud,
           iat: nowSeconds,
           exp: nowSeconds + tenMinutesInSeconds // always
-        },
-        header = { alg : $('.sel-alg').find(':selected').text() };
+        };
+  if (randomBoolean()) {
+    let propname = selectRandomValue(sampledata.props);
+    payload[propname] = generateRandomValue(null, null, propname);
+  }
+  return payload;
+}
+
+function newPayload(event) {
+  let payload = contrivePayload(),
+      elementId = 'token-decoded-payload';
+  editors[elementId].setValue(JSON.stringify(payload,null,2));
+}
+
+function contriveJwt(event) {
+  let payload = contrivePayload(),
+    header = { alg : $('.sel-alg').find(':selected').text() };
 
   if ( keyEncryptionAlgs.indexOf(header.alg) >=0) {
     if ( ! header.enc ) {
       header.enc = selectRandomValue(contentEncryptionAlgs);
     }
-  }
-  if (randomBoolean()) {
-    let propname = selectRandomValue(sampledata.props);
-    payload[propname] = generateRandomValue(null, null, propname);
   }
   editors['token-decoded-header'].setValue(JSON.stringify(header));
   editors['token-decoded-payload'].setValue(JSON.stringify(payload));
@@ -1148,7 +1244,12 @@ function retrieveLocalState() {
 }
 
 function saveSetting(key, value) {
-  datamodel[key] = value;
+  if (key == 'sel-alg') {
+    key = key + '-' + datamodel['sel-variant'].toLowerCase();
+  }
+  else {
+    datamodel[key] = value;
+  }
   storage.store(key, value);
 }
 
@@ -1157,17 +1258,44 @@ function applyState() {
     .forEach(key => {
       var value = datamodel[key];
       var $item = $('#' + key);
-      if (key.startsWith('sel-')) {
+      if (key.startsWith('sel-alg-')) {
+        // selection
+        let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase(),
+            storedVariant = key.substr(8);
+        if (storedVariant == currentlySelectedVariant) {
+          $item = $('#sel-alg');
+          $item.find("option[value='"+value+"']").prop('selected', 'selected');
+        }
+      }
+      else if (key.startsWith('sel-')) {
         // selection
         $item.find("option[value='"+value+"']").prop('selected', 'selected');
+        if (key == 'sel-variant') {
+          onChangeVariant.call(document.querySelector('#sel-variant'), null);
+        }
       }
       else if (key.startsWith('chk-')) {
         $item.prop("checked", Boolean(value));
+      }
+      else if (key == 'encodedjwt') {
+        if (value) { parseAndDisplayToken(value); }
+      }
+      else if (key == 'ta_publickey' || key == 'ta_privatekey') {
+        let keytype = key.substr(3);
+        editors[keytype].setValue(value); // will update the visible text area
       }
       else {
         $item.val(value);
       }
     });
+}
+
+function parseAndDisplayToken(token) {
+  editors.encodedjwt.setValue(token);
+  editors.encodedjwt.save();
+  showDecoded();
+  $('#privatekey .CodeMirror-code').addClass('outdated');
+  $('#publickey .CodeMirror-code').addClass('outdated');
 }
 
 $(document).ready(function() {
@@ -1176,13 +1304,10 @@ $(document).ready(function() {
   $( '.btn-encode' ).on('click', encodeJwt);
   $( '.btn-decode' ).on('click', decodeJwt);
   $( '.btn-verify' ).on('click', verifyJwt);
-  $( '.btn-newkeypair' ).on('click', newKeyPair);
+  $( '.btn-newkey' ).on('click', newKey);
+  $( '.btn-newpayload' ).on('click', newPayload);
 
   $( '.btn-regen' ).on('click', contriveJwt);
-  $( '#sel-variant').on('change', onChangeVariant);
-  $( '#sel-alg').on('change', onChangeAlg);
-  $( '#sel-expiry').on('change', onChangeExpiry);
-  $( '#chk-iat').on('change', onChangeIat);
 
   populateAlgorithmSelectOptions();
 
@@ -1279,23 +1404,24 @@ $(document).ready(function() {
     inboundJwt = window.location.search.replace('?', '');
   }
 
+  retrieveLocalState();
+  applyState();
+
+  $( '#sel-variant').on('change', onChangeVariant);
+  $( '#sel-alg').on('change', onChangeAlg);
+  $( '#sel-expiry').on('change', onChangeExpiry);
+  $( '#chk-iat').on('change', onChangeIat);
+
   if (looksLikeJwt(inboundJwt)) {
-    newKeyPair()
-      .then( _ => {
-        editors.encodedjwt.setValue(inboundJwt);
-        editors.encodedjwt.save();
-        showDecoded();
-        $('#privatekey .CodeMirror-code').addClass('outdated');
-        $('#publickey .CodeMirror-code').addClass('outdated');
-      });
+    maybeNewKey()
+      .then( _ => parseAndDisplayToken(inboundJwt));
   }
-  else {
-    newKeyPair()
+  else if (datamodel.encodedjwt) {
+     maybeNewKey();
+  }
+  else if ( ! datamodel.encodedjwt) {
+    maybeNewKey()
       .then( _ => contriveJwt() );
   }
 
-  retrieveLocalState();
-  applyState();
-  onChangeVariant.call(document.querySelector('#sel-variant'), null);
-  onChangeAlg.call(document.querySelector('#sel-alg'), null);
 });
