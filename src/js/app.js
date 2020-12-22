@@ -745,12 +745,16 @@ function setAlert(html, alertClass) {
   }
   // show()
   $mainalert.removeClass('fade').addClass('show');
-  setTimeout(() => $("#mainalert").addClass('fade').removeClass('show'), 5650);
+  $("#mainalert").css('z-index', 99);
+  setTimeout(() => {
+    $("#mainalert").addClass('fade').removeClass('show');
+    setTimeout(() => $("#mainalert").css('z-index', -1), 800);
+  }, 5650);
 }
 
-function closeAlert(event){
-  //$("#mainalert").toggle();
-  $('#mainalert').removeClass('show').addClass('fade');
+function closeAlert(event) {
+  $("#mainalert").addClass('fade').removeClass('show');
+  setTimeout(() => $("#mainalert").css('z-index', -1), 800);
   return false; // Keep close.bs.alert event from removing from DOM
 }
 
