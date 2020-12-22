@@ -8,7 +8,7 @@ limitations!
 
 ## License
 
-This code is Copyright (c) 2019 Google LLC, and is released under the Apache
+This code is Copyright (c) 2019-2020 Google LLC, and is released under the Apache
 Source License v2.0. For information see the [LICENSE](LICENSE) file.
 
 ## Purpose
