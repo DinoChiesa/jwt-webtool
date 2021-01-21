@@ -29,10 +29,11 @@ This tool has some limitations:
    RSA (RS256, RS384, RS512, PS256, PS384, PS512) or HMAC algorithms (HS256,
    HS384, HS512).
 
- - For encrypted JWT, it handles JWT that use RSA keys, and RSA algorithms
-   (RSA-OAEP, RSA-OAEP-256), as well as the PBES2 algorithms. It does not
-   support other alg types for encrypted JWT, such as "dir" or any of the
-   key-wrapping algorithms. It supports all types of enc.
+ - For encrypted JWT, specifically for key encryption, it handles JWT that use
+   RSA keys and RSA algorithms (RSA-OAEP, RSA-OAEP-256), JWT that use EC keys
+   and various ECDH algorithms (ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A256KW) as well
+   as JWT that use the PBES2 algorithms. It does not currently support the "dir"
+   alg type. It supports all types of enc algorithms.
 
  - In either case (signed or encrypted), this tool does not handle crit headers,
    nor will it extract the certificate from an x5c header. Nor will it check
@@ -114,7 +115,7 @@ npm run build
 
 ## Bugs
 
-* Today, there is limited support for key-encryption algorithms. Missing are:
-  AES based key-wrapping algorithms, direct keys, and Elliptic Curve.
+* The support for key-encryption algorithms is incomplete. Missing are:
+  AES based key-wrapping algorithms, and direct keys.
 
 * It is not possible to use an x509v3 certificate for the source of the public key.

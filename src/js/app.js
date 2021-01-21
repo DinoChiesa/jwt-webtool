@@ -33,8 +33,8 @@ const re = {
           cm : new RegExp('^([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$')
         },
         encrypted: {
-          jwt : new RegExp('^([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$'),
-          cm : new RegExp('^([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$')
+          jwt : new RegExp('^([^\\.]+)\\.([^\\.]*)\\.([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$'),
+          cm :  new RegExp('^([^\\.]+)(\\.)([^\\.]*)(\\.)([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$')
         }
       };
 const sampledata = {
@@ -53,8 +53,9 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
       hmacSigningAlgs = algPermutations(['HS']),
       signingAlgs = [...rsaSigningAlgs, ...ecdsaSigningAlgs, ...hmacSigningAlgs],
       rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'],
-      pbes2KeyEncryptionAlgs = [  "PBES2-HS256+A128KW", "PBES2-HS384+A192KW", "PBES2-HS512+A256KW" ],
-      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs],
+      ecdhKeyEncryptionAlgs = ['ECDH-ES', 'ECDH-ES+A128KW', 'ECDH-ES+A256KW'], // 'ECDH-ES+A192KW' not supported
+      pbes2KeyEncryptionAlgs = ['PBES2-HS256+A128KW', 'PBES2-HS384+A192KW', 'PBES2-HS512+A256KW'],
+      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs, ...ecdhKeyEncryptionAlgs],
       contentEncryptionAlgs = [
         'A128CBC-HS256',
         'A256CBC-HS512',
@@ -62,9 +63,9 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
         'A256GCM'
       ],
       pwComponents = [
-        ['Vaguely', 'Undoubtedly', 'Indisputably'],
+        ['Vaguely', 'Undoubtedly', 'Indisputably', 'Understandably', 'Definitely', 'Possibly'],
         ['Salty', 'Fresh', 'Ursine', 'Excessive', 'Daring', 'Delightful', 'Stable', 'Evolving'],
-        ['Mirror', 'Caliper', 'Postage', 'Return', 'Roadway', 'Passage', 'Statement', 'Toolbox', 'Paradox']
+        ['Mirror', 'Caliper', 'Postage', 'Return', 'Roadway', 'Passage', 'Statement', 'Toolbox', 'Paradox', 'Orbit', 'Bridge']
       ];
 
 let editors = {}; // codemirror editors
@@ -108,14 +109,14 @@ function randomString() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+function randomBoolean() {
+  return Math.floor(Math.random() * 2) == 1;
+}
+
 function randomNumber() {
   let min = (randomBoolean())? 10: 100,
       max = (randomBoolean())? 100000: 1000;
   return Math.floor(Math.random() * (max - min)) + min;
-}
-
-function randomBoolean() {
-  return Math.floor(Math.random() * 2) == 1;
 }
 
 function randomArray() {
@@ -408,6 +409,7 @@ function getAcceptableEncryptionAlgs(key) {
   let keytype = key.kty;
   if (keytype == 'RSA') return rsaKeyEncryptionAlgs;
   if (keytype == 'oct') return pbes2KeyEncryptionAlgs; // eventually extend this to dir, A128KW, etc
+  if (keytype == 'EC') return ecdhKeyEncryptionAlgs;
   return ["NONE"];
 }
 
@@ -573,7 +575,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   }
 
   if (acceptableAlgorithms.indexOf(pHeader.alg) < 0) {
-    reasons.push('the algorithm is not acceptable');
+    reasons.push(`the algorithm is (${pHeader.alg}) not acceptable`);
   }
 
   // 8.1 expired time 'exp' check
@@ -780,9 +782,13 @@ function getGenKeyParams(alg) {
     publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
     hash: {name: "SHA-256"}
   };
+  // signing with EC keys
   if (alg == 'ES256') return { name: "ECDSA", namedCurve: 'P-256' };
   if (alg == 'ES384') return { name: "ECDSA", namedCurve: 'P-384' };
   if (alg == 'ES512') return { name: "ECDSA", namedCurve: 'P-521' };
+  // encrypting with EC keys (ECDH)
+  // TODO: determine if we need to support other keys here
+  if (alg.startsWith('ECDH')) return { name: "ECDH", namedCurve: 'P-256'}; //can be "P-256", "P-384", or "P-521"
   throw new Error('invalid key flavor');
 }
 
@@ -796,12 +802,19 @@ function maybeNewKey() {
   else {
     editors.privatekey.save();
     editors.publickey.save();
-    let privatekey = $('#ta_privatekey').val().trim();
-    let publickey = $('#ta_publickey').val().trim();
+    let privatekey = $('#ta_privatekey').val().trim(),
+        publickey = $('#ta_publickey').val().trim();
     if ( ! privatekey || !publickey) {
       return newKey(null);
     }
   }
+}
+
+function getKeyUse(alg) {
+  //let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
+  if ( ! alg.startsWith('ECDH')) return ["sign", "verify"];
+  return ['deriveKey', 'deriveBits'];
+  //return ['encrypt', 'decrypt'];
 }
 
 function newKey(event) {
@@ -823,11 +836,12 @@ function newKey(event) {
 
   else {
     // this works with either EC or RSA key types
-    let keyUse = ["sign", "verify"], // irrelevant for our purposes (PEM Export)
+    let keyUse = getKeyUse(alg),
         isExtractable = true,
         genKeyParams = getGenKeyParams(alg);
     return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
-      .then(key => window.crypto.subtle.exportKey( "spki", key.publicKey )
+      .then(key =>
+            window.crypto.subtle.exportKey( "spki", key.publicKey )
             .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
             .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
             .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
@@ -835,8 +849,10 @@ function newKey(event) {
         $('#mainalert').removeClass('show').addClass('fade');
         $('#privatekey .CodeMirror-code').removeClass('outdated');
         $('#publickey .CodeMirror-code').removeClass('outdated');
-        editors.publickey.setOption('mode', 'encodedjwt'); // why only publickey, not privatekey?
-    });
+        // why only publickey, not also privatekey?
+        editors.publickey.setOption('mode', 'encodedjwt');
+        return {}; })
+      .catch( e => console.log(e));
   }
 }
 
@@ -846,6 +862,19 @@ function selectAlgorithm(algName) {
     let $option = $('.sel-alg option[value="'+ algName +'"]');
     if ( ! $option.length) {
       $option = $('.sel-alg option[value="??"]');
+    }
+    $option
+      .prop('selected', true)
+      .trigger("change");
+  }
+}
+
+function selectEnc(encName) {
+  let currentlySelectedEnc = $('.sel-enc').find(':selected').text().toLowerCase();
+  if (encName.toLowerCase() != currentlySelectedEnc) {
+    let $option = $('.sel-enc option[value="'+ encName +'"]');
+    if ( ! $option.length) {
+      $option = $('.sel-enc option[value="??"]');
     }
     $option
       .prop('selected', true)
@@ -900,7 +929,8 @@ function showDecoded(skipEncryptedPayload) {
     if (currentlySelectedVariant != "encrypted") {
       $('.sel-variant option[value=Encrypted]')
         .prop('selected', true)
-        .trigger("change");
+        .trigger("change"); //.trigger seems not to work?
+      setTimeout( () => onChangeVariant(), 2);
     }
     // header
     let item = matches[1],
@@ -923,6 +953,9 @@ function showDecoded(skipEncryptedPayload) {
       if (obj.alg) {
         selectAlgorithm(obj.alg);
       }
+      if (obj.enc) {
+        selectEnc(obj.enc);
+      }
 
     }
     catch (e) {
@@ -938,20 +971,49 @@ function showDecoded(skipEncryptedPayload) {
   setAlert("That does not appear to be a JWT");
 }
 
+function populateEncSelectOptions() {
+  $.each(contentEncryptionAlgs, (val, text) =>
+         $('.sel-enc').append( $('<option></option>').val(text).html(text) ));
+}
+
 function populateAlgorithmSelectOptions() {
-  let variant = $('.sel-variant').find(':selected').text().toLowerCase();
-  $('.sel-alg').find('option').remove();
+  let variant = $('.sel-variant').find(':selected').text().toLowerCase(),
+      $selAlg = $('.sel-alg');
+  $selAlg.find('option').remove();
   let a = (variant == 'signed') ? signingAlgs : keyEncryptionAlgs;
   $.each(a, (val, text) =>
-         $('.sel-alg').append( $('<option></option>').val(text).html(text) ));
+         $selAlg.append( $('<option></option>').val(text).html(text) ));
+
+  let headerObj = getHeaderFromForm();
+  if (headerObj && headerObj.alg) {
+    // select that one
+    let $option =
+      $selAlg.find("option[value='"+headerObj.alg+"']");
+    if ($option.length) {
+        $option.prop('selected', 'selected');
+      saveSetting('sel-alg-' + variant, headerObj.alg);
+    }
+    else {
+    // pull from data model and select that
+    let value = datamodel['sel-alg-' + variant];
+    $selAlg.find("option[value='"+value+"']").prop('selected', 'selected');
+    }
+  }
+  else {
+    // pull from data model and select that
+    let value = datamodel['sel-alg-' + variant];
+    $selAlg.find("option[value='"+value+"']").prop('selected', 'selected');
+  }
   // store currently selected alg:
   //$( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
-  $( '.sel-alg').data("prev", 'NONE');
-  // $('.sel-alg').trigger('change'); // not sure why this does not work
 
+  $('.sel-alg').data("prev", 'NONE'); // do we always want this?
+
+  // $('.sel-alg').trigger('change'); // not sure why this does not work
   //onChangeAlg.call(document.getElementsByClassName('sel-alg')[0], null);
   // dino - 20201222-1115 - maybe
   //onChangeAlg.call(document.querySelector('.sel-alg'), null);
+  setTimeout( () => onChangeAlg(), 2);
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -962,7 +1024,6 @@ function keysAreCompatible(alg1, alg2) {
   if (prefix1 == 'ES') return alg1 == alg2;
   return false;
 }
-
 
 function changeSymmetricKeyCoding(event) {
   let $this = $(this),
@@ -1011,7 +1072,7 @@ function checkSymmetryChange(newalg, oldalg) {
   }
   else {
     //$('.btn-newkeypair').show();
-    if (newPrefix == 'RS' || newPrefix == 'PS' || newPrefix == 'ES') {
+    if (newPrefix == 'RS' || newPrefix == 'PS' || newPrefix == 'ES' || newPrefix == 'EC') {
       $('#privatekey').show();
       $('#publickey').show();
       $('#symmetrickey').hide();
@@ -1035,8 +1096,43 @@ function onChangeExpiry(event) {
   saveSetting('sel-expiry', selectedExpiry);
 }
 
+function getHeaderFromForm() {
+  let headerText = $('#token-decoded-header').val();
+  try {
+    return JSON.parse(headerText);
+  }
+  catch (e) {
+    // invalid header
+    console.log('invalid header');
+  }
+}
+
+function onChangeEnc(event) {
+  let $this = $('#sel-enc'),
+      newSelection = $this.find(':selected').text(),
+      previousSelection = $this.data('prev'),
+      headerObj = null;
+
+  if ( ! initialized()) { return ; }
+  if (newSelection != previousSelection) {
+
+    // apply newly selected enc to the displayed header
+    editors['token-decoded-header'].save();
+    try {
+      headerObj = getHeaderFromForm();
+      headerObj.enc = newSelection;
+      editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+    }
+    catch (e) {
+      /* gulp */
+      console.log('while updating header enc', e);
+    }
+  }
+}
+
 function onChangeAlg(event) {
-  let $this = $(this),
+  let $this = $('#sel-alg'),
+      //$this = $(this),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
       headerObj = null;
@@ -1050,14 +1146,14 @@ function onChangeAlg(event) {
 
     // apply newly selected alg to the displayed header
     editors['token-decoded-header'].save();
-    let headerText = $('#token-decoded-header').val();
     try {
-      headerObj = JSON.parse(headerText);
+      headerObj = getHeaderFromForm();
       headerObj.alg = newSelection;
       editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
     }
-    catch(e) {
+    catch (e) {
       /* gulp */
+      console.log('while updating header alg', e);
     }
 
     if ( ! keysAreCompatible(newSelection, previousSelection)) {
@@ -1080,36 +1176,45 @@ function onChangeAlg(event) {
   else {
     // nop
   }
-  saveSetting('sel-alg', newSelection);
+  let variant = $('#sel-variant').find(':selected').text().toLowerCase();
+  saveSetting('sel-alg-' + variant, newSelection);
 }
 
 function onChangeVariant(event) {
   // change signed to encrypted or vice versa
-  let $this = $(this),
+  let $this = $('#sel-variant'),
+      //$this = $(this),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
       priorAlgSelection = $('.sel-alg').data('prev');
 
   editors['token-decoded-header'].save();
-  let headerText = $('#token-decoded-header').val();
+
   if (newSelection != previousSelection) {
     try {
-      let headerObj = JSON.parse(headerText);
+      let headerObj = getHeaderFromForm();
       if (newSelection == 'Encrypted') {
         // swap in alg and enc
-        headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'}); // not always !
-        headerObj.enc = pickContentEncryptionAlg();
+        if ( ! headerObj.alg) {
+          headerObj.alg = pickKeyEncryptionAlg({kty:'RSA'}); // not always !
+        }
+        if ( ! headerObj.enc) {
+          headerObj.enc = pickContentEncryptionAlg();
+        }
+        $('#sel-enc').show();
         $('#privatekey').show();
         $('#publickey').show();
-        $('#symmetrickey').hide();
+        $('#symmetrickey').hide(); // why presume asymmetric alg?
       }
       else {
+        $('#sel-enc').hide(); // not used for signing
         // select an appropriate alg and remove enc
         headerObj.alg = pickSigningAlg({kty:'RSA'});
         // these fields can never be used with signed JWT
         delete headerObj.enc;
         delete headerObj.p2s;
         delete headerObj.p2c;
+        delete headerObj.epk;
         // populateAlgorithmSelectOptions() - called below - will trigger the
         // onChangeAlg fn which will do the right thing for symmetry change, etc.
       }
@@ -1247,7 +1352,7 @@ function applyState() {
       if (value) {
         var $item = $('#' + key);
         if (key.startsWith('sel-alg-')) {
-          // selection
+          // selection of alg, stored separately for signing and encrypting
           let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase(),
               storedVariant = key.substr(8);
           if (storedVariant == currentlySelectedVariant) {
@@ -1300,6 +1405,7 @@ $(document).ready(function() {
   //$( '.btn-regen' ).on('click', contriveJwt);
 
   populateAlgorithmSelectOptions();
+  populateEncSelectOptions();
 
   $( '.sel-symkey-coding').on('change', changeSymmetricKeyCoding);
 
@@ -1399,6 +1505,7 @@ $(document).ready(function() {
 
   $( '#sel-variant').on('change', onChangeVariant);
   $( '#sel-alg').on('change', onChangeAlg);
+  $( '#sel-enc').on('change', onChangeEnc);
   $( '#sel-expiry').on('change', onChangeExpiry);
   $( '#chk-iat').on('change', onChangeIat);
 

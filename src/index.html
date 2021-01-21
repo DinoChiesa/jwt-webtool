@@ -46,8 +46,11 @@
             <option value='Signed'>Signed</option>
             <option value='Encrypted'>Encrypted</option>
           </select>
-          <select class="form-control form-control-sm sel-alg" id='sel-alg'>
+          <select class="form-control form-control-sm sel-alg" title='alg' id='sel-alg'>
             <!-- options will be dynamically added -->
+          </select>
+          <select class="form-control form-control-sm sel-enc" title='enc' id='sel-enc'>
+            <!-- this select will show only with variant = encrypted, options will be added at runtime -->
           </select>
           <button type="button" class="btn btn-outline-secondary btn-lg btn-encode" title='encode and sign a JWT'>
             <span class="oi oi-arrow-thick-left"></span>
