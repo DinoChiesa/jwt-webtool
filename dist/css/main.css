@@ -8219,11 +8219,13 @@ textarea {
   margin: 2px 0;
   border-width: 0; }
   .panel-center > button {
-    margin-top: 14px;
+    margin-top: 14px; }
+  .panel-center > * {
     width: 140px; }
   .panel-center > select:not(:first-child) {
-    margin-top: 14px;
-    width: 140px; }
+    margin-top: 14px; }
+  .panel-center .form-control-sm {
+    padding-left: 0.25rem; }
 
 .panel-right {
   min-width: 452px;

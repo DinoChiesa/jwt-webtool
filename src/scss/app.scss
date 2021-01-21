@@ -80,11 +80,15 @@ textarea {
   border-width: 0;
   > button {
     margin-top: 14px;
+  }
+  > * {
     width:140px;
   }
   > select:not(:first-child) {
     margin-top: 14px;
-    width:140px;
+  }
+  .form-control-sm {
+    padding-left: 0.25rem;
   }
 }
 

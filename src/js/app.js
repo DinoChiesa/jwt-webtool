@@ -11,6 +11,7 @@ const html5AppId = '2084664E-BF2B-4C76-BD5F-1087502F580B';
 const storage = LocalStorage.init(html5AppId);
 let datamodel = {
       'sel-variant': '',
+      'sel-enc': '',
       'encodedjwt' : '',
       'ta_publickey' : '',
       'ta_privatekey' : '',
@@ -422,7 +423,7 @@ function pickKeyEncryptionAlg(key) {
 }
 
 function pickContentEncryptionAlg() {
-  return selectRandomValue(contentEncryptionAlgs);
+  return datamodel['sel-enc'] || selectRandomValue(contentEncryptionAlgs);
 }
 
 function isSymmetric(alg) {
@@ -1122,6 +1123,7 @@ function onChangeEnc(event) {
       headerObj = getHeaderFromForm();
       headerObj.enc = newSelection;
       editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+      saveSetting('sel-enc', newSelection);
     }
     catch (e) {
       /* gulp */
@@ -1339,9 +1341,7 @@ function saveSetting(key, value) {
   if (key == 'sel-alg') {
     key = key + '-' + datamodel['sel-variant'].toLowerCase();
   }
-  else {
-    datamodel[key] = value;
-  }
+  datamodel[key] = value;
   storage.store(key, value);
 }
 
