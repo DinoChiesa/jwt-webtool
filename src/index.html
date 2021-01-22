@@ -177,7 +177,7 @@
         <ol>
           <li>Information that you paste here, including JWT and keys, whether secret, private or public, <strong>never leaves your browser</strong>. Information from the decoding or decrypting also stays in the browser. This page does use LocalStorage. But nothing gets posted to a server. Still, you should take care. It's good hygiene to never submit private information, production private keys, or production credentials or tokens to a website you do not own or trust.</li>
           <li>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</li>
-          <li>For generating and verifying signed JWT, this page supports RSA, HMAC, or ECDSA algorithms. For generating or verifying encrypted JWT, it supports RSA keys with RSA-OAEP or RSA-OAEP-256 key encryption, EC keys with various ECDH key encryption, as well as PBES2 key encryption algorithms. For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
+          <li>For generating and verifying signed JWT, this page supports RSA, HMAC, or ECDSA algorithms. For generating or verifying encrypted JWT, it supports RSA keys with RSA-OAEP or RSA-OAEP-256 key encryption, EC keys with various ECDH key encryption (always with the P-256 curve), as well as PBES2 key encryption algorithms. For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
           <li>to use this, first select the variant of JWT: either Signed or Encrypted. Then select the algorithm.</li>
           <li><p style='margin-bottom:0;'>For Signed JWT</p>
             <ol type='a'>

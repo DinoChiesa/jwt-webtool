@@ -118,4 +118,6 @@ npm run build
 * The support for key-encryption algorithms is incomplete. Missing are:
   AES based key-wrapping algorithms, and direct keys.
 
+* When using ECDH encryption, the tool always chooses the P-256 curve.
+
 * It is not possible to use an x509v3 certificate for the source of the public key.
