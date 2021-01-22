@@ -86,18 +86,15 @@ CodeMirror.defineSimpleMode("encodedjwt", {
   ]
 });
 
-function quantify(quantity, term) {
-  let termIsPlural = term.endsWith('s');
-  let quantityIsPlural = (quantity != 1 && quantity != -1);
+const quantify = (quantity, term) => {
+        let termIsPlural = term.endsWith('s'),
+            quantityIsPlural = (quantity != 1 && quantity != -1);
 
-  if (termIsPlural && !quantityIsPlural)
-    return term.slice(0, -1);
+        if (termIsPlural && !quantityIsPlural)
+          return term.slice(0, -1);
 
-  if ( ! termIsPlural && quantityIsPlural)
-    return term + 's';
-
-  return term;
-}
+        return ( ! termIsPlural && quantityIsPlural) ?  term + 's': term;
+      };
 
 function reformIndents(s) {
   let s2 = s.split(new RegExp('\n', 'g'))
@@ -106,19 +103,15 @@ function reformIndents(s) {
   return s2.trim();
 }
 
-function randomString() {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
+const randomString = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
-function randomBoolean() {
-  return Math.floor(Math.random() * 2) == 1;
-}
+const randomBoolean = () => Math.floor(Math.random() * 2) == 1;
 
-function randomNumber() {
-  let min = (randomBoolean())? 10: 100,
-      max = (randomBoolean())? 100000: 1000;
-  return Math.floor(Math.random() * (max - min)) + min;
-}
+const randomNumber = () => {
+        let min = (randomBoolean())? 10: 100,
+            max = (randomBoolean())? 100000: 1000;
+        return Math.floor(Math.random() * (max - min)) + min;
+      };
 
 function randomArray() {
   let n = Math.floor(Math.random() * 4) + 1, // at least 1 element
@@ -402,9 +395,9 @@ function getAcceptableSigningAlgs(key) {
   return ["NONE"];
 }
 
-function isAppropriateAlg(alg, key) {
-  return getAcceptableSigningAlgs(key).indexOf(alg)>=0;
-}
+const isAppropriateSigningAlg = (alg, key) => getAcceptableSigningAlgs(key).indexOf(alg)>=0;
+
+const isAppropriateEncryptingAlg = (alg, key) => getAcceptableEncryptionAlgs(key).indexOf(alg)>=0;
 
 function getAcceptableEncryptionAlgs(key) {
   let keytype = key.kty;
@@ -414,21 +407,13 @@ function getAcceptableEncryptionAlgs(key) {
   return ["NONE"];
 }
 
-function pickSigningAlg(key) {
-  return selectRandomValue(getAcceptableSigningAlgs(key));
-}
+const pickSigningAlg = (key) => selectRandomValue(getAcceptableSigningAlgs(key));
 
-function pickKeyEncryptionAlg(key) {
-  return selectRandomValue(getAcceptableEncryptionAlgs(key));
-}
+const pickKeyEncryptionAlg = (key) => selectRandomValue(getAcceptableEncryptionAlgs(key));
 
-function pickContentEncryptionAlg() {
-  return datamodel['sel-enc'] || selectRandomValue(contentEncryptionAlgs);
-}
+const pickContentEncryptionAlg = () => datamodel['sel-enc'] || selectRandomValue(contentEncryptionAlgs);
 
-function isSymmetric(alg) {
-  return alg.startsWith('HS');
-}
+const isSymmetric = (alg) => alg.startsWith('HS');
 
 function checkKeyLength(alg, keybuffer) {
   let length = keybuffer.byteLength;
@@ -490,7 +475,6 @@ function encodeJwt(event) {
 
       let keyBuffer = Buffer.from($('#ta_symmetrickey').val(), 'utf-8');
       p = jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: 'enc' });
-
     }
     else {
       p = getPublicKey(header);
@@ -498,6 +482,9 @@ function encodeJwt(event) {
 
     p = p
       .then( encryptingKey => {
+        if ( ! isAppropriateEncryptingAlg(header.alg, encryptingKey)) {
+          throw new Error('the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?');
+        }
         let encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
             // createEncrypt will automatically inject the kid, unless I pass reference:false
             cipher = jose.JWE.createEncrypt(encryptOptions, [{key:encryptingKey, reference:false}]);
@@ -518,8 +505,8 @@ function encodeJwt(event) {
     p = p
     .then( signingKey => {
       if (!header.alg) { header.alg = pickSigningAlg(signingKey); }
-      if ( ! isAppropriateAlg(header.alg, signingKey)) {
-        throw new Error('the alg specified in the header is not compatible with the key');
+      if ( ! isAppropriateSigningAlg(header.alg, signingKey)) {
+        throw new Error('the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?');
       }
       let signOptions = {
             alg: header.alg,
@@ -543,11 +530,11 @@ function encodeJwt(event) {
         // re-format the decoded JSON, incl added or modified properties like kid, alg
         showDecoded(true);
         editors['token-decoded-payload'].setValue(JSON.stringify(payload, null, 2));
-        setAlert("encrypted JWT", 'info');
+        setAlert("an encrypted JWT", 'info');
       }
       else {
         showDecoded();
-        setAlert("signed JWT", 'info');
+        setAlert("a signed JWT", 'info');
       }
     })
     .then(() => {
@@ -615,7 +602,6 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   }
   return reasons;
 }
-
 
 function verifyJwt(event) {
   editors.encodedjwt.save();
@@ -732,7 +718,6 @@ function verifyJwt(event) {
   }
 }
 
-
 function setAlert(html, alertClass) {
   let buttonHtml = '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
     ' <span aria-hidden="true">&times;</span>\n' +
@@ -789,7 +774,8 @@ function getGenKeyParams(alg) {
   if (alg == 'ES512') return { name: "ECDSA", namedCurve: 'P-521' };
   // encrypting with EC keys (ECDH)
   // TODO: determine if we need to support other keys here
-  if (alg.startsWith('ECDH')) return { name: "ECDH", namedCurve: 'P-256'}; //can be "P-256", "P-384", or "P-521"
+  // TODO: determine if we want to support other curves. can be "P-256", "P-384", or "P-521"
+  if (alg.startsWith('ECDH')) return { name: "ECDH", namedCurve: 'P-256'};
   throw new Error('invalid key flavor');
 }
 
@@ -811,12 +797,7 @@ function maybeNewKey() {
   }
 }
 
-function getKeyUse(alg) {
-  //let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
-  if ( ! alg.startsWith('ECDH')) return ["sign", "verify"];
-  return ['deriveKey', 'deriveBits'];
-  //return ['encrypt', 'decrypt'];
-}
+const getKeyUse = (alg) => (alg.startsWith('ECDH')) ? ['deriveKey', 'deriveBits'] : ['sign', 'verify'] ;
 
 function newKey(event) {
   let alg = $('.sel-alg').find(':selected').text();
