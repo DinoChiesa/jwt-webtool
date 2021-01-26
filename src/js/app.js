@@ -877,6 +877,7 @@ function showDecoded(skipEncryptedPayload) {
       $('.sel-variant option[value=Signed]')
         .prop('selected', true)
         .trigger("change");
+      setTimeout( () => onChangeVariant(), 2);
     }
 
     let flavors = ['header','payload']; // cannot decode signature
