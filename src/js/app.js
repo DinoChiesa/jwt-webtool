@@ -795,6 +795,7 @@ function maybeNewKey() {
       return newKey(null);
     }
   }
+  return Promise.resolve({});
 }
 
 const getKeyUse = (alg) => (alg.startsWith('ECDH')) ? ['deriveKey', 'deriveBits'] : ['sign', 'verify'] ;
@@ -814,28 +815,27 @@ function newKey(event) {
       $('#ta_symmetrickey').val(keyString);
       saveSetting('ta_symmetrickey', keyString); // for reload
     }
+    return Promise.resolve({});
   }
 
-  else {
-    // this works with either EC or RSA key types
-    let keyUse = getKeyUse(alg),
-        isExtractable = true,
-        genKeyParams = getGenKeyParams(alg);
-    return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
-      .then(key =>
-            window.crypto.subtle.exportKey( "spki", key.publicKey )
-            .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
-            .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
-            .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
-      .then( () => {
-        $('#mainalert').removeClass('show').addClass('fade');
-        $('#privatekey .CodeMirror-code').removeClass('outdated');
-        $('#publickey .CodeMirror-code').removeClass('outdated');
-        // why only publickey, not also privatekey?
-        editors.publickey.setOption('mode', 'encodedjwt');
-        return {}; })
-      .catch( e => console.log(e));
-  }
+  // this works with either EC or RSA key types
+  let keyUse = getKeyUse(alg),
+  isExtractable = true,
+  genKeyParams = getGenKeyParams(alg);
+  return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
+    .then(key =>
+          window.crypto.subtle.exportKey( "spki", key.publicKey )
+          .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
+          .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
+          .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
+    .then( () => {
+      $('#mainalert').removeClass('show').addClass('fade');
+      $('#privatekey .CodeMirror-code').removeClass('outdated');
+      $('#publickey .CodeMirror-code').removeClass('outdated');
+      // why only publickey, not also privatekey?
+      editors.publickey.setOption('mode', 'encodedjwt');
+      return {}; })
+    .catch( e => console.log(e));
 }
 
 function selectAlgorithm(algName) {
@@ -870,6 +870,8 @@ function showDecoded(skipEncryptedPayload) {
   let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
       matches = re.signed.jwt.exec(tokenString);
   saveSetting('encodedjwt', tokenString); // for reload
+  $('#panel_encoded > p > span.length').text('(' + tokenString.length + ' bytes)');
+
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", 'info');
     let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
@@ -1081,12 +1083,13 @@ function onChangeExpiry(event) {
 
 function getHeaderFromForm() {
   let headerText = $('#token-decoded-header').val();
-  try {
-    return JSON.parse(headerText);
-  }
-  catch (e) {
-    // invalid header
-    console.log('invalid header');
+  if (headerText) {
+    try {
+      return JSON.parse(headerText);
+    }
+    catch (e) {
+      console.log('invalid header');
+    }
   }
 }
 
@@ -1123,45 +1126,47 @@ function onChangeAlg(event) {
 
   if ( ! initialized()) { return ; }
 
-  maybeNewKey();
-  if (newSelection != previousSelection) {
+  maybeNewKey()
+    .then( _ => {
+      if (newSelection != previousSelection) {
 
-    checkSymmetryChange(newSelection, previousSelection);
+        checkSymmetryChange(newSelection, previousSelection);
 
-    // apply newly selected alg to the displayed header
-    editors['token-decoded-header'].save();
-    try {
-      headerObj = getHeaderFromForm();
-      headerObj.alg = newSelection;
-      editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
-    }
-    catch (e) {
-      /* gulp */
-      console.log('while updating header alg', e);
-    }
+        // apply newly selected alg to the displayed header
+        editors['token-decoded-header'].save();
+        try {
+          headerObj = getHeaderFromForm();
+          headerObj.alg = newSelection;
+          editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+        }
+        catch (e) {
+          /* gulp */
+          console.log('while updating header alg', e);
+        }
 
-    if ( ! keysAreCompatible(newSelection, previousSelection)) {
-      $('#privatekey .CodeMirror-code').addClass('outdated');
-      $('#publickey .CodeMirror-code').addClass('outdated');
-    }
-    $this.data('prev', newSelection);
-  }
-  if (newSelection.startsWith('PB')) {
-    if (headerObj){
-      $('#ta_pbkdf2_iterations').val(headerObj.p2c);
-      $('#ta_pbkdf2_salt').val(headerObj.p2s);
-      // always base64
-      $('.sel-symkey-pbkdf2-salt-coding option[value="Base64"]')
-        .prop('selected', true)
-        .trigger("change");
-      // user can change these but it probably won't work
-    }
-  }
-  else {
-    // nop
-  }
-  let variant = $('#sel-variant').find(':selected').text().toLowerCase();
-  saveSetting('sel-alg-' + variant, newSelection);
+        if ( ! keysAreCompatible(newSelection, previousSelection)) {
+          $('#privatekey .CodeMirror-code').addClass('outdated');
+          $('#publickey .CodeMirror-code').addClass('outdated');
+        }
+        $this.data('prev', newSelection);
+      }
+      if (newSelection.startsWith('PB')) {
+        if (headerObj){
+          $('#ta_pbkdf2_iterations').val(headerObj.p2c);
+          $('#ta_pbkdf2_salt').val(headerObj.p2s);
+          // always base64
+          $('.sel-symkey-pbkdf2-salt-coding option[value="Base64"]')
+            .prop('selected', true)
+            .trigger("change");
+          // user can change these but it probably won't work
+        }
+      }
+      else {
+        // nop
+      }
+      let variant = $('#sel-variant').find(':selected').text().toLowerCase();
+      saveSetting('sel-alg-' + variant, newSelection);
+    });
 }
 
 function onChangeVariant(event) {
