@@ -1371,6 +1371,16 @@ function applyState() {
     });
 }
 
+function reformKeyNewlines(keytype /* publickey, privatekey */) {
+  editors[keytype].save();
+  let fieldvalue = $('#ta_' + keytype).val()
+    .replace(/\\n/g, '\n')
+    .trim();
+  $('#ta_' + keytype).val(fieldvalue);
+  editors[keytype].save();
+  return fieldvalue;
+}
+
 function parseAndDisplayToken(token) {
   editors.encodedjwt.setValue(token);
   editors.encodedjwt.save();
@@ -1430,8 +1440,7 @@ $(document).ready(function() {
     editors[keytype].on('inputRead', function(cm, event) {
       if (event.origin == 'paste') {
         setTimeout(function() {
-          editors[keytype].save();
-          let fieldvalue = $('#ta_' + keytype).val();
+          let fieldvalue = reformKeyNewlines(keytype);
           if (looksLikePem(fieldvalue)) {
             editors[keytype].setOption('mode', 'encodedjwt');
             updateKeyValue(flavor, reformIndents(fieldvalue));
