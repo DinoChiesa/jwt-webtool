@@ -8220,6 +8220,8 @@ textarea {
   border-width: 0; }
   .panel-center > button {
     margin-top: 14px; }
+  .panel-center #chk-iat {
+    width: auto; }
   .panel-center > * {
     width: 140px; }
   .panel-center > select:not(:first-child) {
