@@ -908,7 +908,6 @@ function showDecoded(skipEncryptedPayload) {
 
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
-    // can decode the header. Need to decrypt to 'decode' the payload.
     setAlert("an encrypted JWT", 'info');
     let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
     if (currentlySelectedVariant != "encrypted") {
@@ -917,23 +916,22 @@ function showDecoded(skipEncryptedPayload) {
         .trigger("change"); //.trigger seems not to work?
       setTimeout( () => onChangeVariant(), 2);
     }
-    // header
-    let item = matches[1],
-        json = atob(item),  // base64-decode (maybe not suitable for JWT?)
-        elementId = 'token-decoded-header',
-        flavor = 'header';
+    // Display the decoded header.
+    // Not possible to 'decode' the payload; it requires decryption.
     try {
-      let obj = JSON.parse(json),
+      let item = matches[1],
+          json = atob(item),  // base64-decode
+          obj = JSON.parse(json),
           prettyPrintedJson = JSON.stringify(obj,null,2),
           flatJson = JSON.stringify(obj);
-      editors[elementId].setValue(prettyPrintedJson);
-      $('#' + flavor + ' > p > .length').text('(' + flatJson.length + '' + 'bytes)');
+      editors['token-decoded-header'].setValue(prettyPrintedJson);
+      $('#header > p > .length').text('(' + flatJson.length + '' + 'bytes)');
       if ( ! skipEncryptedPayload) {
-        // must decrypt the ciphertext payload to display claims
-        elementId = 'token-decoded-payload';
-        flavor = 'payload';
-        editors[elementId].setValue('?ciphertext?');
-        $('#' + flavor + ' > p > .length').text('( ' + matches[2].length + ' bytes)');
+        // Just display a fixed value.
+        // Must decrypt the ciphertext payload to display claims,
+        // and it's not possible to decrypt just now.
+        editors['token-decoded-payload'].setValue('?ciphertext?');
+        $('#payload > p > .length').text('( ' + matches[2].length + ' bytes)');
       }
       if (obj.alg) {
         selectAlgorithm(obj.alg);
@@ -941,12 +939,11 @@ function showDecoded(skipEncryptedPayload) {
       if (obj.enc) {
         selectEnc(obj.enc);
       }
-
     }
     catch (e) {
       // probably not json
-      setAlert("the "+ flavor +" may not be valid JSON", 'info');
-      //editors[elementId].setValue(json);
+      setAlert("the header may not be valid JSON", 'info');
+      editors['token-decoded-header'].setValue('??');
     }
 
     // do not attempt decrypt here
