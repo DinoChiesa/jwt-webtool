@@ -63,19 +63,27 @@
           </button>
           <div style='font-size:60%; margin-top:20px;'
                title='these apply only when generating JWT'>overrides:</div>
-          <div style='font-size:60%; margin-bottom:6px;'>exp:</div>
-          <select class="form-control form-control-sm sel-expiry" id='sel-expiry' title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
-            <option value='do nothing'>do nothing</option>
-            <option value='no expiry'>no expiry</option>
-            <option value='10 seconds'>10 seconds</option>
-            <option value='60 seconds'>60 seconds</option>
-            <option value='5 minutes'>5 minutes</option>
-            <option value='10 minutes'>10 minutes</option>
-            <option value='30 minutes'>30 minutes</option>
-            <option value='60 minutes'>60 minutes</option>
-          </select>
-          <span style='font-size:60%; margin-right:6px;'>iat:</span>
-          <input id='chk-iat' type='checkbox' />
+          <div style='font-size:60%; margin-bottom:6px;'>
+            <span>exp:</span>
+            <select class="form-control form-control-sm sel-expiry" id='sel-expiry' title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
+              <option value='do nothing'>do nothing</option>
+              <option value='no expiry'>no expiry</option>
+              <option value='10 seconds'>10 seconds</option>
+              <option value='60 seconds'>60 seconds</option>
+              <option value='5 minutes'>5 minutes</option>
+              <option value='10 minutes'>10 minutes</option>
+              <option value='30 minutes'>30 minutes</option>
+              <option value='60 minutes'>60 minutes</option>
+            </select>
+          </div>
+          <div style='font-size:60%; margin-right:6px;'>
+            <span>iat:</span>
+            <input id='chk-iat' type='checkbox' />
+          </div>
+          <div style='font-size:60%; margin-right:6px;'>
+            <span>typ:</span>
+            <input id='chk-typ' type='checkbox' />
+            </div>
         </div>
 
         <div class='panel panel-right clearfix' id='panel_decoded'>

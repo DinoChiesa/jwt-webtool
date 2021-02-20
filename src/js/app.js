@@ -16,9 +16,10 @@ let datamodel = {
       'ta_publickey' : '',
       'ta_privatekey' : '',
       'ta_symmetrickey' : '',
-      'sel-expiry': 10,
       'sel-symkey-coding' : '',
-      'chk-iat': true
+      'sel-expiry': 10,
+      'chk-iat': true,
+      'chk-typ': true
     };
 
 require('codemirror/mode/javascript/javascript');
@@ -85,6 +86,8 @@ CodeMirror.defineSimpleMode("encodedjwt", {
     }
   ]
 });
+
+const curry = (fn, arg1) => (...args) => fn.apply(this,[arg1].concat(args));
 
 const quantify = (quantity, term) => {
         let termIsPlural = term.endsWith('s'),
@@ -443,7 +446,9 @@ function encodeJwt(event) {
   }
 
   let {header, payload} = values;
-  if (!header.typ) { header.typ = "JWT"; }
+  if (!header.typ && $('#chk-typ').prop('checked')) {
+    header.typ = "JWT";
+  }
 
   // optionally set expiry in payload
   let desiredExpiryOverride = $('.sel-expiry').find(':selected').text().toLowerCase();
@@ -545,10 +550,6 @@ function encodeJwt(event) {
       console.log(e.stack);
       setAlert(e);
     });
-}
-
-function decodeJwt(event) {
-  showDecoded();
 }
 
 function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
@@ -1067,9 +1068,9 @@ function initialized() {
   return !!editors['token-decoded-header'];
 }
 
-function onChangeIat(event) {
-  let wantIat = $('#chk-iat').prop('checked');
-  saveSetting('chk-iat', String(wantIat));
+function onChangeCheckbox(id, event) {
+  let booleanValue = $('#' + id).prop('checked');
+  saveSetting(id, String(booleanValue));
 }
 
 function onChangeExpiry(event) {
@@ -1313,7 +1314,7 @@ function retrieveLocalState() {
     .forEach(key => {
       var value = storage.get(key);
       if (key.startsWith('chk-')) {
-        datamodel[key] = Boolean(value);
+        datamodel[key] = (value == 'true');
       }
       else {
         datamodel[key] = value;
@@ -1368,15 +1369,17 @@ function applyState() {
     });
 }
 
-function reformKeyNewlines(keytype /* publickey, privatekey */) {
-  editors[keytype].save();
-  let fieldvalue = $('#ta_' + keytype).val()
-    .replace(/\\n/g, '\n')
+function fixupTextInEditor(replacer, editor) {
+  editor.save();
+  let fieldvalue = replacer(editor.getValue())
     .trim();
-  $('#ta_' + keytype).val(fieldvalue);
-  editors[keytype].save();
+  editor.setValue(fieldvalue);
+  editor.save();
   return fieldvalue;
 }
+
+const reformNewlines = curry(fixupTextInEditor, s => s.replace(/\\n/g, '\n'));
+const removeNewlines = curry(fixupTextInEditor, s => s.replace(/\s/g, ''));
 
 function parseAndDisplayToken(token) {
   editors.encodedjwt.setValue(token);
@@ -1390,7 +1393,7 @@ $(document).ready(function() {
   $( '#version_id').text(BUILD_VERSION);
   $( '.btn-copy' ).on('click', copyToClipboard);
   $( '.btn-encode' ).on('click', encodeJwt);
-  $( '.btn-decode' ).on('click', decodeJwt);
+  $( '.btn-decode' ).on('click', showDecoded);
   $( '.btn-verify' ).on('click', verifyJwt);
   $( '.btn-newkey' ).on('click', newKey);
   $( '.btn-newpayload' ).on('click', newPayload);
@@ -1421,7 +1424,10 @@ $(document).ready(function() {
        text: array of pasted strings
        } */
     if (event.origin == 'paste') {
-      setTimeout(decodeJwt, 220);
+      setTimeout(() => {
+        removeNewlines(editors.encodedjwt);
+        showDecoded();
+      }, 220);
     }
   });
   //editors.encodedjwt.on('renderLine', decorateEncodedToken);
@@ -1437,7 +1443,7 @@ $(document).ready(function() {
     editors[keytype].on('inputRead', function(cm, event) {
       if (event.origin == 'paste') {
         setTimeout(function() {
-          let fieldvalue = reformKeyNewlines(keytype);
+          let fieldvalue = reformNewlines(editors[keytype]);
           if (looksLikePem(fieldvalue)) {
             editors[keytype].setOption('mode', 'encodedjwt');
             updateKeyValue(flavor, reformIndents(fieldvalue));
@@ -1500,7 +1506,8 @@ $(document).ready(function() {
   $( '#sel-alg').on('change', onChangeAlg);
   $( '#sel-enc').on('change', onChangeEnc);
   $( '#sel-expiry').on('change', onChangeExpiry);
-  $( '#chk-iat').on('change', onChangeIat);
+  $( '#chk-iat').on('change', curry(onChangeCheckbox, 'chk-iat'));
+  $( '#chk-typ').on('change', curry(onChangeCheckbox, 'chk-typ'));
 
   if (looksLikeJwt(inboundJwt)) {
     maybeNewKey()
