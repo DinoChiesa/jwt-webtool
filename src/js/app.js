@@ -1229,7 +1229,8 @@ function onChangeVariant(event) {
   saveSetting('sel-variant', newSelection);
 }
 
-function contrivePayload() {
+function contriveJson(segment) {
+  if (segment == 'payload') {
     let nowSeconds = Math.floor((new Date()).valueOf() / 1000),
         sub = selectRandomValue(sampledata.names),
         aud = selectRandomValueExcept(sampledata.names, sub),
@@ -1244,10 +1245,9 @@ function contrivePayload() {
     let propname = selectRandomValue(sampledata.props);
     payload[propname] = generateRandomValue(null, null, propname);
   }
-  return payload;
-}
+    return payload;
+  }
 
-function contriveHeader() {
   let header = { alg : $('.sel-alg').find(':selected').text() };
   if ( keyEncryptionAlgs.indexOf(header.alg) >=0) {
     if ( ! header.enc ) {
@@ -1265,21 +1265,15 @@ function contriveHeader() {
   return header;
 }
 
-function newPayload(event) {
-  let payload = contrivePayload(),
-      elementId = 'token-decoded-payload';
-  editors[elementId].setValue(JSON.stringify(payload,null,2));
-}
-
-function newHeader(event) {
-  let payload = contriveHeader(),
-      elementId = 'token-decoded-header';
-  editors[elementId].setValue(JSON.stringify(payload,null,2));
+function newJson(segment, event) {
+  let jsonBlob = contriveJson(segment),
+      elementId = `token-decoded-${segment}` ;
+  editors[elementId].setValue(JSON.stringify(jsonBlob,null,2));
 }
 
 function contriveJwt(event) {
-  let payload = contrivePayload(),
-      header = contriveHeader();
+  let payload = contriveJson('payload'),
+      header = contriveJson('header');
   editors['token-decoded-header'].setValue(JSON.stringify(header));
   editors['token-decoded-payload'].setValue(JSON.stringify(payload));
   encodeJwt(event);
@@ -1314,7 +1308,7 @@ function retrieveLocalState() {
     .forEach(key => {
       var value = storage.get(key);
       if (key.startsWith('chk-')) {
-        datamodel[key] = (value == 'true');
+        datamodel[key] = (String(value) == 'true');
       }
       else {
         datamodel[key] = value;
@@ -1353,7 +1347,7 @@ function applyState() {
           }
         }
         else if (key.startsWith('chk-')) {
-          $item.prop("checked", Boolean(value));
+          $item.prop("checked", String(value) == 'true');
         }
         else if (key == 'encodedjwt') {
           if (value) { parseAndDisplayToken(value); }
@@ -1396,8 +1390,8 @@ $(document).ready(function() {
   $( '.btn-decode' ).on('click', showDecoded);
   $( '.btn-verify' ).on('click', verifyJwt);
   $( '.btn-newkey' ).on('click', newKey);
-  $( '.btn-newpayload' ).on('click', newPayload);
-  $( '.btn-newheader' ).on('click', newHeader);
+  $( '.btn-newpayload' ).on('click', curry(newJson, 'payload'));
+  $( '.btn-newheader' ).on('click', curry(newJson, 'header'));
 
   //$( '.btn-regen' ).on('click', contriveJwt);
 
