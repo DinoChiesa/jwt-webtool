@@ -8180,9 +8180,11 @@ textarea {
 #panel_encoded > p > .length,
 #header > p > .length,
 #payload > p > .length,
+#directkey > p > .length,
 #symmetrickey > p > .length {
   font-size: 60%; }
 
+#directkey > input,
 #symmetrickey > input {
   width: 100%;
   padding-left: 6px;
@@ -8190,18 +8192,22 @@ textarea {
   background-color: white;
   /* must be explicit to allow flash? */ }
 
+#directkey > div,
 #symmetrickey > div {
   margin-left: 32px; }
+  #directkey > div span,
   #symmetrickey > div span {
     color: #BDBDBD;
     font-size: 80%;
     width: 140px;
     display: inline-block; }
+  #directkey > div input,
   #symmetrickey > div input {
     margin-left: 8px;
     padding-left: 6px;
     width: 440px;
     font-family: monospace; }
+  #directkey > div select,
   #symmetrickey > div select {
     margin-left: 8px;
     width: 180px;

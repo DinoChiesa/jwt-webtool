@@ -12,11 +12,16 @@ const storage = LocalStorage.init(html5AppId);
 let datamodel = {
       'sel-variant': '',
       'sel-enc': '',
+      'sel-alg-encrypted': '',
+      'sel-alg-signed': '',
       'encodedjwt' : '',
       'ta_publickey' : '',
       'ta_privatekey' : '',
       'ta_symmetrickey' : '',
+      'ta_directkey' : '',
       'sel-symkey-coding' : '',
+      'sel-dirkey-coding' : '',
+      'sel-symkey-pbkdf2-salt-coding' : '',
       'sel-expiry': 10,
       'chk-iat': true,
       'chk-typ': true
@@ -26,7 +31,9 @@ require('codemirror/mode/javascript/javascript');
 require('codemirror/addon/mode/simple');
 
 const tenMinutesInSeconds = 10 * 60;
-const ITERATION_DEFAULT = 8192,
+
+const PBKDF2_SALT_DEFAULT = 'abcdefghijkl',
+      ITERATION_DEFAULT = 8192,
       ITERATION_MAX = 100001,
       ITERATION_MIN = 50;
 const re = {
@@ -57,7 +64,7 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
       rsaKeyEncryptionAlgs = ['RSA-OAEP','RSA-OAEP-256'],
       ecdhKeyEncryptionAlgs = ['ECDH-ES', 'ECDH-ES+A128KW', 'ECDH-ES+A256KW'], // 'ECDH-ES+A192KW' not supported
       pbes2KeyEncryptionAlgs = ['PBES2-HS256+A128KW', 'PBES2-HS384+A192KW', 'PBES2-HS512+A256KW'],
-      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs, ...ecdhKeyEncryptionAlgs],
+      keyEncryptionAlgs = [...rsaKeyEncryptionAlgs, ...pbes2KeyEncryptionAlgs, ...ecdhKeyEncryptionAlgs, 'dir'],
       contentEncryptionAlgs = [
         'A128CBC-HS256',
         'A256CBC-HS512',
@@ -201,22 +208,38 @@ function hmacToKeyBits(alg) {
   return 9999999;
 }
 
-function algToKeyBits(alg) {
+function requiredKeyBitsForAlg(alg) {
   if (alg.startsWith('PBES2')) {
     let hmac = alg.substring(6, 11);
     return hmacToKeyBits(hmac);
   }
-  return hmacToKeyBits(alg);
+  if (alg.startsWith('HS')) {
+    return hmacToKeyBits(alg);
+  }
+  switch(alg) {
+  case 'A128CBC-HS256' : return 256;
+  case 'A192CBC-HS384' : return 384;
+  case 'A256CBC-HS512' : return 512;
+  case 'A128GCM' : return 128;
+  case 'A192GCM' : return 192;
+  case 'A256GCM' : return 256;
+  }
+  return 99999;
 }
 
 function getPbkdf2IterationCount() {
   let icountvalue = $('#ta_pbkdf2_iterations').val(),
       icount = ITERATION_DEFAULT;
-  try {
-    icount = Number.parseInt(icountvalue, 10);
-  }
-  catch (exc1) {
+  if (icountvalue == '') {
     setAlert("not a number? defaulting to iteration count: "+ icount);
+  }
+  else {
+    try {
+      icount = Number.parseInt(icountvalue, 10);
+    }
+    catch (exc1) {
+      setAlert("not a number? defaulting to iteration count: "+ icount);
+    }
   }
   if (icount > ITERATION_MAX || icount < ITERATION_MIN) {
     icount = ITERATION_DEFAULT;
@@ -226,30 +249,48 @@ function getPbkdf2IterationCount() {
 }
 
 function getPbkdf2SaltBuffer() {
-  let keyvalue = $('#ta_pbkdf2_salt').val();
+  let saltText = $('#ta_pbkdf2_salt').val();
   let coding = $('.sel-symkey-pbkdf2-salt-coding').find(':selected').text().toLowerCase();
   let knownCodecs = ['utf-8', 'base64', 'hex'];
 
   if (knownCodecs.indexOf(coding)>=0) {
-    return Buffer.from(keyvalue, coding);
+    return Buffer.from(saltText, coding);
   }
   throw new Error('unsupported salt encoding'); // will not happen
 }
 
-async function getSymmetricKeyBuffer(alg) {
-  let keyvalue = $('#ta_symmetrickey').val();
-  let coding = $('.sel-symkey-coding').find(':selected').text().toLowerCase();
-  let knownCodecs = ['utf-8', 'base64', 'hex'];
+function getBufferForKey(item, alg) {
+  let $div, $ta;
+  if (typeof item == 'string') {
+    $div = $('#' + item);
+    $ta = $div.find('.ta-key');
+  }
+  else {
+    $ta = item;
+    $div = $ta.parent();
+  }
+
+  const keyvalue = $ta.val(),
+        coding = $div.find('.sel-key-coding').find(':selected').text().toLowerCase(),
+        knownCodecs = ['utf-8', 'base64', 'hex'];
 
   if (knownCodecs.indexOf(coding)>=0) {
-    return Promise.resolve(Buffer.from(keyvalue, coding));
+    let b = null;
+    try {
+      b = Buffer.from(keyvalue, coding);
+    }
+    catch (e) {
+      // bad coding: either bad length, invalid chars for the given coding, etc.
+      b = Buffer.from([]);
+    }
+    return Promise.resolve(b);
   }
 
   if (coding == 'pbkdf2') {
     let kdfParams = {
           salt: getPbkdf2SaltBuffer(),
           iterations: getPbkdf2IterationCount(),
-          length: algToKeyBits(alg) / 8
+          length: requiredKeyBitsForAlg(alg) / 8
         };
     return jose.JWA.derive("PBKDF2-SHA-256", Buffer.from(keyvalue, 'utf-8'), kdfParams);
   }
@@ -405,7 +446,7 @@ const isAppropriateEncryptingAlg = (alg, key) => getAcceptableEncryptionAlgs(key
 function getAcceptableEncryptionAlgs(key) {
   let keytype = key.kty;
   if (keytype == 'RSA') return rsaKeyEncryptionAlgs;
-  if (keytype == 'oct') return pbes2KeyEncryptionAlgs; // eventually extend this to dir, A128KW, etc
+  if (keytype == 'oct') return [...pbes2KeyEncryptionAlgs, 'dir']; // extend further to A128KW, etc?
   if (keytype == 'EC') return ecdhKeyEncryptionAlgs;
   return ["NONE"];
 }
@@ -418,11 +459,15 @@ const pickContentEncryptionAlg = () => datamodel['sel-enc'] || selectRandomValue
 
 const isSymmetric = (alg) => alg.startsWith('HS');
 
-function checkKeyLength(alg, keybuffer) {
-  let length = keybuffer.byteLength;
-  let requiredLength = algToKeyBits(alg) / 8;
-  if (length >= requiredLength) return Promise.resolve(keybuffer);
-  return Promise.reject(new Error('insufficient key length. You need at least ' + requiredLength + ' chars for ' + alg));
+function checkKeyLength(alg, exact, keybuffer) {
+  let length = keybuffer.byteLength,
+      requiredLength = requiredKeyBitsForAlg(alg) / 8,
+      okResult = (exact) ? (length == requiredLength) : length >= requiredLength;
+  if (okResult) return Promise.resolve(keybuffer);
+  let errorMsg = (exact) ?
+    `inappropriate key length, provided=${length}, required=${requiredLength}` :
+    `insufficient key length. You need at least ${requiredLength} bytes to use ${alg}`;
+  return Promise.reject(new Error(errorMsg));
 }
 
 function encodeJwt(event) {
@@ -478,8 +523,13 @@ function encodeJwt(event) {
       header.p2c = getPbkdf2IterationCount();
       header.p2s = getPbkdf2SaltBuffer().toString('base64');
 
-      let keyBuffer = Buffer.from($('#ta_symmetrickey').val(), 'utf-8');
-      p = jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: 'enc' });
+      p = getBufferForKey('symmetrickey', header.alg)
+        .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
+    }
+    else if (header.alg === 'dir') {
+      p = getBufferForKey('directkey', header.alg)
+        .then( keyBuffer => checkKeyLength(header.enc, true, keyBuffer))
+        .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc", alg:header.enc }));
     }
     else {
       p = getPublicKey(header);
@@ -500,8 +550,8 @@ function encodeJwt(event) {
   else {
     // create signed JWT
     if (isSymmetric(header.alg)) {
-      p = getSymmetricKeyBuffer(header.alg)
-        .then( keyBuffer => checkKeyLength(header.alg, keyBuffer))
+      p = getBufferForKey('symmetrickey', header.alg)
+        .then( keyBuffer => checkKeyLength(header.alg, false, keyBuffer))
         .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "sig" }));
     }
     else {
@@ -547,7 +597,7 @@ function encodeJwt(event) {
       $('#publickey .CodeMirror-code').removeClass('outdated');
     })
     .catch( e => {
-      console.log(e.stack);
+      //console.log(e.stack);
       setAlert(e);
     });
 }
@@ -617,8 +667,8 @@ function verifyJwt(event) {
     let p = null;
 
     if (isSymmetric(header.alg)) {
-      p = getSymmetricKeyBuffer(header.alg)
-        .then( keyBuffer => checkKeyLength(header.alg, keyBuffer))
+      p = getBufferForKey('symmetrickey', header.alg)
+        .then( keyBuffer => checkKeyLength(header.alg, false, keyBuffer))
         .then( keyBuffer => jose.JWK.asKey({kty:'oct', k: keyBuffer, use:'sig'}));
     }
     else {
@@ -747,7 +797,7 @@ function closeAlert(event) {
   return false; // Keep close.bs.alert event from removing from DOM
 }
 
-function updateKeyValue(flavor /* public || private */, keyvalue) {
+function updateAsymmetricKeyValue(flavor /* public || private */, keyvalue) {
   let editor = editors[flavor+'key'];
   if (editor) {
     editor.setValue(keyvalue);
@@ -782,11 +832,18 @@ function getGenKeyParams(alg) {
 
 function maybeNewKey() {
   let alg = $('.sel-alg').find(':selected').text();
-  if (alg.startsWith('HS') || alg.startsWith('PB')) {
+  if (alg === 'dir') {
+    if ( ! $('#ta_directkey').val()) {
+      return newKey(null);
+    }
+  }
+
+  else if (alg.startsWith('HS') || alg.startsWith('PB')) {
     if ( ! $('#ta_symmetrickey').val()) {
       return newKey(null);
     }
   }
+
   else {
     editors.privatekey.save();
     editors.publickey.save();
@@ -803,8 +860,11 @@ const getKeyUse = (alg) => (alg.startsWith('ECDH')) ? ['deriveKey', 'deriveBits'
 
 function newKey(event) {
   let alg = $('.sel-alg').find(':selected').text();
-  if (alg.startsWith('HS') || alg.startsWith('PB')) {
-    let coding = $('.sel-symkey-coding').find(':selected').text().toLowerCase();
+
+  if (alg.startsWith('HS') || alg.startsWith('PB') || alg === 'dir') {
+    let domid = (alg === 'dir')? 'directkey': 'symmetrickey',
+        $div = $('#' + domid),
+        coding = $div.find('.sel-key-coding').find(':selected').text().toLowerCase();
     let keyString = null;
     if (coding == 'utf-8' || coding == 'pbkdf2') {
       keyString = randomPassword();
@@ -813,8 +873,8 @@ function newKey(event) {
       keyString = Buffer.from(randomOctetKey()).toString(coding);
     }
     if (keyString) {
-      $('#ta_symmetrickey').val(keyString);
-      saveSetting('ta_symmetrickey', keyString); // for reload
+      $div.find('.ta-key').val(keyString);
+      saveSetting('ta_' + domid, keyString); // for reload
     }
     return Promise.resolve({});
   }
@@ -826,9 +886,9 @@ function newKey(event) {
   return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
     .then(key =>
           window.crypto.subtle.exportKey( "spki", key.publicKey )
-          .then(keydata => updateKeyValue('public', key2pem('PUBLIC', keydata)) )
+          .then(keydata => updateAsymmetricKeyValue('public', key2pem('PUBLIC', keydata)) )
           .then( () => window.crypto.subtle.exportKey( "pkcs8", key.privateKey ))
-          .then(keydata => updateKeyValue('private', key2pem('PRIVATE', keydata)) ))
+          .then(keydata => updateAsymmetricKeyValue('private', key2pem('PRIVATE', keydata)) ))
     .then( () => {
       $('#mainalert').removeClass('show').addClass('fade');
       $('#privatekey .CodeMirror-code').removeClass('outdated');
@@ -918,7 +978,7 @@ function showDecoded(skipEncryptedPayload) {
       setTimeout( () => onChangeVariant(), 2);
     }
     // Display the decoded header.
-    // Not possible to 'decode' the payload; it requires decryption.
+    // It is not possible to 'decode' the payload; it requires decryption.
     try {
       let item = matches[1],
           json = atob(item),  // base64-decode
@@ -996,7 +1056,7 @@ function populateAlgorithmSelectOptions() {
   //onChangeAlg.call(document.getElementsByClassName('sel-alg')[0], null);
   // dino - 20201222-1115 - maybe
   //onChangeAlg.call(document.querySelector('.sel-alg'), null);
-  setTimeout( () => onChangeAlg(), 2);
+  setTimeout( () => onChangeAlg(), 1);
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -1008,47 +1068,88 @@ function keysAreCompatible(alg1, alg2) {
   return false;
 }
 
-function changeSymmetricKeyCoding(event) {
+function changeKeyCoding(event) {
   let $this = $(this),
-      newSelection = $this.find(':selected').text(),
-      previousSelection = $this.data('prev');
-  if (newSelection != previousSelection) {
-    $('#ta_symmetrickey').addClass('outdated');
-    if (newSelection == 'PBKDF2') {
+      newCoding = $this.find(':selected').text().toLowerCase(),
+      previousCoding = $this.data('prev');
+  if (newCoding != previousCoding) {
+
+    // When the coding changes, try to re-encode the existing key.
+    // This will not always work nicely when switching to UTF-8.
+    // You will get a urf-8 string with unicode escape sequences, eg \u000b.
+    let $ta = $this.parent().prev(),
+        textVal = $ta.val(),
+        effectivePrevCoding = (previousCoding == 'PBKDF2')?'utf-8':previousCoding,
+        keybuf = Buffer.from(textVal, effectivePrevCoding);
+
+    if (newCoding == 'pbkdf2') {
+      $ta.val(keybuf.toString('utf-8'));
       // display the salt and iteration count
       $('#pbkdf2_params').show();
     }
     else {
+      $ta.val(keybuf.toString(newCoding));
       $('#pbkdf2_params').hide();
     }
   }
-  $this.data('prev', newSelection);
-  saveSetting('sel-symkey-coding', newSelection);
+  $this.data('prev', newCoding);
+  saveSetting($this.attr('id'), newCoding);
 }
 
 function checkSymmetryChange(newalg, oldalg) {
   let newPrefix = newalg.substring(0, 2),
       oldPrefix = oldalg && oldalg.substring(0, 2);
-  if (newPrefix == 'HS' || newPrefix == 'PB') {
+  if (newalg == 'dir') {
+    if (oldalg != 'dir') {
+      $('#privatekey').hide();
+      $('#publickey').hide();
+      $('#symmetrickey').hide();
+      $('#directkey').show();
+    }
+  }
+  else if (newPrefix == 'HS' || newPrefix == 'PB') {
     //$('.btn-newkeypair').hide();
-    if (oldPrefix != 'HS' & oldPrefix != 'PB') {
+    if (oldPrefix != 'HS' && oldPrefix != 'PB') {
       $('#privatekey').hide();
       $('#publickey').hide();
       $('#symmetrickey').show();
+      $('#directkey').hide();
 
       if (newPrefix == 'PB') {
         //$('.sel-symkey-coding').disable(); // always PBKDF2!
-        let currentlySelectedCoding = $('.sel-symkey-coding').find(':selected').text().toLowerCase();
+        let currentlySelectedCoding = $('#sel-symkey-coding').find(':selected').text().toLowerCase();
         if (currentlySelectedCoding != "pbkdf2") {
-          $('.sel-symkey-coding option[value=PBKDF2]')
+          $('#sel-symkey-coding option[value=PBKDF2]')
             .prop('selected', true)
             .trigger("change");
         }
-        $('.sel-symkey-coding').prop("disabled", true);
+
+        // // ensure a valid value
+        // // This shouldn't ever happen.
+        // let $icount = $('#ta_pbkdf2_iterations'),
+        // icountvalue = $icount.val();
+        // if (icountvalue == '') {
+        //   $icount.val(String(ITERATION_DEFAULT));
+        // }
+        // else {
+        //   try {
+        //     Number.parseInt(icountvalue, 10);
+        //   }
+        //   catch (exc1) {
+        //     $icount.val(String(ITERATION_DEFAULT));
+        //   }
+        // }
+        // let saltText = $('#ta_pbkdf2_salt').val();
+        // if (saltText == '') {
+        //   let saltCoding = $('.sel-symkey-pbkdf2-salt-coding').find(':selected').text().toLowerCase();
+        //   $('#ta_pbkdf2_salt').val(Buffer.from('IloveAPIs-0123456789', 'utf-8').toString(saltCoding));
+        // }
+
+        $('#sel-symkey-coding').prop("disabled", true);
       }
       else {
         // $('.sel-symkey-coding').enable();
-        $('.sel-symkey-coding').prop("disabled", false);
+        $('#sel-symkey-coding').prop("disabled", false);
       }
       return true;
     }
@@ -1059,6 +1160,7 @@ function checkSymmetryChange(newalg, oldalg) {
       $('#privatekey').show();
       $('#publickey').show();
       $('#symmetrickey').hide();
+      $('#directkey').hide();
       return true;
     }
   }
@@ -1091,15 +1193,39 @@ function getHeaderFromForm() {
   }
 }
 
+async function onKeyTextChange(event) {
+  let $this = $(this),
+      id = $this.attr('id'),
+      alg = $('.sel-alg').find(':selected').text();
+
+  saveSetting(id, $this.val());
+
+  if ( ! alg.startsWith('PB')) {
+      let buf = await getBufferForKey($this),
+      enc = $('.sel-enc').find(':selected').text(),
+      requiredLength = requiredKeyBitsForAlg(enc) / 8,
+      requirement = (id.indexOf('direct') >=0)?'required' : 'minimum';
+    $this.parent().find('p > span.length').text(`(${buf.byteLength} bytes, ${requirement}: ${requiredLength})`);
+  }
+  else {
+    // there is no minimum with PBKDF2...
+  }
+}
+
 function onChangeEnc(event) {
   let $this = $('#sel-enc'),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
+      alg = $('.sel-alg').find(':selected').text(),
       headerObj = null;
 
   if ( ! initialized()) { return ; }
-  if (newSelection != previousSelection) {
 
+  if (alg == 'dir' || alg.startsWith('PB')) {
+    Array.prototype.forEach.call($(".ta-key"), ($ta) => onKeyTextChange.call($ta, null));
+  }
+
+  if (newSelection != previousSelection) {
     // apply newly selected enc to the displayed header
     editors['token-decoded-header'].save();
     try {
@@ -1117,12 +1243,23 @@ function onChangeEnc(event) {
 
 function onChangeAlg(event) {
   let $this = $('#sel-alg'),
-      //$this = $(this),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
       headerObj = null;
+  const updateHeader =
+    () => {
+      try {
+        editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
+      }
+      catch (e) {
+        /* gulp */
+        console.log('while updating header alg', e);
+      }
+    };
 
   if ( ! initialized()) { return ; }
+  editors['token-decoded-header'].save();
+  headerObj = getHeaderFromForm();
 
   maybeNewKey()
     .then( _ => {
@@ -1131,16 +1268,7 @@ function onChangeAlg(event) {
         checkSymmetryChange(newSelection, previousSelection);
 
         // apply newly selected alg to the displayed header
-        editors['token-decoded-header'].save();
-        try {
-          headerObj = getHeaderFromForm();
-          headerObj.alg = newSelection;
-          editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
-        }
-        catch (e) {
-          /* gulp */
-          console.log('while updating header alg', e);
-        }
+        headerObj.alg = newSelection;
 
         if ( ! keysAreCompatible(newSelection, previousSelection)) {
           $('#privatekey .CodeMirror-code').addClass('outdated');
@@ -1148,20 +1276,38 @@ function onChangeAlg(event) {
         }
         $this.data('prev', newSelection);
       }
+      if ( ! newSelection.startsWith('ECDH')) {
+          if (headerObj.epk) {
+            delete headerObj.epk;
+          }
+      }
+      if ( ! newSelection.startsWith('PB')) {
+          if ( headerObj.p2c) {
+            delete headerObj.p2c;
+          }
+          if ( headerObj.p2s ) {
+            delete headerObj.p2s;
+          }
+      }
+
       if (newSelection.startsWith('PB')) {
-        if (headerObj){
-          $('#ta_pbkdf2_iterations').val(headerObj.p2c);
-          $('#ta_pbkdf2_salt').val(headerObj.p2s);
-          // always base64
-          $('.sel-symkey-pbkdf2-salt-coding option[value="Base64"]')
-            .prop('selected', true)
-            .trigger("change");
-          // user can change these but it probably won't work
+        if ( ! headerObj.p2c) {
+          headerObj.p2c = ITERATION_DEFAULT;
         }
+        $('#ta_pbkdf2_iterations').val(headerObj.p2c);
+        if ( !headerObj.p2s ) {
+          headerObj.p2s = PBKDF2_SALT_DEFAULT;
+        }
+        $('#ta_pbkdf2_salt').val(headerObj.p2s);
+        // always base64
+        $('.sel-symkey-pbkdf2-salt-coding option[value="Base64"]')
+          .prop('selected', true)
+          .trigger("change");
+        // The user can change the salt coding but... currently this app does
+        // not serialize the salt correctly if it is specified in something
+        // other than base64.
       }
-      else {
-        // nop
-      }
+      updateHeader();
       let variant = $('#sel-variant').find(':selected').text().toLowerCase();
       saveSetting('sel-alg-' + variant, newSelection);
     });
@@ -1325,7 +1471,10 @@ function saveSetting(key, value) {
 }
 
 function applyState() {
-    Object.keys(datamodel)
+  // ordering is important. We must apply variant before alg.
+  let keys = Object.keys(datamodel);
+  keys.sort( (a,b) => (a=='sel-variant')? -1 : ((b == 'sel-variant')?1:a.localeCompare(b) ));
+  keys
     .forEach(key => {
       var value = datamodel[key];
       if (value) {
@@ -1398,7 +1547,7 @@ $(document).ready(function() {
   populateAlgorithmSelectOptions();
   populateEncSelectOptions();
 
-  $( '.sel-symkey-coding').on('change', changeSymmetricKeyCoding);
+  $( '.sel-key-coding').on('change', changeKeyCoding);
 
   $('#mainalert').addClass('fade');
   $('#mainalert').on('close.bs.alert', closeAlert);
@@ -1440,7 +1589,7 @@ $(document).ready(function() {
           let fieldvalue = reformNewlines(editors[keytype]);
           if (looksLikePem(fieldvalue)) {
             editors[keytype].setOption('mode', 'encodedjwt');
-            updateKeyValue(flavor, reformIndents(fieldvalue));
+            updateAsymmetricKeyValue(flavor, reformIndents(fieldvalue));
           }
           else {
             let possiblyJwks = looksLikeJwks(fieldvalue);
@@ -1495,6 +1644,9 @@ $(document).ready(function() {
 
   retrieveLocalState();
   applyState();
+
+  $(".ta-key").on('change keyup input', onKeyTextChange);
+  Array.prototype.forEach.call($(".ta-key"), ($ta) => onKeyTextChange.call($ta, null));
 
   $( '#sel-variant').on('change', onChangeVariant);
   $( '#sel-alg').on('change', onChangeAlg);
