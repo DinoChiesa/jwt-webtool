@@ -864,8 +864,8 @@ function newKey(event) {
   if (alg.startsWith('HS') || alg.startsWith('PB') || alg === 'dir') {
     let domid = (alg === 'dir')? 'directkey': 'symmetrickey',
         $div = $('#' + domid),
-        coding = $div.find('.sel-key-coding').find(':selected').text().toLowerCase();
-    let keyString = null;
+        coding = $div.find('.sel-key-coding').find(':selected').text().toLowerCase(),
+        keyString = null;
     if (coding == 'utf-8' || coding == 'pbkdf2') {
       keyString = randomPassword();
     }
@@ -873,8 +873,10 @@ function newKey(event) {
       keyString = Buffer.from(randomOctetKey()).toString(coding);
     }
     if (keyString) {
-      $div.find('.ta-key').val(keyString);
-      saveSetting('ta_' + domid, keyString); // for reload
+      let $ta = $div.find('.ta-key');
+      $ta.val(keyString);
+      onKeyTextChange.call($ta, null);
+      saveSetting('ta_' + domid, keyString);
     }
     return Promise.resolve({});
   }
