@@ -150,10 +150,10 @@
                 <span class="oi oi-reload"></span>
               </button>
             </p>
-            <input type='text' id='ta_directkey' class='ta-key' value='Key-Must-Be-16-or-32-or-64-bytes-exactly' spellcheck="false">
+            <input type='text' id='ta_directkey' class='ta-key' data-coding='sel-dirkey-coding' value='Key-Must-Be-16-or-32-or-64-bytes-exactly' spellcheck="false">
             <div>
               <span>Key Encoding:</span>
-              <select id='sel-dirkey-coding' class="form-control form-control-sm sel-key-coding">
+              <select id='sel-dirkey-coding' data-target='ta_directkey' class="form-control form-control-sm sel-key-coding">
                 <option value='UTF-8'>UTF-8</option>
                 <option value='Hex'>Hex</option>
                 <option value='Base64'>Base64</option>
@@ -172,10 +172,10 @@
                 <span class="oi oi-reload"></span>
               </button>
             </p>
-            <input type='text' id='ta_symmetrickey' class='ta-key' value='Key-Must-Be-at-least-32-bytes-in-length!' spellcheck="false">
+            <input type='text' id='ta_symmetrickey' class='ta-key' data-coding='sel-symkey-coding' value='Key-Must-Be-at-least-32-bytes-in-length!' spellcheck="false">
             <div>
               <span>Key Encoding:</span>
-              <select id='sel-symkey-coding' class="form-control form-control-sm sel-key-coding">
+              <select id='sel-symkey-coding' data-target='ta_symmetrickey' class="form-control form-control-sm sel-key-coding">
                 <option value='UTF-8'>UTF-8</option>
                 <option value='Hex'>Hex</option>
                 <option value='Base64'>Base64</option>
@@ -189,11 +189,11 @@
             </div>
             <div>
               <span>salt:</span>
-              <input type='text' id='ta_pbkdf2_salt' value='abcdefghijkl'>
+              <input type='text' id='ta_pbkdf2_salt' data-coding='sel-symkey-pbkdf2-salt-coding' value='abcdefghijkl'>
             </div>
             <div>
               <span>salt encoding:</span>
-              <select id='sel-symkey-pbkdf2-salt-coding' class="form-control form-control-sm sel-symkey-pbkdf2-salt-coding">
+              <select id='sel-symkey-pbkdf2-salt-coding' data-target='ta_pbkdf2_salt' class="form-control form-control-sm sel-symkey-pbkdf2-salt-coding sel-key-coding">
                 <option value='UTF-8'>UTF-8</option>
                 <option value='Hex'>Hex</option>
                 <option value='Base64'>Base64</option>
