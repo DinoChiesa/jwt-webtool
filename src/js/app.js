@@ -483,6 +483,31 @@ function checkKeyLength(alg, exact, keybuffer) {
   return Promise.reject(new Error(errorMsg));
 }
 
+
+function retrieveCryptoKey(header) {
+  if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
+    // overwrite the header values with values from the inputs
+    header.p2c = getPbkdf2IterationCount();
+    header.p2s = getPbkdf2SaltBuffer().toString('base64');
+
+    return getBufferForKey('symmetrickey', header.alg)
+      .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
+  }
+  if (kwKeyEncryptionAlgs.indexOf(header.alg) >= 0) {
+    return getBufferForKey('symmetrickey', header.alg)
+      .then( keyBuffer => checkKeyLength(header.alg, true, keyBuffer))
+      .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
+  }
+
+  if (header.alg === 'dir') {
+    return getBufferForKey('directkey', header.alg)
+      .then( keyBuffer => checkKeyLength(header.enc, true, keyBuffer))
+      .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc", alg:header.enc }));
+  }
+  return getPublicKey(header);
+}
+
+
 function encodeJwt(event) {
   let values = {}, parseError;
   ['header', 'payload'].forEach( segment => {
@@ -531,29 +556,7 @@ function encodeJwt(event) {
   let p = null;
   if (header.enc && header.alg) {
     // create encrypted JWT
-    if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
-      // overwrite the header values with values from the inputs
-      header.p2c = getPbkdf2IterationCount();
-      header.p2s = getPbkdf2SaltBuffer().toString('base64');
-
-      p = getBufferForKey('symmetrickey', header.alg)
-        .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
-    }
-    else if (kwKeyEncryptionAlgs.indexOf(header.alg) >= 0) {
-      p = getBufferForKey('symmetrickey', header.alg)
-        .then( keyBuffer => checkKeyLength(header.alg, true, keyBuffer))
-        .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
-    }
-    else if (header.alg === 'dir') {
-      p = getBufferForKey('directkey', header.alg)
-        .then( keyBuffer => checkKeyLength(header.enc, true, keyBuffer))
-        .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc", alg:header.enc }));
-    }
-    else {
-      p = getPublicKey(header);
-    }
-
-    p = p
+    p = retrieveCryptoKey(header)
       .then( encryptingKey => {
         if ( ! isAppropriateEncryptingAlg(header.alg, encryptingKey)) {
           throw new Error('the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?');
@@ -732,20 +735,10 @@ function verifyJwt(event) {
   // verification/decrypt of encrypted JWT
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
-    let p = null;
     let json = atob(matches[1]);  // base64-decode
     let header = JSON.parse(json);
 
-    if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
-      let password = $('#ta_symmetrickey').val();
-      let keyBuffer = Buffer.from(password, 'utf-8');
-      p = jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: 'enc' });
-    }
-    else {
-      p = getPrivateKey();
-    }
-
-    return p
+    return retrieveCryptoKey(header)
       .then( decryptionKey =>
              jose.JWE.createDecrypt(decryptionKey)
              .decrypt(tokenString)
