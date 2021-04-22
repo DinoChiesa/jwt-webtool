@@ -30,14 +30,14 @@ function makeConfig(mode) {
               use: ['style-loader',
                     {
                       loader: MiniCssExtractPlugin.loader,
-                      options: {
-                        hmr: mode === 'development',
-                      },
+                      options: { }
                     },
                     'css-loader', 'sass-loader']
             }]
         },
+
         plugins: [
+
           new CopyPlugin({patterns:[
             { from: 'src/index.html', to: 'index.html' }
           ]}),
