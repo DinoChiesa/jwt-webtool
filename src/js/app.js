@@ -335,17 +335,20 @@ function looksLikeJwks(s) {
   }
 }
 
-function getPrivateKey() {
+function getPrivateKey(header, options) {
   editors.privatekey.save();
   let keyvalue = $('#ta_privatekey').val().trim();
-  return jose.JWK.asKey(keyvalue, "pem");
+  return jose.JWK.asKey(keyvalue, "pem", {...options, ...header});
 }
 
-function getPublicKey(header) {
+function getPublicKey(header, options) {
+  options = options || {};
   editors.publickey.save();
   let fieldvalue = $('#ta_publickey').val().trim();
+
   if (looksLikePem(fieldvalue)) {
-    return jose.JWK.asKey(fieldvalue, "pem");
+    // if de-serializing from PEM, apply the kid, if any
+    return jose.JWK.asKey(fieldvalue, "pem", { ...options, ...header });
   }
 
   return jose.JWK.asKeyStore(fieldvalue)
@@ -484,7 +487,9 @@ function checkKeyLength(alg, exact, keybuffer) {
 }
 
 
-function retrieveCryptoKey(header) {
+function retrieveCryptoKey(header, options) {
+  // options = {direction:'encrypt'} or {direction:'decrypt'}
+  // When using symmetric keys and algorithms, it does not matter.
   if (pbes2KeyEncryptionAlgs.indexOf(header.alg) >= 0) {
     // overwrite the header values with values from the inputs
     header.p2c = getPbkdf2IterationCount();
@@ -504,7 +509,12 @@ function retrieveCryptoKey(header) {
       .then( keyBuffer => checkKeyLength(header.enc, true, keyBuffer))
       .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc", alg:header.enc }));
   }
-  return getPublicKey(header);
+
+  // When using asymmetric keys and algorithms, direction matters.
+  if (options.direction === 'encrypt')
+    return getPublicKey(header, {use: "enc"});
+
+  return getPrivateKey(header, {use: "enc"});
 }
 
 
@@ -556,7 +566,7 @@ function encodeJwt(event) {
   let p = null;
   if (header.enc && header.alg) {
     // create encrypted JWT
-    p = retrieveCryptoKey(header)
+    p = retrieveCryptoKey(header, {direction:'encrypt'})
       .then( encryptingKey => {
         if ( ! isAppropriateEncryptingAlg(header.alg, encryptingKey)) {
           throw new Error('the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?');
@@ -738,40 +748,51 @@ function verifyJwt(event) {
     let json = atob(matches[1]);  // base64-decode
     let header = JSON.parse(json);
 
-    return retrieveCryptoKey(header)
-      .then( decryptionKey =>
-             jose.JWE.createDecrypt(decryptionKey)
-             .decrypt(tokenString)
-             .then( result => {
-               // {result} is a Object with:
-               // *  header: the combined 'protected' and 'unprotected' header members
-               // *  protected: an array of the member names from the "protected" member
-               // *  key: Key used to decrypt
-               // *  payload: Buffer of the decrypted content
-               // *  plaintext: Buffer of the decrypted content (alternate)
-               let td = new TextDecoder('utf-8'),
-                   stringPayload = td.decode(result.payload),
-                   parsedPayload = JSON.parse(stringPayload),
-                   prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
-                   reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(decryptionKey)),
-                   elementId = 'token-decoded-payload',
-                   flavor = 'payload';
-               editors[elementId].setValue(prettyPrintedJson);
-               $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
-               if (reasons.length == 0) {
-                 let message = "The JWT has been decrypted successfully, and the times are valid.";
-                 if (event) {
-                   setAlert(message, 'success');
-                 }
-                 $('#privatekey .CodeMirror-code').removeClass('outdated');
-                 $('#publickey .CodeMirror-code').removeClass('outdated');
-               }
-               else {
-                 let label = (reasons.length == 1)? 'Reason' : 'Reasons';
-                 setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
-               }
-               return {};
-             }))
+    return retrieveCryptoKey(header, {direction:'decrypt'})
+      .then( async decryptionKey => {
+        let decrypter = await jose.JWE.createDecrypt(decryptionKey);
+        let result = await decrypter.decrypt(tokenString);
+        // {result} is a Object with:
+        // *  header: the combined 'protected' and 'unprotected' header members
+        // *  protected: an array of the member names from the "protected" member
+        // *  key: Key used to decrypt
+        // *  payload: Buffer of the decrypted content
+        // *  plaintext: Buffer of the decrypted content (alternate)
+        let td = new TextDecoder('utf-8'),
+            stringPayload = td.decode(result.payload),
+            parsedPayload = null;
+        try {
+          parsedPayload = JSON.parse(stringPayload);
+        } catch (e) {
+          // not JSON. It's a JWE, not JWT
+        }
+        if (parsedPayload) {
+          let prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
+          reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(decryptionKey)),
+          elementId = 'token-decoded-payload',
+          flavor = 'payload';
+          editors[elementId].setValue(prettyPrintedJson);
+          $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
+          if (reasons.length == 0) {
+            let message = "The JWT has been decrypted successfully, and the times are valid.";
+            if (event) {
+              setAlert(message, 'success');
+            }
+            $('#privatekey .CodeMirror-code').removeClass('outdated');
+            $('#publickey .CodeMirror-code').removeClass('outdated');
+          }
+          else {
+            let label = (reasons.length == 1)? 'Reason' : 'Reasons';
+            setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
+          }
+          return {};
+        }
+
+        // it's a JWE
+        let elementId = 'token-decoded-payload', flavor = 'payload';
+        editors[elementId].setValue(stringPayload);
+        $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
+      })
       .catch( e => {
         setAlert('Decryption failed. Bad key?');
         console.log('During decryption: ' + e);
