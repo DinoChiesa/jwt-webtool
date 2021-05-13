@@ -21,13 +21,14 @@
   "license": "Apache-2.0",
   "dependencies": {
     "bootstrap": "^4.3.1",
-    "codemirror": "^5.48.4",
+    "codemirror": ">5.58.2",
     "jquery": "^3.5.0",
     "node-jose": "^2.0.0",
     "open-iconic": "^1.1.1",
     "popper.js": "^1.16.0"
   },
   "devDependencies": {
+    "ajv": "^6.12.6",
     "child_process": "^1.0.2",
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^3.4.2",
