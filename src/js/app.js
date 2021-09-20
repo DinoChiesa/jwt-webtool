@@ -1214,6 +1214,7 @@ function getHeaderFromForm() {
       console.log('invalid header');
     }
   }
+  return {}; // hack in case of no header
 }
 
 async function onKeyTextChange(event) {
@@ -1495,11 +1496,13 @@ function applyState() {
         var $item = $('#' + key);
         if (key.startsWith('sel-alg-')) {
           // selection of alg, stored separately for signing and encrypting
-          let currentlySelectedVariant = datamodel['sel-variant'].toLowerCase(),
-              storedVariant = key.substr(8);
-          if (storedVariant == currentlySelectedVariant) {
-            $item = $('#sel-alg');
-            $item.find("option[value='"+value+"']").prop('selected', 'selected');
+          let currentlySelectedVariant = datamodel['sel-variant'];
+          if (currentlySelectedVariant) {
+            let storedVariant = key.substr(8);
+            if (storedVariant == currentlySelectedVariant.toLowerCase()) {
+              $item = $('#sel-alg');
+              $item.find("option[value='"+value+"']").prop('selected', 'selected');
+            }
           }
         }
         else if (key.startsWith('sel-symkey-coding')) {
