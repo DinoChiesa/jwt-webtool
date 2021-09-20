@@ -1664,7 +1664,10 @@ $(document).ready(function() {
         return s.lastIndexOf(searchString, position) === position;
       };
 
-  if ( ! inboundJwt || inboundJwt === '') {
+  if ( inboundJwt ) {
+    inboundJwt = inboundJwt.slice(1);
+  }
+  else {
     inboundJwt = window.location.search.replace('?', '');
   }
 
