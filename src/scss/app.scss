@@ -4,9 +4,15 @@ body {
   margin: 12px 20px;
 }
 
+// extend bootstrap run for wider displays
+@media (min-width: 1600px) {
+  body .container {
+    max-width: 1540px;
+  }
+}
+
 .container {
     width: 100%;
-    max-width: 1540px;
     padding: 0 15px;
     margin: auto;
     overflow: hidden;
@@ -23,9 +29,9 @@ textarea {
   border-color: grey;
   border-style: dotted;
   padding: 0 8px;
-  font-size:160%;
+  font-size: 120%;
   p {
-    margin-bottom: 0.2rem;
+    /* margin-bottom: 0.2rem; */
     color: #BDBDBD;
   }
 }
