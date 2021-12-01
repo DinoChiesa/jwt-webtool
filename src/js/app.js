@@ -1,4 +1,4 @@
-/* global atob, Buffer, TextDecoder, BUILD_VERSION */
+/* global Buffer, TextDecoder, BUILD_VERSION */
 
 import 'bootstrap';
 import CodeMirror from 'codemirror/lib/codemirror.js';
@@ -693,7 +693,7 @@ function verifyJwt(event) {
   // verify a signed JWT
   if (matches && matches.length == 4) {
     $("#mainalert").addClass('fade').removeClass('show');
-    let json = atob(matches[1]);  // base64-decode
+    let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
     let p = null;
 
@@ -745,7 +745,7 @@ function verifyJwt(event) {
   // verification/decrypt of encrypted JWT
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
-    let json = atob(matches[1]);  // base64-decode
+    let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
 
     return retrieveCryptoKey(header, {direction:'decrypt'})
@@ -988,7 +988,7 @@ function showDecoded(skipEncryptedPayload) {
 
     let flavors = ['header','payload']; // cannot decode signature
     matches.slice(1,-1).forEach(function(item,index) {
-      let json = atob(item),  // base64-decode
+      let json = Buffer.from(item, 'base64').toString('utf8'),
           flavor = flavors[index],
           elementId = 'token-decoded-' + flavor;
       try {
@@ -1024,7 +1024,7 @@ function showDecoded(skipEncryptedPayload) {
     // It is not possible to 'decode' the payload; it requires decryption.
     try {
       let item = matches[1],
-          json = atob(item),  // base64-decode
+          json = Buffer.from(item, 'base64').toString('utf8'),
           obj = JSON.parse(json),
           prettyPrintedJson = JSON.stringify(obj,null,2),
           flatJson = JSON.stringify(obj);
