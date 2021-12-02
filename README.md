@@ -1,14 +1,14 @@
 # JWT Web tool
 
 This is the source code for a web tool that can decode JWT, verify signed JWT,
-decrypt encrypted JWT, and create signed or encrypted JWT. It has some
-limitations!
+decrypt encrypted JWT, and create signed or encrypted JWT. It works nicely for
+lots of cases.  It also has a few limitations; details below.
 
 ![screengrab](images/screenshot-20191115-083624.png)
 
 ## License
 
-This code is Copyright (c) 2019-2020 Google LLC, and is released under the Apache
+This code is Copyright (c) 2019-2021 Google LLC, and is released under the Apache
 Source License v2.0. For information see the [LICENSE](LICENSE) file.
 
 ## Purpose
@@ -37,7 +37,7 @@ This tool has some limitations:
 
  - In either case (signed or encrypted), this tool does not handle crit headers,
    nor will it extract the certificate from an x5c header. Nor will it check
-   thumprints of an x5t header.
+   thumbprints of an x5t header.
 
  - This tool uses EcmaScript v9, and webcrypto, which means it will run only on
    modern, current browsers.
@@ -54,9 +54,12 @@ saves you a step, pasting in your own JWT. If you're paranoid you can also use
 the # as a separator.
 
 
-It may be nice to fork this and bundle it into an intranet, to
-allow developers within a company to experiment with JWT. As far as I'm
-concerned there's no security issue with using the [publicly hosted tool](https://dinochiesa.github.io/jwt/).
+You may want to fork this and bundle it into an intranet, to allow developers
+within a company to experiment with JWT. You can also run it from a file:// URL.
+
+From my perspective, there's no security issue with using the [publicly hosted
+tool](https://dinochiesa.github.io/jwt/), but your company's security auditors
+may not agree..
 
 ## Dependencies
 
@@ -79,8 +82,8 @@ This is my first webpack project, so if anyone has some constructive feedback on
 my webpack config, how to improve or optimize it, please let me know.  PR's will be
 appreciated.
 
-For example, the JS bundle is about 1mb and the css bundle is 400kb.  Is there a
-better way to optimize this?
+For example, the JS bundle is about 1mb and the css bundle is 400kb.  If there is a
+better way to optimize this, I am interested to learn.
 
 
 ## Developing
@@ -113,7 +116,7 @@ To build a production distribution:
 npm run build
 ```
 
-## Bugs
+## Bugs / Feature Gaps
 
 * The support for key-encryption algorithms is incomplete. Missing are:
   AES based key-wrapping algorithms, and direct keys.
@@ -121,3 +124,4 @@ npm run build
 * When using ECDH encryption, the tool always chooses the P-256 curve.
 
 * It is not possible to use an x509v3 certificate for the source of the public key.
+
