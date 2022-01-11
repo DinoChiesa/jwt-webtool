@@ -8,7 +8,7 @@
   },
   "main": "webpack.config.js",
   "scripts": {
-    "preinstall": "npx npm-force-resolutions",
+    "preinstall": "([ ! -f package-lock.json ] && npm install --package-lock-only --ignore-scripts --no-audit); npx npm-force-resolutions",
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --output-pathinfo --devtool source-map --mode=development --watch --color",
     "devbuild": "webpack --output-pathinfo --devtool source-map --mode=development --progress --color",

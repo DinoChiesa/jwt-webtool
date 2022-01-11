@@ -1,5 +1,5 @@
-/* global Buffer, TextDecoder, BUILD_VERSION */
-
+/* global Buffer, TextDecoder, BUILD_VERSION, gtag */
+// gtag('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);
 import 'bootstrap';
 import CodeMirror from 'codemirror/lib/codemirror.js';
 import $ from "jquery";
@@ -533,6 +533,7 @@ function encodeJwt(event) {
       }
     }
   });
+  gtag('send', 'event', 'click', 'encode', 'standard');
   if (parseError) {
     setAlert("cannot parse JSON ("+parseError+")", 'warning');
     return;
@@ -696,6 +697,7 @@ function verifyJwt(event) {
     let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
     let p = null;
+    gtag('send', 'event', 'click', 'verify', 'standard', { type: 'signed', alg:header.alg});
 
     if (isSymmetric(header.alg)) {
       p = getBufferForKey('symmetrickey', header.alg)
@@ -745,6 +747,7 @@ function verifyJwt(event) {
   // verification/decrypt of encrypted JWT
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
+    gtag('send', 'event', 'click', 'verify', 'standard', { type: 'encrypted'});
     let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
 
@@ -973,6 +976,9 @@ function showDecoded(skipEncryptedPayload) {
 
   let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
       matches = re.signed.jwt.exec(tokenString);
+
+  gtag('send', 'event', 'click', 'decode', 'standard');
+
   saveSetting('encodedjwt', tokenString); // for reload
   $('#panel_encoded > p > span.length').text('(' + tokenString.length + ' bytes)');
 
@@ -1246,6 +1252,7 @@ function onChangeEnc(event) {
       headerObj = null;
 
   if ( ! initialized()) { return ; }
+  gtag('send', 'event', 'click', 'changeEnc', 'standard', newSelection);
 
   if (alg == 'dir' || alg.startsWith('PB')) {
     Array.prototype.forEach.call($(".ta-key"), ($ta) => onKeyTextChange.call($ta, null));
@@ -1284,6 +1291,7 @@ function onChangeAlg(event) {
     };
 
   if ( ! initialized()) { return ; }
+  gtag('send', 'event', 'click', 'changeAlg', 'standard', newSelection);
   editors['token-decoded-header'].save();
   headerObj = getHeaderFromForm();
 
@@ -1343,6 +1351,8 @@ function onChangeVariant(event) {
       priorAlgSelection = $('.sel-alg').data('prev');
 
   editors['token-decoded-header'].save();
+
+  gtag('send', 'event', 'click', 'changeVariant', 'standard', newSelection);
 
   if (newSelection != previousSelection) {
     try {
