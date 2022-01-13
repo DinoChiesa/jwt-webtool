@@ -1,5 +1,9 @@
 /* global Buffer, TextDecoder, BUILD_VERSION, gtag */
-// gtag('send', 'event', [eventCategory], [eventAction], [eventLabel], [eventValue], [fieldsObject]);
+// gtag('event', <action>, {
+//   'event_category': <category>,
+//   'event_label': <label>,
+//   'value': <value>
+// });
 import 'bootstrap';
 import CodeMirror from 'codemirror/lib/codemirror.js';
 import $ from "jquery";
@@ -377,6 +381,11 @@ function copyToClipboard(event) {
     editors[sourceElement].save();
   }
 
+  gtag('event', 'copyToClipboard', {
+    event_category: 'click',
+    event_label: sourceElement
+  });
+
   //let textToCopy = $source.val();
   // in which case do I need text() ?
   let sourceType = $source[0].tagName;
@@ -533,7 +542,8 @@ function encodeJwt(event) {
       }
     }
   });
-  gtag('send', 'event', 'click', 'encode', 'standard');
+  gtag('event', 'encodeJwt');
+
   if (parseError) {
     setAlert("cannot parse JSON ("+parseError+")", 'warning');
     return;
@@ -697,7 +707,10 @@ function verifyJwt(event) {
     let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
     let p = null;
-    gtag('send', 'event', 'click', 'verify', 'standard', { type: 'signed', alg:header.alg});
+
+    gtag('event', 'verifyJwt', {
+      event_category: 'click',
+      event_label: `signed ${header.alg}`});
 
     if (isSymmetric(header.alg)) {
       p = getBufferForKey('symmetrickey', header.alg)
@@ -747,9 +760,12 @@ function verifyJwt(event) {
   // verification/decrypt of encrypted JWT
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
-    gtag('send', 'event', 'click', 'verify', 'standard', { type: 'encrypted'});
     let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
+  gtag('event', 'verifyJwt', {
+    event_category: 'click',
+    event_label: `encrypted ${header.alg}`
+  });
 
     return retrieveCryptoKey(header, {direction:'decrypt'})
       .then( async decryptionKey => {
@@ -895,6 +911,11 @@ const getKeyUse = (alg) => (alg.startsWith('ECDH')) ? ['deriveKey', 'deriveBits'
 function newKey(event) {
   let alg = $('.sel-alg').find(':selected').text();
 
+  gtag('event', 'newKey', {
+    event_category: (event)? 'click' : 'implicit',
+    event_label: alg
+  });
+
   if (alg.startsWith('HS') || alg.startsWith('PB') || alg === 'dir' || alg.startsWith('A') ) {
     let domid = (alg === 'dir')? 'directkey': 'symmetrickey',
         $div = $('#' + domid),
@@ -977,7 +998,9 @@ function showDecoded(skipEncryptedPayload) {
   let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
       matches = re.signed.jwt.exec(tokenString);
 
-  gtag('send', 'event', 'click', 'decode', 'standard');
+  gtag('event', 'decode', {
+    event_category: 'click'
+  });
 
   saveSetting('encodedjwt', tokenString); // for reload
   $('#panel_encoded > p > span.length').text('(' + tokenString.length + ' bytes)');
@@ -1252,8 +1275,10 @@ function onChangeEnc(event) {
       headerObj = null;
 
   if ( ! initialized()) { return ; }
-  gtag('send', 'event', 'click', 'changeEnc', 'standard', newSelection);
-
+  gtag('event', 'changeEnv', {
+    event_category: 'click',
+    event_label: newSelection
+  });
   if (alg == 'dir' || alg.startsWith('PB')) {
     Array.prototype.forEach.call($(".ta-key"), ($ta) => onKeyTextChange.call($ta, null));
   }
@@ -1291,7 +1316,11 @@ function onChangeAlg(event) {
     };
 
   if ( ! initialized()) { return ; }
-  gtag('send', 'event', 'click', 'changeAlg', 'standard', newSelection);
+  gtag('event', 'changeAlg', {
+    event_category: 'click',
+    event_label: newSelection
+  });
+
   editors['token-decoded-header'].save();
   headerObj = getHeaderFromForm();
 
@@ -1352,8 +1381,10 @@ function onChangeVariant(event) {
 
   editors['token-decoded-header'].save();
 
-  gtag('send', 'event', 'click', 'changeVariant', 'standard', newSelection);
-
+  gtag('event', 'changeVariant', {
+    event_category: 'click',
+    event_label: newSelection
+  });
   if (newSelection != previousSelection) {
     try {
       let headerObj = getHeaderFromForm();
@@ -1439,12 +1470,14 @@ function contriveJson(segment) {
 function newJson(segment, event) {
   let jsonBlob = contriveJson(segment),
       elementId = `token-decoded-${segment}` ;
+  gtag('event', 'newJson', { segment });
   editors[elementId].setValue(JSON.stringify(jsonBlob,null,2));
 }
 
 function contriveJwt(event) {
   let payload = contriveJson('payload'),
       header = contriveJson('header');
+  gtag('event', 'contriveJwt');
   editors['token-decoded-header'].setValue(JSON.stringify(header));
   editors['token-decoded-payload'].setValue(JSON.stringify(payload));
   encodeJwt(event);
@@ -1606,6 +1639,10 @@ $(document).ready(function() {
        text: array of pasted strings
        } */
     if (event.origin == 'paste') {
+  gtag('event', 'paste', {
+    event_category: 'encodedJwt'
+  });
+
       setTimeout(() => {
         removeNewlines(editors.encodedjwt);
         showDecoded();
@@ -1623,6 +1660,9 @@ $(document).ready(function() {
       lineWrapping: true
     });
     editors[keytype].on('inputRead', function(cm, event) {
+  gtag('event', 'paste', {
+    event_category: keytype
+  });
       if (event.origin == 'paste') {
         setTimeout(function() {
           let fieldvalue = reformNewlines(editors[keytype]);
@@ -1704,7 +1744,7 @@ $(document).ready(function() {
   else if (datamodel.encodedjwt) {
      maybeNewKey();
   }
-  else if ( ! datamodel.encodedjwt) {
+  else {
     maybeNewKey()
       .then( _ => contriveJwt() );
   }

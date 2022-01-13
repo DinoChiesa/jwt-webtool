@@ -12,8 +12,24 @@
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'UA-105867635-2');
+        gtag('js', new Date());
+        gtag('config', 'UA-105867635-2');
+      function gaEvent(a) {
+        // https://stackoverflow.com/questions/15744042/events-not-being-tracked-in-new-google-analytics-analytics-js-setup
+        // if (window.ga) {
+        //   if (!window.gaTracker) {
+        //     window.gaTracker = window.ga.getAll()[0];
+        //     window.gaTracker.set('page', location);
+        //   }
+        //   if (window.gaTracker) {
+        //     let args = Array.prototype.slice.call(arguments);
+        //     args.unshift('event');
+        //     gaTracker.send.apply(null, args);
+        //   }
+        // }
+        // let args = Array.prototype.slice.call(arguments);
+        gtag.call(null,a);
+      }
     </script>
   </head>
 
