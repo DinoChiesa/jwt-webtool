@@ -80,7 +80,7 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
       pwComponents = [
         ['Vaguely', 'Undoubtedly', 'Indisputably', 'Understandably', 'Definitely', 'Possibly'],
         ['Salty', 'Fresh', 'Ursine', 'Excessive', 'Daring', 'Delightful', 'Stable', 'Evolving', 'Instructive', 'Engaging'],
-        ['Mirror', 'Caliper', 'Postage', 'Return', 'Roadway', 'Passage', 'Statement', 'Toolbox', 'Paradox', 'Orbit', 'Bridge']
+        ['Mirror', 'Caliper', 'Postage', 'Return', 'Roadway', 'Passage', 'Statement', 'Toolbox', 'Paradox', 'Orbit', 'Bridge', 'Artifact', 'Puzzle']
       ];
 
 let editors = {}; // codemirror editors
@@ -197,7 +197,9 @@ function randomOctetKey(L) {
   return array;
 }
 
-function randomPassword(L) {
+const randomPassphrase = () => randomPassword(0, true);
+
+function randomPassword(L, noTruncate) {
   L = L || 23;
   let r = '';
   let totalLength = (items) => items.reduce((a, c) => a += c.length, 0);
@@ -207,7 +209,10 @@ function randomPassword(L) {
       items.push(
         randomNumber().toFixed(0).padStart(4, '0').substr(-4) );
     }
-    r = items.join('-').substring(0, L);
+    r = items.join('-');
+    if (! noTruncate) {
+      r = r.substring(0, L);
+    }
   }
   while (r.endsWith('-'));
   return r;
@@ -924,7 +929,7 @@ function newKey(event) {
         keyString = null;
     if (coding == 'pbkdf2') {
       // password can be of arbitrary length
-      keyString = randomPassword();
+      keyString = randomPassphrase();
     }
     else {
       // want key of specific length. Not REQUIRED for HS* signing, but it's ok.
@@ -1137,7 +1142,8 @@ function keysAreCompatible(alg1, alg2) {
 
 function changeKeyCoding(event) {
   let $this = $(this),
-      newCoding = $this.find(':selected').text().toLowerCase(),
+      newCodingCased = $this.find(':selected').text(),
+      newCoding = newCodingCased.toLowerCase(),
       previousCoding = $this.data('prev');
 
   const effectivePrevCoding = () => {
@@ -1165,7 +1171,7 @@ function changeKeyCoding(event) {
 
   $this.data('prev', newCoding);
   let suffix = (newCoding == 'pbkdf2') ? '-pb':'';
-  saveSetting($this.attr('id') + suffix, newCoding);
+  saveSetting($this.attr('id') + suffix, newCodingCased);
 }
 
 function checkSymmetryChange(newalg, oldalg) {
@@ -1198,9 +1204,10 @@ function checkSymmetryChange(newalg, oldalg) {
     }
     else {
       let value = datamodel['sel-symkey-coding'];
-      $keycoding.prop("disabled", false);
-      $keycoding.find(`option[value='${value}']`).prop('selected', 'selected');
+      if (value == 'PBKDF2') { value = 'UTF-8';}
       $keycoding.find('option[value=PBKDF2]').hide();
+      $keycoding.find(`option[value='${value}']`).prop('selected', 'selected');
+      $keycoding.prop("disabled", false);
     }
 
     if (newPrefix.startsWith('A')) {
@@ -1254,10 +1261,10 @@ async function onKeyTextChange(event) {
   saveSetting(id, $this.val());
 
   if ( ! alg.startsWith('PB')) {
-    let buf = await getBufferForKey($this),
+    let buf = await getBufferForKey($this, alg),
         cls = (id.indexOf('direct') >=0) ? '.sel-enc' : '.sel-alg',
-        alg = $(cls).find(':selected').text(),
-        benchmark = requiredKeyBitsForAlg(alg) / 8,
+        realAlg = $(cls).find(':selected').text(),
+        benchmark = requiredKeyBitsForAlg(realAlg) / 8,
         variant = $('.sel-variant').find(':selected').text().toLowerCase(),
         requirement = (variant == 'encrypted') ? 'required' : 'minimum';
     $this.parent().find('p > span.length').text(`(${buf.byteLength} bytes, ${requirement}: ${benchmark})`);
@@ -1275,9 +1282,9 @@ function onChangeEnc(event) {
       headerObj = null;
 
   if ( ! initialized()) { return ; }
-  gtag('event', 'changeEnv', {
+  gtag('event', 'changeEnc', {
     event_category: 'click',
-    event_label: newSelection
+    event_label: `${previousSelection} -> ${newSelection}`
   });
   if (alg == 'dir' || alg.startsWith('PB')) {
     Array.prototype.forEach.call($(".ta-key"), ($ta) => onKeyTextChange.call($ta, null));
@@ -1318,7 +1325,7 @@ function onChangeAlg(event) {
   if ( ! initialized()) { return ; }
   gtag('event', 'changeAlg', {
     event_category: 'click',
-    event_label: newSelection
+    event_label: `${previousSelection} -> ${newSelection}`
   });
 
   editors['token-decoded-header'].save();
@@ -1383,7 +1390,7 @@ function onChangeVariant(event) {
 
   gtag('event', 'changeVariant', {
     event_category: 'click',
-    event_label: newSelection
+    event_label: `${previousSelection} -> ${newSelection}`
   });
   if (newSelection != previousSelection) {
     try {
@@ -1417,13 +1424,7 @@ function onChangeVariant(event) {
 
   populateAlgorithmSelectOptions();
 
-  // This used to be appropriate logic, but since adding PBES2, at
-  // least the comment is no longer accurate.  In any case things seem to be working.
-
-  // There are two possibilities:
-  // 1. change from signed to encrypted, in which case we always need RSA keys.
-  // 2. change from encrypted to signed, in which case RS256 gets selected and again we need RSA keys.
-  // So just check if the prior alg was RSA.
+  // still need this?
   if ( !priorAlgSelection.startsWith('PS') && !priorAlgSelection.startsWith('RS')) {
     $('#privatekey .CodeMirror-code').addClass('outdated');
     $('#publickey .CodeMirror-code').addClass('outdated');
@@ -1443,10 +1444,10 @@ function contriveJson(segment) {
           iat: nowSeconds,
           exp: nowSeconds + tenMinutesInSeconds
         };
-  if (randomBoolean()) {
-    let propname = selectRandomValue(sampledata.props);
-    payload[propname] = generateRandomValue(null, null, propname);
-  }
+    if (randomBoolean()) {
+      let propname = selectRandomValue(sampledata.props);
+      payload[propname] = generateRandomValue(null, null, propname);
+    }
     return payload;
   }
 
@@ -1508,7 +1509,7 @@ function looksLikeJwt(possibleJwt) {
 }
 
 function retrieveLocalState() {
-    Object.keys(datamodel)
+  Object.keys(datamodel)
     .forEach(key => {
       var value = storage.get(key);
       if (key.startsWith('chk-')) {
@@ -1639,9 +1640,9 @@ $(document).ready(function() {
        text: array of pasted strings
        } */
     if (event.origin == 'paste') {
-  gtag('event', 'paste', {
-    event_category: 'encodedJwt'
-  });
+      gtag('event', 'paste', {
+        event_category: 'encodedJwt'
+      });
 
       setTimeout(() => {
         removeNewlines(editors.encodedjwt);
