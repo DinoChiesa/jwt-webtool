@@ -1141,8 +1141,10 @@ function keysAreCompatible(alg1, alg2) {
 }
 
 function changeKeyCoding(event) {
+  // fires for changes in either key or salt coding
   let $this = $(this),
       newCodingCased = $this.find(':selected').text(),
+      id = $this.attr('id'),
       newCoding = newCodingCased.toLowerCase(),
       previousCoding = $this.data('prev');
 
@@ -1153,7 +1155,7 @@ function changeKeyCoding(event) {
   if (newCoding != previousCoding) {
     // When the coding changes, try to re-encode the existing key.
     // This will not always work nicely when switching to UTF-8.
-    // You will get a urf-8 string with unicode escape sequences, eg \u000b.
+    // You will get a utf-8 string with unicode escape sequences, eg \u000b.
     let $ta = $('#' + $this.data('target')),
         textVal = $ta.val(),
         keybuf = Buffer.from(textVal, effectivePrevCoding());
@@ -1165,13 +1167,15 @@ function changeKeyCoding(event) {
     }
     else {
       $ta.val(keybuf.toString(newCoding));
-      $('#pbkdf2_params').hide();
+      if ( id.indexOf('salt') < 0) {
+        $('#pbkdf2_params').hide();
+      }
     }
   }
 
   $this.data('prev', newCoding);
   let suffix = (newCoding == 'pbkdf2') ? '-pb':'';
-  saveSetting($this.attr('id') + suffix, newCodingCased);
+  saveSetting(id + suffix, newCodingCased);
 }
 
 function checkSymmetryChange(newalg, oldalg) {
