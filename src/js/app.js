@@ -1632,7 +1632,8 @@ $(document).ready(function() {
   // editor for the encoded JWT (left hand column)
   editors.encodedjwt = CodeMirror.fromTextArea(document.getElementById('encodedjwt'), {
     mode: 'encodedjwt',
-    lineWrapping: true
+    lineWrapping: true,
+    singleCursorHeightPerLine: false
   });
   editors.encodedjwt.on('inputRead', function(cm, event) {
     /* event -> object{
@@ -1662,7 +1663,8 @@ $(document).ready(function() {
         elementId = 'ta_'+ keytype;
     editors[keytype] = CodeMirror.fromTextArea(document.getElementById(elementId), {
       mode: 'encodedjwt', // not really, its just plaintext
-      lineWrapping: true
+      lineWrapping: true,
+      singleCursorHeightPerLine: false
     });
     editors[keytype].on('inputRead', function(cm, event) {
   gtag('event', 'paste', {
@@ -1705,7 +1707,8 @@ $(document).ready(function() {
         statementIndent : 2,
         indentUnit : 2,
         tabSize: 2
-      }
+      },
+      singleCursorHeightPerLine: false
     });
   });
 
