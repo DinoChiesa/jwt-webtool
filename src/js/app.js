@@ -281,7 +281,7 @@ function getPbkdf2SaltBuffer() {
   throw new Error('unsupported salt encoding'); // will not happen
 }
 
-function getBufferForKey(item, alg) {
+function getBufferForSymmetricKey(item, alg) {
   let $div, $ta;
   if (typeof item == 'string') {
     $div = $('#' + item);
@@ -509,17 +509,17 @@ function retrieveCryptoKey(header, options) {
     header.p2c = getPbkdf2IterationCount();
     header.p2s = getPbkdf2SaltBuffer().toString('base64');
 
-    return getBufferForKey('symmetrickey', header.alg)
+    return getBufferForSymmetricKey('symmetrickey', header.alg)
       .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
   }
   if (kwKeyEncryptionAlgs.indexOf(header.alg) >= 0) {
-    return getBufferForKey('symmetrickey', header.alg)
+    return getBufferForSymmetricKey('symmetrickey', header.alg)
       .then( keyBuffer => checkKeyLength(header.alg, true, keyBuffer))
       .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc" }));
   }
 
   if (header.alg === 'dir') {
-    return getBufferForKey('directkey', header.alg)
+    return getBufferForSymmetricKey('directkey', header.alg)
       .then( keyBuffer => checkKeyLength(header.enc, true, keyBuffer))
       .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "enc", alg:header.enc }));
   }
@@ -597,7 +597,7 @@ function encodeJwt(event) {
   else {
     // create signed JWT
     if (isSymmetric(header.alg)) {
-      p = getBufferForKey('symmetrickey', header.alg)
+      p = getBufferForSymmetricKey('symmetrickey', header.alg)
         .then( keyBuffer => checkKeyLength(header.alg, false, keyBuffer))
         .then( keyBuffer => jose.JWK.asKey({ kty:'oct', k: keyBuffer, use: "sig" }));
     }
@@ -718,7 +718,7 @@ function verifyJwt(event) {
       event_label: `signed ${header.alg}`});
 
     if (isSymmetric(header.alg)) {
-      p = getBufferForKey('symmetrickey', header.alg)
+      p = getBufferForSymmetricKey('symmetrickey', header.alg)
         .then( keyBuffer => checkKeyLength(header.alg, false, keyBuffer))
         .then( keyBuffer => jose.JWK.asKey({kty:'oct', k: keyBuffer, use:'sig'}));
     }
@@ -1260,21 +1260,28 @@ function getHeaderFromForm() {
 async function onKeyTextChange(event) {
   let $this = $(this),
       id = $this.attr('id'),
-      alg = $('.sel-alg').find(':selected').text();
+      alg = $('.sel-alg').find(':selected').text(),
+      variant = $('.sel-variant').find(':selected').text().toLowerCase();
 
   saveSetting(id, $this.val());
 
-  if ( ! alg.startsWith('PB')) {
-    let buf = await getBufferForKey($this, alg),
-        cls = (id.indexOf('direct') >=0) ? '.sel-enc' : '.sel-alg',
-        realAlg = $(cls).find(':selected').text(),
-        benchmark = requiredKeyBitsForAlg(realAlg) / 8,
-        variant = $('.sel-variant').find(':selected').text().toLowerCase(),
-        requirement = (variant == 'encrypted') ? 'required' : 'minimum';
-    $this.parent().find('p > span.length').text(`(${buf.byteLength} bytes, ${requirement}: ${benchmark})`);
-  }
-  else {
-    // there is no minimum with PBKDF2...
+  // If the key will be used in a symmetric alg (signing or encrypting), show
+  // some helpful text on the actual size of the key, and the required size of
+  // the key.
+  if ((variant == 'encrypted' && (alg == 'dir' || alg.startsWith('PB'))) ||
+      (variant == 'signed' && (alg.startsWith('HS')))) {
+
+    if ( ! alg.startsWith('PB')) {
+      let buf = await getBufferForSymmetricKey($this, alg),
+          cls = (id.indexOf('direct') >=0) ? '.sel-enc' : '.sel-alg',
+          realAlg = $(cls).find(':selected').text(),
+          benchmark = requiredKeyBitsForAlg(realAlg) / 8,
+          requirement = (variant == 'encrypted') ? 'required' : 'minimum';
+      $this.parent().find('p > span.length').text(`(${buf.byteLength} bytes, ${requirement}: ${benchmark})`);
+    }
+    else {
+      // there is no minimum with PBKDF2...
+    }
   }
 }
 
