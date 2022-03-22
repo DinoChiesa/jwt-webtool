@@ -22,17 +22,32 @@ function makeConfig(mode) {
         module: {
           rules: [
             {
-              test: /\.(png|woff|woff2|eot|ttf|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-              use: [ { loader: 'url-loader' } ]
+              test: /\.(woff(2)?|eot|ttf|otf|svg|png)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+              type: 'asset',
+              parser: {
+                dataUrlCondition: {
+                  maxSize: 8 * 1024 // in bytes
+                }
+              },
+              generator: {
+                // the file path to use when emitting a file
+                filename: 'assets/[hash][ext][query]'
+              }
             },
             {
               test: /\.scss$/,
-              use: ['style-loader',
-                    {
-                      loader: MiniCssExtractPlugin.loader,
-                      options: { }
-                    },
-                    'css-loader', 'sass-loader']
+              use: [
+                'style-loader',
+                {
+                  loader: MiniCssExtractPlugin.loader,
+                  options: {
+                    esModule: false,
+                    publicPath: '../' // prepend this to url() in the CSS
+                  }
+                },
+                'css-loader',
+                'sass-loader'
+              ]
             }]
         },
 
