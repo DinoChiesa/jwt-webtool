@@ -726,40 +726,46 @@ function verifyJwt(event) {
       p = getPublicKey(header);
     }
 
-    return p
+
+    p = p
       .then( key =>
-             jose.JWS.createVerify(key)
+             jose.JWS
+             .createVerify(key)
              .verify(tokenString)
              .then( result => {
-               // {result} is a Object with:
-               // *  header: the combined 'protected' and 'unprotected' header members
-               // *  payload: Buffer of the signed content
-               // *  signature: Buffer of the verified signature
-               // *  key: The key used to verify the signature
+        // {result} is a Object with:
+        // *  header: the combined 'protected' and 'unprotected' header members
+        // *  payload: Buffer of the signed content
+        // *  signature: Buffer of the verified signature
+        // *  key: The key used to verify the signature
 
-               let parsedPayload = JSON.parse(result.payload),
-                   reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableSigningAlgs(key));
-               if (reasons.length == 0) {
-                 let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
-                 showDecoded();
-                 if (event) {
-                   setAlert(message, 'success');
-                 }
-                 selectAlgorithm(result.header.alg);
-                 $('#privatekey .CodeMirror-code').removeClass('outdated');
-                 $('#publickey .CodeMirror-code').removeClass('outdated');
-               }
-               else {
-                 let label = (reasons.length == 1)? 'Reason' : 'Reasons';
-                 setAlert('The signature verifies, but the JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
-               }
-             })
-             .catch( e => {
-               setAlert('Verification failed. Bad key? ' + e.message);
-             }))
+        let parsedPayload = JSON.parse(result.payload),
+            reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableSigningAlgs(key));
+        if (reasons.length == 0) {
+          let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
+          showDecoded();
+          if (event) {
+            setAlert(message, 'success');
+          }
+          selectAlgorithm(result.header.alg);
+          $('#privatekey .CodeMirror-code').removeClass('outdated');
+          $('#publickey .CodeMirror-code').removeClass('outdated');
+        }
+        else {
+          let label = (reasons.length == 1)? 'Reason' : 'Reasons';
+          setAlert('The signature verifies, but the JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
+        }
+      })
       .catch( e => {
-        setAlert('error verifying: ' + e.message);
-      });
+        if (e.message == 'no key found') {
+          setAlert('could not verify. key mismatch?');
+        }
+        else {
+          setAlert('could not verify. ' + e.message);
+        }
+      }));
+
+    return p;
   }
 
   // verification/decrypt of encrypted JWT
@@ -767,10 +773,10 @@ function verifyJwt(event) {
   if (matches && matches.length == 6) {
     let json = Buffer.from(matches[1], 'base64').toString('utf8');
     let header = JSON.parse(json);
-  gtag('event', 'verifyJwt', {
-    event_category: 'click',
-    event_label: `encrypted ${header.alg}`
-  });
+    gtag('event', 'verifyJwt', {
+      event_category: 'click',
+      event_label: `encrypted ${header.alg}`
+    });
 
     return retrieveCryptoKey(header, {direction:'decrypt'})
       .then( async decryptionKey => {
