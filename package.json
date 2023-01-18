@@ -1,6 +1,6 @@
 {
   "name": "jwt-webtool",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "web tool to parse, generate, and validate JWT, whether signed or encrypted",
   "repository": {
     "type": "git",
@@ -44,6 +44,7 @@
     "npm": ">= 8.3.0"
   },
   "overrides": {
-    "yargs": "^17.0.1"
+    "yargs": "^17.0.1",
+    "json5": "^2.2.3"
   }
 }

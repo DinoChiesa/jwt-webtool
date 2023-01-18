@@ -1,4 +1,4 @@
-@import "custom";
+@import 'custom';
 
 body {
   margin: 12px 20px;
@@ -12,26 +12,26 @@ body {
 }
 
 .container {
-    width: 100%;
-    padding: 0 15px;
-    margin: auto;
-    overflow: hidden;
+  margin: auto;
+  overflow: hidden;
+  padding: 0 15px;
+  width: 100%;
 }
 
 textarea {
   font-family: monospace;
-  max-width:876px;
-  width:100%;
+  max-width: 876px;
+  width: 100%;
 }
 
 .panel {
-  border-width: 1px 1px 1px 1px;
   border-color: grey;
   border-style: dotted;
-  padding: 0 8px;
+  border-width: 1px 1px 1px 1px;
   font-size: 120%;
+  padding: 0 8px;
   p {
-    /* margin-bottom: 0.2rem; */
+    // margin-bottom: 0.2rem;
     color: #BDBDBD;
   }
 }
@@ -47,29 +47,29 @@ textarea {
 #directkey,
 #symmetrickey {
   > input {
-    width: 100%;
-    padding-left: 6px;
-    font-family: monospace;
     background-color: white; /* must be explicit to allow flash? */
+    font-family: monospace;
+    padding-left: 6px;
+    width: 100%;
   }
   > div {
     margin-left: 32px;
     span {
       color: #BDBDBD;
+      display: inline-block;
       font-size: 80%;
       width: 140px;
-      display: inline-block;
     }
     input {
+      font-family: monospace;
       margin-left: 8px;
       padding-left: 6px;
       width: 440px;
-      font-family: monospace;
     }
     select {
-      margin-left:8px;
-      width:180px;
       display: inline-block;
+      margin-left: 8px;
+      width: 180px;
     }
   }
 }
@@ -82,10 +82,10 @@ textarea {
 }
 
 .panel-center {
-  float: left;
-  width: 162px;
-  margin: 2px 0;
   border-width: 0;
+  float: left;
+  margin: 2px 0;
+  width: 162px;
   > button {
     margin-top: 14px;
   }
@@ -93,7 +93,7 @@ textarea {
     width: auto;
   }
   > * {
-    width:140px;
+    width: 140px;
   }
   > select:not(:first-child) {
     margin-top: 14px;
@@ -104,8 +104,8 @@ textarea {
 }
 
 .panel-right {
-  min-width: 452px;
   margin-left: 678px;
+  min-width: 452px;
 }
 
 div.CodeMirror {
@@ -149,6 +149,7 @@ pre.CodeMirror-line > span {
 .cm-jwt-header {
   color: #fa003a;
 }
+
 .cm-jwt-payload {
   color: #b100ff;
 }
@@ -161,6 +162,36 @@ pre.CodeMirror-line > span {
 .cm-jwt-signature, .cm-jwt-authtag {
   color: #3184fb;
 }
+
+/*
+
+.cm-jwt-header:hover::after {
+    display: inline-flex;
+}
+.cm-jwt-header::after {
+    content: "JWT Header";
+}
+
+.cm-jwt-header::after,
+.cm-jwt-payload::after,
+.cm-jwt-signature::after {
+    background-color: #fef4c5;
+    border: 1px solid #d4b943;
+    -moz-border-radius: 2px;
+    -ms-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    display: none;
+    padding: 2px;
+    position: relative;
+    right: -30px;
+    text-align: center;
+    top: -20px;
+    width: 150px;
+    z-index:100;
+}
+
+*/
 
 #privatekey, #publickey {
   > .CodeMirror {
@@ -221,6 +252,7 @@ pre.CodeMirror-line > span {
 .banner > h2, .footer > h2 {
   top: 46px;
 }
+
 .banner > div {
   top: 96px;
 }
@@ -257,6 +289,7 @@ pre.CodeMirror-line > span {
 }
 
 .outdated {
+  // indicates that the keypair is not known to correspond to the JWT/JWE
   background-color: #DCDCDC;
 }
 
