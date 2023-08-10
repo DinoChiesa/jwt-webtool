@@ -1451,7 +1451,7 @@ function onChangeVariant(event) {
 
 function contriveJson(segment) {
   if (segment == 'payload') {
-    let nowSeconds = Math.floor((new Date()).valueOf() / 1000),
+    const nowSeconds = Math.floor((new Date()).valueOf() / 1000),
         sub = selectRandomValue(sampledata.names),
         aud = selectRandomValueExcept(sampledata.names, sub),
         payload = {
@@ -1462,13 +1462,13 @@ function contriveJson(segment) {
           exp: nowSeconds + tenMinutesInSeconds
         };
     if (randomBoolean()) {
-      let propname = selectRandomValue(sampledata.props);
+      const propname = selectRandomValue(sampledata.props);
       payload[propname] = generateRandomValue(null, null, propname);
     }
     return payload;
   }
 
-  let header = { alg : $('.sel-alg').find(':selected').text() };
+  const header = { alg : $('.sel-alg').find(':selected').text() };
   if ( keyEncryptionAlgs.indexOf(header.alg) >=0) {
     if ( ! header.enc ) {
       header.enc = selectRandomValue(contentEncryptionAlgs);
@@ -1478,22 +1478,22 @@ function contriveJson(segment) {
     header.typ = 'JWT';
   }
   if (randomBoolean()) {
-    let propname = selectRandomValue(sampledata.props),
+    const propname = selectRandomValue(sampledata.props),
         type = selectRandomValueExcept(sampledata.types, ['array', 'object']);
     header[propname] = generateRandomValue(type, 0, propname);
   }
   return header;
 }
 
-function newJson(segment, event) {
-  let jsonBlob = contriveJson(segment),
+function newJson(segment, _event) {
+  const jsonBlob = contriveJson(segment),
       elementId = `token-decoded-${segment}` ;
   gtag('event', 'newJson', { segment });
   editors[elementId].setValue(JSON.stringify(jsonBlob,null,2));
 }
 
 function contriveJwt(event) {
-  let payload = contriveJson('payload'),
+  const payload = contriveJson('payload'),
       header = contriveJson('header');
   gtag('event', 'contriveJwt');
   editors['token-decoded-header'].setValue(JSON.stringify(header));
@@ -1501,16 +1501,24 @@ function contriveJwt(event) {
   encodeJwt(event);
 }
 
-function decoratePayloadLine(instance, handle, lineElement) {
-  let lastComma = new RegExp(',\s*$');
+function decoratePayloadLine(_instance, _handle, lineElement) {
+  const lastComma = new RegExp(',\s*$');
   $(lineElement).find('span.cm-property').each( (ix, element) => {
-    let $this = $(element), text = $this.text();
+    const $this = $(element),
+          text = $this.text();
     if (['"exp"', '"iat"', '"nbf"'].indexOf(text) >= 0) {
-      let $valueSpan = $this.nextAll('span').first(),
-          text = $valueSpan.text().replace(lastComma, ''),
-          time = new Date(Number(text) * 1000),
-          stringRep = time.toISOString();
-      $valueSpan.attr('title', stringRep);
+      const $valueSpan = $this.nextAll('span').first(),
+            value = $valueSpan.text().replace(lastComma, ''),
+            time = new Date(Number(value) * 1000);
+      try {
+        const stringRep = time.toISOString();
+        $valueSpan.attr('title', stringRep);
+      }
+      catch(e) {
+        // possibly invalid time
+        $valueSpan.attr('title', 'looks like an invalid time value');
+        console.log(`found invalid time value while decoding ${text}`);
+      }
     }
   });
 }
@@ -1528,7 +1536,7 @@ function looksLikeJwt(possibleJwt) {
 function retrieveLocalState() {
   Object.keys(datamodel)
     .forEach(key => {
-      var value = storage.get(key);
+      const value = storage.get(key);
       if (key.startsWith('chk-')) {
         datamodel[key] = (String(value) == 'true');
       }
@@ -1548,16 +1556,16 @@ function saveSetting(key, value) {
 
 function applyState() {
   // ordering is important. We must apply variant before alg.
-  let keys = Object.keys(datamodel);
+  const keys = Object.keys(datamodel);
   keys.sort( (a,b) => (a=='sel-variant')? -1 : ((b == 'sel-variant')?1:a.localeCompare(b) ));
   keys
     .forEach(key => {
-      var value = datamodel[key];
+      const value = datamodel[key];
       if (value) {
-        var $item = $('#' + key);
+        const $item = $('#' + key);
         if (key.startsWith('sel-alg-')) {
           // selection of alg, stored separately for signing and encrypting
-          let currentlySelectedVariant = datamodel['sel-variant'];
+          const currentlySelectedVariant = datamodel['sel-variant'];
           if (currentlySelectedVariant) {
             let storedVariant = key.substr(8);
             if (storedVariant == currentlySelectedVariant.toLowerCase()) {
@@ -1569,7 +1577,7 @@ function applyState() {
         else if (key.startsWith('sel-symkey-coding')) {
           $item = $('#sel-symkey-coding');
           if (key == 'sel-symkey-coding-pb') {
-            let currentlySelectedAlg = datamodel['sel-alg-encrypted'];
+            const currentlySelectedAlg = datamodel['sel-alg-encrypted'];
             if (currentlySelectedAlg.startsWith('PB')) {
               $item.find("option[value='"+value+"']").prop('selected', 'selected');
             }
@@ -1592,7 +1600,7 @@ function applyState() {
           if (value) { parseAndDisplayToken(value); }
         }
         else if (key == 'ta_publickey' || key == 'ta_privatekey') {
-          let keytype = key.substr(3);
+          const keytype = key.substr(3);
           editors[keytype].setValue(value); // will update the visible text area
         }
         else {
@@ -1604,8 +1612,7 @@ function applyState() {
 
 function fixupTextInEditor(replacer, editor) {
   editor.save();
-  let fieldvalue = replacer(editor.getValue())
-    .trim();
+  const fieldvalue = replacer(editor.getValue()).trim();
   editor.setValue(fieldvalue);
   editor.save();
   return fieldvalue;
