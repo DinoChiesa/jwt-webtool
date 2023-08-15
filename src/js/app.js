@@ -250,7 +250,7 @@ function requiredKeyBitsForAlg(alg) {
 }
 
 function getPbkdf2IterationCount() {
-  let icountvalue = $('#ta_pbkdf2_iterations').val(),
+  const icountvalue = $('#ta_pbkdf2_iterations').val().trim(),
       icount = ITERATION_DEFAULT;
   if (icountvalue == '') {
     setAlert("not a number? defaulting to iteration count: "+ icount);
@@ -259,7 +259,7 @@ function getPbkdf2IterationCount() {
     try {
       icount = Number.parseInt(icountvalue, 10);
     }
-    catch (exc1) {
+    catch (_exc1) {
       setAlert("not a number? defaulting to iteration count: "+ icount);
     }
   }
@@ -271,9 +271,9 @@ function getPbkdf2IterationCount() {
 }
 
 function getPbkdf2SaltBuffer() {
-  let saltText = $('#ta_pbkdf2_salt').val();
-  let coding = $('.sel-symkey-pbkdf2-salt-coding').find(':selected').text().toLowerCase();
-  let knownCodecs = ['utf-8', 'base64', 'hex'];
+  const saltText = $('#ta_pbkdf2_salt').val().trim(),
+        coding = $('.sel-symkey-pbkdf2-salt-coding').find(':selected').text().toLowerCase(),
+        knownCodecs = ['utf-8', 'base64', 'hex'];
 
   if (knownCodecs.indexOf(coding)>=0) {
     return Buffer.from(saltText, coding);
@@ -292,7 +292,7 @@ function getBufferForSymmetricKey(item, alg) {
     $div = $ta.parent();
   }
 
-  const keyvalue = $ta.val(),
+  const keyvalue = $ta.val().trim(),
         coding = $('#' + $ta.data('coding')).find(':selected').text().toLowerCase(),
         knownCodecs = ['utf-8', 'base64', 'hex'];
 
@@ -309,7 +309,7 @@ function getBufferForSymmetricKey(item, alg) {
   }
 
   if (coding == 'pbkdf2') {
-    let kdfParams = {
+    const kdfParams = {
           salt: getPbkdf2SaltBuffer(),
           iterations: getPbkdf2IterationCount(),
           length: requiredKeyBitsForAlg(alg) / 8
@@ -322,7 +322,7 @@ function getBufferForSymmetricKey(item, alg) {
 
 function looksLikePem(s) {
   s = s.trim();
-  let looksLike =
+  const looksLike =
     (s.startsWith('-----BEGIN PRIVATE KEY-----') &&
      s.endsWith('-----END PRIVATE KEY-----')) ||
     (s.startsWith('-----BEGIN PUBLIC KEY-----') &&
@@ -339,43 +339,53 @@ function looksLikeJwks(s) {
     s = JSON.parse(s);
     return ((s.keys) && (s.keys.length > 0) && s.keys[0].kty) ? s : null;
   }
-  catch (exc1) {
+  catch (_exc1) {
     return false;
   }
 }
 
 function getPrivateKey(header, options) {
   editors.privatekey.save();
-  let keyvalue = $('#ta_privatekey').val().trim();
+  const keyvalue = $('#ta_privatekey')
+    .val()
+    .trim()
+    .replace(new RegExp('[^\x00-\x7F]', 'g'), "");  // strip non - ASCII
+
   return jose.JWK.asKey(keyvalue, "pem", {...options, ...header});
 }
 
 function getPublicKey(header, options) {
   options = options || {};
   editors.publickey.save();
-  let fieldvalue = $('#ta_publickey').val().trim();
+  const fieldValue = $('#ta_publickey')
+    .val()
+    .trim()
+    .replace(new RegExp('[^\x00-\x7F]', 'g'), "");  // strip non - ASCII
 
-  if (looksLikePem(fieldvalue)) {
+  if (looksLikePem(fieldValue)) {
     // if de-serializing from PEM, apply the kid, if any
-    return jose.JWK.asKey(fieldvalue, "pem", { ...options, ...header });
+    return jose.JWK.asKey(fieldValue, "pem", { ...options, ...header });
   }
 
-  return jose.JWK.asKeyStore(fieldvalue)
-      .then(keystore => keystore.get(header));
+  let parseable = false;
+  try{
+    JSON.parse(fieldValue);
+    parseable = true;
+  }
+  catch (_e1) {
+    setAlert("not parseable as JWKS?");
+  }
+
+  if ( ! parseable) {
+    return Promise.resolve(null); // no key
+  }
+
+  return jose.JWK.asKeyStore(fieldValue)
+    .then(keystore => keystore.get(header));
 }
 
-// function currentKid() {
-//   let s = (new Date()).toISOString(); // ex: 2019-09-04T21:29:23.428Z
-//   let re = new RegExp('[-:TZ\\.]', 'g');
-//   return s.replace(re, '');
-// }
-
-function capitalize(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-function copyToClipboard(event) {
-  let $elt = $(this),
+function copyToClipboard(_event) {
+  const $elt = $(this),
       sourceElement = $elt.data('target'),
       // grab the element to copy
       $source = $('#' + sourceElement),
@@ -393,8 +403,8 @@ function copyToClipboard(event) {
 
   //let textToCopy = $source.val();
   // in which case do I need text() ?
-  let sourceType = $source[0].tagName;
-  let textToCopy = (sourceType == 'TEXTAREA' || sourceType.tagName == 'INPUT') ? $source.val() : $source.text();
+  const sourceType = $source[0].tagName;
+  const textToCopy = (sourceType == 'TEXTAREA' || sourceType.tagName == 'INPUT') ? $source.val() : $source.text();
 
   $("body").append($temp);
   $temp.val(textToCopy).select();
@@ -406,48 +416,47 @@ function copyToClipboard(event) {
       // Animation to indicate copy.
       // CodeMirror obscures the original textarea, and appends a div as the next sibling.
       // We want to flash THAT.
-      let $cmdiv = $source.next();
-      if ($cmdiv.prop('tagName').toLowerCase() == 'div' && $cmdiv.hasClass('CodeMirror')) {
-        // There seems to be  a bug in Chrome which recomputes the font size, seemingly incorrectly,
-        // after removing the copy-to-clipboard-flash-bg class. So this logic just leaves it there.
-        // It needs to be removed _prior_ to adding it the next time.
+    const $cmdiv = $source.next();
+    if ($cmdiv.prop('tagName').toLowerCase() == 'div' && $cmdiv.hasClass('CodeMirror')) {
+      // There seems to be  a bug in Chrome which recomputes the font size, seemingly incorrectly,
+      // after removing the copy-to-clipboard-flash-bg class. So this logic just leaves it there.
+      // It needs to be removed _prior_ to adding it the next time.
 
-        // $cmdiv
-        //   .removeClass('dummy')
-        //   .addClass('copy-to-clipboard-flash-bg')
-        //   .delay('1200')
-        //   .queue( _ => $cmdiv
-        //           .removeClass('copy-to-clipboard-flash-bg')
-        //           .dequeue() )
-        //   .delay('3')
-        //   .queue( _ => $cmdiv
-        //           .addClass('dummy')
-        //           .dequeue() );
-        $cmdiv
-          .removeClass('copy-to-clipboard-flash-bg')
-          .delay('6')
-          .queue( _ => $cmdiv
-                  .addClass('copy-to-clipboard-flash-bg')
-                  .dequeue() );
-      }
-      else {
-        // no codemirror (probably the secretkey field, which is just an input)
-        $source.addClass('copy-to-clipboard-flash-bg');
-        setTimeout( _ => $source.removeClass('copy-to-clipboard-flash-bg'), 1800);
+      // $cmdiv
+      //   .removeClass('dummy')
+      //   .addClass('copy-to-clipboard-flash-bg')
+      //   .delay('1200')
+      //   .queue( _ => $cmdiv
+      //           .removeClass('copy-to-clipboard-flash-bg')
+      //           .dequeue() )
+      //   .delay('3')
+      //   .queue( _ => $cmdiv
+      //           .addClass('dummy')
+      //           .dequeue() );
+      $cmdiv
+        .removeClass('copy-to-clipboard-flash-bg')
+        .delay('6')
+        .queue( _ => $cmdiv
+                .addClass('copy-to-clipboard-flash-bg')
+                .dequeue() );
+    }
+    else {
+      // no codemirror (probably the secretkey field, which is just an input)
+      $source.addClass('copy-to-clipboard-flash-bg');
+      setTimeout( _ => $source.removeClass('copy-to-clipboard-flash-bg'), 1800);
 
-        // $source.addClass('copy-to-clipboard-flash-bg')
-        //   .delay('1800')
-        //   .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
+      // $source.addClass('copy-to-clipboard-flash-bg')
+      //   .delay('1800')
+      //   .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
 
-        // $source
-        //   .removeClass('copy-to-clipboard-flash-bg')
-        //   .delay('6')
-        //   .queue( _ => $source.addClass('copy-to-clipboard-flash-bg').dequeue() );
-      }
-
+      // $source
+      //   .removeClass('copy-to-clipboard-flash-bg')
+      //   .delay('6')
+      //   .queue( _ => $source.addClass('copy-to-clipboard-flash-bg').dequeue() );
+    }
   }
 
-  catch (e) {
+  catch (_e) {
     success = false;
   }
   $temp.remove();
@@ -455,7 +464,7 @@ function copyToClipboard(event) {
 }
 
 function getAcceptableSigningAlgs(key) {
-  let keytype = key.kty;
+  const keytype = key.kty;
   if (keytype == 'oct') return hmacSigningAlgs;
   if (keytype == 'RSA') return rsaSigningAlgs;
   if (keytype == 'EC') {
@@ -470,7 +479,7 @@ function getAcceptableSigningAlgs(key) {
 }
 
 function getAcceptableEncryptionAlgs(key) {
-  let keytype = key.kty;
+  const keytype = key.kty;
   if (keytype == 'RSA') return rsaKeyEncryptionAlgs;
   if (keytype == 'oct') return [...pbes2KeyEncryptionAlgs, ...kwKeyEncryptionAlgs, 'dir'];
   if (keytype == 'EC') return ecdhKeyEncryptionAlgs;
@@ -490,11 +499,11 @@ const pickContentEncryptionAlg = () => datamodel['sel-enc'] || selectRandomValue
 const isSymmetric = (alg) => alg.startsWith('HS');
 
 function checkKeyLength(alg, exact, keybuffer) {
-  let length = keybuffer.byteLength,
-      requiredLength = requiredKeyBitsForAlg(alg) / 8,
-      okResult = (exact) ? (length == requiredLength) : length >= requiredLength;
+  const length = keybuffer.byteLength,
+        requiredLength = requiredKeyBitsForAlg(alg) / 8,
+        okResult = (exact) ? (length == requiredLength) : length >= requiredLength;
   if (okResult) return Promise.resolve(keybuffer);
-  let errorMsg = (exact) ?
+  const errorMsg = (exact) ?
     `inappropriate key length, provided=${length}, required=${requiredLength}` :
     `insufficient key length. You need at least ${requiredLength} bytes to use ${alg}`;
   return Promise.reject(new Error(errorMsg));
@@ -554,27 +563,27 @@ function encodeJwt(event) {
     return;
   }
 
-  let {header, payload} = values;
+  const {header, payload} = values;
   if (!header.typ && $('#chk-typ').prop('checked')) {
     header.typ = "JWT";
   }
 
   // optionally set expiry in payload
-  let desiredExpiryOverride = $('.sel-expiry').find(':selected').text().toLowerCase();
+  const desiredExpiryOverride = $('.sel-expiry').find(':selected').text().toLowerCase();
   if (desiredExpiryOverride == "no expiry") {
     delete payload.exp;
   }
   else {
-    let matches = (new RegExp('^([1-9][0-9]*) (minutes|seconds)$')).exec(desiredExpiryOverride);
+    const matches = (new RegExp('^([1-9][0-9]*) (minutes|seconds)$')).exec(desiredExpiryOverride);
     if (matches && matches.length == 3) {
-      let now = Math.floor((new Date()).valueOf() / 1000),
+      const now = Math.floor((new Date()).valueOf() / 1000),
           factor = (matches[2] == 'minutes') ? 60 : 1;
       // the following may override an explicitly-provided value
       payload.exp = now + parseInt(matches[1], 10) * factor;
     }
   }
 
-  let wantIssuedTime = $('#chk-iat').prop('checked');
+  const wantIssuedTime = $('#chk-iat').prop('checked');
   if (wantIssuedTime) {
     payload.iat = Math.floor((new Date()).valueOf() / 1000);
   }
@@ -587,9 +596,9 @@ function encodeJwt(event) {
         if ( ! isAppropriateEncryptingAlg(header.alg, encryptingKey)) {
           throw new Error('the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?');
         }
-        let encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
-            // createEncrypt will automatically inject the kid, unless I pass reference:false
-            cipher = jose.JWE.createEncrypt(encryptOptions, [{key:encryptingKey, reference:false}]);
+        const encryptOptions = {alg: header.alg, fields: header, format: 'compact'},
+              // createEncrypt will automatically inject the kid, unless I pass reference:false
+              cipher = jose.JWE.createEncrypt(encryptOptions, [{key:encryptingKey, reference:false}]);
         cipher.update(JSON.stringify(payload), "utf8");
         return cipher.final();
       });
@@ -610,13 +619,13 @@ function encodeJwt(event) {
       if ( ! isAppropriateSigningAlg(header.alg, signingKey)) {
         throw new Error('the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?');
       }
-      let signOptions = {
+      const signOptions = {
             alg: header.alg,
             fields: header,
             format: 'compact'
           };
       // use reference:false to omit the kid from the header
-      let signer = jose.JWS.createSign(signOptions, [{key:signingKey, reference:false}]);
+      const signer = jose.JWS.createSign(signOptions, [{key:signingKey, reference:false}]);
       signer.update(JSON.stringify(payload), "utf8");
       return signer.final();
     });
@@ -650,8 +659,7 @@ function encodeJwt(event) {
 }
 
 function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
-  let nowSeconds = Math.floor((new Date()).valueOf() / 1000),
-      gracePeriod = 0,
+  const nowSeconds = Math.floor((new Date()).valueOf() / 1000),
       wantCheckIat = true,
       reasons = [];
 
@@ -666,7 +674,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
 
   // 8.1 expired time 'exp' check
   if (pPayload.exp !== undefined && typeof pPayload.exp == "number") {
-    let expiry = new Date(pPayload.exp * 1000),
+    const expiry = new Date(pPayload.exp * 1000),
         expiresString = expiry.toISOString(),
         delta = nowSeconds - pPayload.exp,
         timeUnit = quantify(delta, 'seconds');
@@ -677,7 +685,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
 
   // 8.2 not before time 'nbf' check
   if (pPayload.nbf !== undefined && typeof pPayload.nbf == "number") {
-    let notBefore = new Date(pPayload.nbf * 1000),
+    const notBefore = new Date(pPayload.nbf * 1000),
         notBeforeString = notBefore.toISOString(),
         delta = pPayload.nbf - nowSeconds,
         timeUnit = quantify(delta, 'seconds');
@@ -689,7 +697,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   // 8.3 issued at time 'iat' check
   if (wantCheckIat) {
     if (pPayload.iat !== undefined && typeof pPayload.iat == "number") {
-    let issuedAt = new Date(pPayload.iat * 1000),
+    const issuedAt = new Date(pPayload.iat * 1000),
         issuedAtString = issuedAt.toISOString(),
         delta = pPayload.iat - nowSeconds,
         timeUnit = quantify(delta, 'seconds');
@@ -704,13 +712,13 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
 function verifyJwt(event) {
   editors.encodedjwt.save();
   editors.publickey.save();
-  let tokenString = editors.encodedjwt.getValue(),
+  const tokenString = editors.encodedjwt.getValue(),
       matches = re.signed.jwt.exec(tokenString);
   // verify a signed JWT
   if (matches && matches.length == 4) {
     $("#mainalert").addClass('fade').removeClass('show');
-    let json = Buffer.from(matches[1], 'base64').toString('utf8');
-    let header = JSON.parse(json);
+    const json = Buffer.from(matches[1], 'base64').toString('utf8'),
+          header = JSON.parse(json);
     let p = null;
 
     gtag('event', 'verifyJwt', {
@@ -739,10 +747,10 @@ function verifyJwt(event) {
         // *  signature: Buffer of the verified signature
         // *  key: The key used to verify the signature
 
-        let parsedPayload = JSON.parse(result.payload),
+        const parsedPayload = JSON.parse(result.payload),
             reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableSigningAlgs(key));
         if (reasons.length == 0) {
-          let message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
+          const message = 'The JWT signature has been verified and the times are valid. Algorithm: ' + result.header.alg;
           showDecoded();
           if (event) {
             setAlert(message, 'success');
@@ -752,7 +760,7 @@ function verifyJwt(event) {
           $('#publickey .CodeMirror-code').removeClass('outdated');
         }
         else {
-          let label = (reasons.length == 1)? 'Reason' : 'Reasons';
+          const label = (reasons.length == 1)? 'Reason' : 'Reasons';
           setAlert('The signature verifies, but the JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
         }
       })
@@ -763,7 +771,10 @@ function verifyJwt(event) {
         else {
           setAlert('could not verify. ' + e.message);
         }
-      }));
+      }))
+      .catch(e => {
+        setAlert(e);
+      });
 
     return p;
   }
@@ -771,8 +782,8 @@ function verifyJwt(event) {
   // verification/decrypt of encrypted JWT
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
-    let json = Buffer.from(matches[1], 'base64').toString('utf8');
-    let header = JSON.parse(json);
+    const json = Buffer.from(matches[1], 'base64').toString('utf8');
+    const header = JSON.parse(json);
     gtag('event', 'verifyJwt', {
       event_category: 'click',
       event_label: `encrypted ${header.alg}`
@@ -780,31 +791,32 @@ function verifyJwt(event) {
 
     return retrieveCryptoKey(header, {direction:'decrypt'})
       .then( async decryptionKey => {
-        let decrypter = await jose.JWE.createDecrypt(decryptionKey);
-        let result = await decrypter.decrypt(tokenString);
+        const decrypter = await jose.JWE.createDecrypt(decryptionKey);
+        const result = await decrypter.decrypt(tokenString);
         // {result} is a Object with:
         // *  header: the combined 'protected' and 'unprotected' header members
         // *  protected: an array of the member names from the "protected" member
         // *  key: Key used to decrypt
         // *  payload: Buffer of the decrypted content
         // *  plaintext: Buffer of the decrypted content (alternate)
-        let td = new TextDecoder('utf-8'),
+        const td = new TextDecoder('utf-8'),
             stringPayload = td.decode(result.payload),
             parsedPayload = null;
         try {
           parsedPayload = JSON.parse(stringPayload);
         } catch (e) {
-          // not JSON. It's a JWE, not JWT
+          // not JSON. It's a JWE, not JWT. Which is ok.
         }
+
         if (parsedPayload) {
-          let prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
-          reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(decryptionKey)),
-          elementId = 'token-decoded-payload',
-          flavor = 'payload';
+          const prettyPrintedJson = JSON.stringify(parsedPayload,null,2),
+                reasons = checkValidityReasons(result.header, parsedPayload, getAcceptableEncryptionAlgs(decryptionKey)),
+                elementId = 'token-decoded-payload',
+                flavor = 'payload';
           editors[elementId].setValue(prettyPrintedJson);
           $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
           if (reasons.length == 0) {
-            let message = "The JWT has been decrypted successfully, and the times are valid.";
+            const message = "The JWT has been decrypted successfully, and the times are valid.";
             if (event) {
               setAlert(message, 'success');
             }
@@ -812,16 +824,19 @@ function verifyJwt(event) {
             $('#publickey .CodeMirror-code').removeClass('outdated');
           }
           else {
-            let label = (reasons.length == 1)? 'Reason' : 'Reasons';
+            const label = (reasons.length == 1)? 'Reason' : 'Reasons';
             setAlert('The JWT is not valid. ' + label+': ' + reasons.join(', and ') + '.', 'warning');
           }
           return {};
         }
 
         // it's a JWE
-        let elementId = 'token-decoded-payload', flavor = 'payload';
+        const elementId = 'token-decoded-payload',
+              flavor = 'payload';
         editors[elementId].setValue(stringPayload);
-        $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ' bytes)');
+        $('#' + flavor + ' > p > .length').text('( ' + stringPayload.length + ''
+                                                + ' bytes)');
+        return null;
       })
       .catch( e => {
         setAlert('Decryption failed. Bad key?');
@@ -832,7 +847,7 @@ function verifyJwt(event) {
 }
 
 function setAlert(html, alertClass) {
-  let buttonHtml = '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
+  const buttonHtml = '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
     ' <span aria-hidden="true">&times;</span>\n' +
     '</button>',
       $mainalert = $("#mainalert");
@@ -860,7 +875,7 @@ function closeAlert(event) {
 }
 
 function updateAsymmetricKeyValue(flavor /* public || private */, keyvalue) {
-  let editor = editors[flavor+'key'];
+  const editor = editors[flavor+'key'];
   if (editor) {
     editor.setValue(keyvalue);
     editor.save();
@@ -892,7 +907,7 @@ function getGenKeyParams(alg) {
 }
 
 function maybeNewKey() {
-  let alg = $('.sel-alg').find(':selected').text();
+  const alg = $('.sel-alg').find(':selected').text();
   if (alg === 'dir') {
     if ( ! $('#ta_directkey').val()) {
       return newKey(null);
@@ -908,7 +923,7 @@ function maybeNewKey() {
   else {
     editors.privatekey.save();
     editors.publickey.save();
-    let privatekey = $('#ta_privatekey').val().trim(),
+    const privatekey = $('#ta_privatekey').val().trim(),
         publickey = $('#ta_publickey').val().trim();
     if ( ! privatekey || !publickey) {
       return newKey(null);
@@ -920,7 +935,7 @@ function maybeNewKey() {
 const getKeyUse = (alg) => (alg.startsWith('ECDH')) ? ['deriveKey', 'deriveBits'] : ['sign', 'verify'] ;
 
 function newKey(event) {
-  let alg = $('.sel-alg').find(':selected').text();
+  const alg = $('.sel-alg').find(':selected').text();
 
   gtag('event', 'newKey', {
     event_category: (event)? 'click' : 'implicit',
@@ -928,7 +943,7 @@ function newKey(event) {
   });
 
   if (alg.startsWith('HS') || alg.startsWith('PB') || alg === 'dir' || alg.startsWith('A') ) {
-    let domid = (alg === 'dir')? 'directkey': 'symmetrickey',
+    const domid = (alg === 'dir')? 'directkey': 'symmetrickey',
         $div = $('#' + domid),
         $ta = $div.find('.ta-key').first(),
         coding = $('#' + $ta.data('coding')).find(':selected').text().toLowerCase(),
@@ -939,7 +954,7 @@ function newKey(event) {
     }
     else {
       // want key of specific length. Not REQUIRED for HS* signing, but it's ok.
-      let cls = (alg === 'dir') ? '.sel-enc' : '.sel-alg',
+      const cls = (alg === 'dir') ? '.sel-enc' : '.sel-alg',
           cipherAlg = $(cls).find(':selected').text(),
           benchmark = requiredKeyBitsForAlg(cipherAlg) / 8;
       if (coding == 'utf-8') {
@@ -958,9 +973,9 @@ function newKey(event) {
   }
 
   // this works with either EC or RSA key types
-  let keyUse = getKeyUse(alg),
-  isExtractable = true,
-  genKeyParams = getGenKeyParams(alg);
+  const keyUse = getKeyUse(alg),
+        isExtractable = true,
+        genKeyParams = getGenKeyParams(alg);
   return window.crypto.subtle.generateKey(genKeyParams, isExtractable, keyUse)
     .then(key =>
           window.crypto.subtle.exportKey( "spki", key.publicKey )
@@ -978,7 +993,7 @@ function newKey(event) {
 }
 
 function selectAlgorithm(algName) {
-  let currentlySelectedAlg = $('.sel-alg').find(':selected').text().toLowerCase();
+  const currentlySelectedAlg = $('.sel-alg').find(':selected').text().toLowerCase();
   if (algName.toLowerCase() != currentlySelectedAlg) {
     let $option = $('.sel-alg option[value="'+ algName +'"]');
     if ( ! $option.length) {
@@ -991,7 +1006,7 @@ function selectAlgorithm(algName) {
 }
 
 function selectEnc(encName) {
-  let currentlySelectedEnc = $('.sel-enc').find(':selected').text().toLowerCase();
+  const currentlySelectedEnc = $('.sel-enc').find(':selected').text().toLowerCase();
   if (encName.toLowerCase() != currentlySelectedEnc) {
     let $option = $('.sel-enc option[value="'+ encName +'"]');
     if ( ! $option.length) {
@@ -1006,7 +1021,7 @@ function selectEnc(encName) {
 function showDecoded(skipEncryptedPayload) {
   editors.encodedjwt.save();
 
-  let tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
+  const tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
       matches = re.signed.jwt.exec(tokenString);
 
   gtag('event', 'decode', {
@@ -1018,7 +1033,7 @@ function showDecoded(skipEncryptedPayload) {
 
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", 'info');
-    let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
+    const currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
     if (currentlySelectedVariant != "signed") {
       $('.sel-variant option[value=Signed]')
         .prop('selected', true)
@@ -1026,15 +1041,15 @@ function showDecoded(skipEncryptedPayload) {
       setTimeout( () => onChangeVariant(), 2);
     }
 
-    let flavors = ['header','payload']; // cannot decode signature
+    const flavors = ['header','payload']; // cannot decode signature
     matches.slice(1,-1).forEach(function(item,index) {
-      let json = Buffer.from(item, 'base64').toString('utf8'),
-          flavor = flavors[index],
-          elementId = 'token-decoded-' + flavor;
+      const json = Buffer.from(item, 'base64').toString('utf8'),
+            flavor = flavors[index],
+            elementId = 'token-decoded-' + flavor;
       try {
-        let obj = JSON.parse(json), // may throw
-            prettyPrintedJson = JSON.stringify(obj,null,2),
-            flatJson = JSON.stringify(obj);
+        const obj = JSON.parse(json), // may throw
+              prettyPrintedJson = JSON.stringify(obj,null,2),
+              flatJson = JSON.stringify(obj);
         editors[elementId].setValue(prettyPrintedJson);
         $('#' + flavor + ' > p > .length').text('(' + flatJson.length + ' bytes)');
         if (flavor == 'header' && obj.alg) {
@@ -1053,7 +1068,7 @@ function showDecoded(skipEncryptedPayload) {
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
     setAlert("an encrypted JWT", 'info');
-    let currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
+    const currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
     if (currentlySelectedVariant != "encrypted") {
       $('.sel-variant option[value=Encrypted]')
         .prop('selected', true)
@@ -1063,11 +1078,11 @@ function showDecoded(skipEncryptedPayload) {
     // Display the decoded header.
     // It is not possible to 'decode' the payload; it requires decryption.
     try {
-      let item = matches[1],
-          json = Buffer.from(item, 'base64').toString('utf8'),
-          obj = JSON.parse(json),
-          prettyPrintedJson = JSON.stringify(obj,null,2),
-          flatJson = JSON.stringify(obj);
+      const item = matches[1],
+            json = Buffer.from(item, 'base64').toString('utf8'),
+            obj = JSON.parse(json),
+            prettyPrintedJson = JSON.stringify(obj,null,2),
+            flatJson = JSON.stringify(obj);
       editors['token-decoded-header'].setValue(prettyPrintedJson);
       $('#header > p > .length').text('(' + flatJson.length + '' + 'bytes)');
       if ( ! skipEncryptedPayload) {
@@ -1084,7 +1099,7 @@ function showDecoded(skipEncryptedPayload) {
         selectEnc(obj.enc);
       }
     }
-    catch (e) {
+    catch (_e) {
       // probably not json
       setAlert("the header may not be valid JSON", 'info');
       editors['token-decoded-header'].setValue('??');
@@ -1103,17 +1118,17 @@ function populateEncSelectOptions() {
 }
 
 function populateAlgorithmSelectOptions() {
-  let variant = $('.sel-variant').find(':selected').text().toLowerCase(),
+  const variant = $('.sel-variant').find(':selected').text().toLowerCase(),
       $selAlg = $('.sel-alg');
   $selAlg.find('option').remove();
-  let a = (variant == 'signed') ? signingAlgs : keyEncryptionAlgs;
+  const a = (variant == 'signed') ? signingAlgs : keyEncryptionAlgs;
   $.each(a, (val, text) =>
          $selAlg.append( $('<option></option>').val(text).html(text) ));
 
-  let headerObj = getHeaderFromForm();
+  const headerObj = getHeaderFromForm();
   if (headerObj && headerObj.alg) {
     // select that one
-    let $option =
+    const $option =
       $selAlg.find(`option[value='${headerObj.alg}']`);
     if ($option.length) {
         $option.prop('selected', 'selected');
@@ -1121,13 +1136,13 @@ function populateAlgorithmSelectOptions() {
     }
     else {
       // pull from data model and select that
-      let value = datamodel['sel-alg-' + variant];
+      const value = datamodel['sel-alg-' + variant];
       $selAlg.find(`option[value='${value}']`).prop('selected', 'selected');
     }
   }
   else {
     // pull from data model and select that
-    let value = datamodel['sel-alg-' + variant];
+    const value = datamodel['sel-alg-' + variant];
     $selAlg.find(`option[value='${value}']`).prop('selected', 'selected');
   }
   // store currently selected alg:
@@ -1138,8 +1153,8 @@ function populateAlgorithmSelectOptions() {
 }
 
 function keysAreCompatible(alg1, alg2) {
-  let prefix1 = alg1.substring(0, 2),
-      prefix2 = alg2.substring(0, 2);
+  const prefix1 = alg1.substring(0, 2),
+        prefix2 = alg2.substring(0, 2);
   if (['RS', 'PS'].indexOf(prefix1)>=0 &&
       ['RS', 'PS'].indexOf(prefix2)>=0 ) return true;
   if (prefix1 == 'ES') return alg1 == alg2;
@@ -1148,11 +1163,11 @@ function keysAreCompatible(alg1, alg2) {
 
 function changeKeyCoding(event) {
   // fires for changes in either key or salt coding
-  let $this = $(this),
-      newCodingCased = $this.find(':selected').text(),
-      id = $this.attr('id'),
-      newCoding = newCodingCased.toLowerCase(),
-      previousCoding = $this.data('prev');
+  const $this = $(this),
+        newCodingCased = $this.find(':selected').text(),
+        id = $this.attr('id'),
+        newCoding = newCodingCased.toLowerCase(),
+        previousCoding = $this.data('prev');
 
   const effectivePrevCoding = () => {
           if (previousCoding == 'PBKDF2' || previousCoding == 'pbkdf2') return 'utf-8';
@@ -1162,9 +1177,9 @@ function changeKeyCoding(event) {
     // When the coding changes, try to re-encode the existing key.
     // This will not always work nicely when switching to UTF-8.
     // You will get a utf-8 string with unicode escape sequences, eg \u000b.
-    let $ta = $('#' + $this.data('target')),
-        textVal = $ta.val(),
-        keybuf = Buffer.from(textVal, effectivePrevCoding());
+    const $ta = $('#' + $this.data('target')),
+          textVal = $ta.val(),
+          keybuf = Buffer.from(textVal, effectivePrevCoding());
 
     if (newCoding == 'pbkdf2') {
       $ta.val(keybuf.toString('utf-8'));
@@ -1180,13 +1195,13 @@ function changeKeyCoding(event) {
   }
 
   $this.data('prev', newCoding);
-  let suffix = (newCoding == 'pbkdf2') ? '-pb':'';
+  const suffix = (newCoding == 'pbkdf2') ? '-pb':'';
   saveSetting(id + suffix, newCodingCased);
 }
 
 function checkSymmetryChange(newalg, oldalg) {
-  let newPrefix = newalg.substring(0, 2),
-      oldPrefix = oldalg && oldalg.substring(0, 2);
+  const newPrefix = newalg.substring(0, 2);
+  //oldPrefix = oldalg && oldalg.substring(0, 2);
   if (newalg == 'dir') {
     if (oldalg != 'dir') {
       $('#privatekey').hide();
@@ -1201,9 +1216,9 @@ function checkSymmetryChange(newalg, oldalg) {
     $('#symmetrickey').show();
     $('#directkey').hide();
 
-    let $keycoding = $('#sel-symkey-coding');
+    const $keycoding = $('#sel-symkey-coding');
     if (newPrefix == 'PB') {
-      let currentlySelectedCoding = $keycoding.find(':selected').text().toLowerCase();
+      const currentlySelectedCoding = $keycoding.find(':selected').text().toLowerCase();
       $keycoding.find('option[value=PBKDF2]').show();
       if (currentlySelectedCoding != "pbkdf2") {
         $keycoding.find('option[value=PBKDF2]')
@@ -1240,18 +1255,18 @@ function initialized() {
 }
 
 function onChangeCheckbox(id, event) {
-  let booleanValue = $('#' + id).prop('checked');
+  const booleanValue = $('#' + id).prop('checked');
   saveSetting(id, String(booleanValue));
 }
 
 function onChangeExpiry(event) {
-  let $this = $(this),
+  const $this = $(this),
       selectedExpiry = $this.find(':selected').text();
   saveSetting('sel-expiry', selectedExpiry);
 }
 
 function getHeaderFromForm() {
-  let headerText = $('#token-decoded-header').val();
+  const headerText = $('#token-decoded-header').val();
   if (headerText) {
     try {
       return JSON.parse(headerText);
@@ -1264,7 +1279,7 @@ function getHeaderFromForm() {
 }
 
 async function onKeyTextChange(event) {
-  let $this = $(this),
+  const $this = $(this),
       id = $this.attr('id'),
       alg = $('.sel-alg').find(':selected').text(),
       variant = $('.sel-variant').find(':selected').text().toLowerCase();
@@ -1278,7 +1293,7 @@ async function onKeyTextChange(event) {
       (variant == 'signed' && (alg.startsWith('HS')))) {
 
     if ( ! alg.startsWith('PB')) {
-      let buf = await getBufferForSymmetricKey($this, alg),
+      const buf = await getBufferForSymmetricKey($this, alg),
           cls = (id.indexOf('direct') >=0) ? '.sel-enc' : '.sel-alg',
           realAlg = $(cls).find(':selected').text(),
           benchmark = requiredKeyBitsForAlg(realAlg) / 8,
@@ -1292,7 +1307,7 @@ async function onKeyTextChange(event) {
 }
 
 function onChangeEnc(event) {
-  let $this = $('#sel-enc'),
+  const $this = $('#sel-enc'),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
       alg = $('.sel-alg').find(':selected').text(),
@@ -1324,10 +1339,10 @@ function onChangeEnc(event) {
 }
 
 function onChangeAlg(event) {
-  let $this = $('#sel-alg'),
-      newSelection = $this.find(':selected').text(),
-      previousSelection = $this.data('prev'),
-      headerObj = null;
+  const $this = $('#sel-alg'),
+        newSelection = $this.find(':selected').text(),
+        previousSelection = $this.data('prev');
+  let headerObj = null;
   const updateHeader =
     () => {
       try {
@@ -1391,14 +1406,14 @@ function onChangeAlg(event) {
         $('#ta_pbkdf2_salt').val(headerObj.p2s);
       }
       updateHeader();
-      let variant = $('#sel-variant').find(':selected').text().toLowerCase();
+      const variant = $('#sel-variant').find(':selected').text().toLowerCase();
       saveSetting('sel-alg-' + variant, newSelection);
     });
 }
 
 function onChangeVariant(event) {
   // change signed to encrypted or vice versa
-  let $this = $('#sel-variant'),
+  const $this = $('#sel-variant'),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
       priorAlgSelection = $('.sel-alg').data('prev');
@@ -1411,7 +1426,7 @@ function onChangeVariant(event) {
   });
   if (newSelection != previousSelection) {
     try {
-      let headerObj = getHeaderFromForm();
+      const headerObj = getHeaderFromForm();
       if (newSelection == 'Encrypted') {
         // swap in alg and enc
         if ( ! headerObj.alg) {
@@ -1433,7 +1448,7 @@ function onChangeVariant(event) {
       }
       editors['token-decoded-header'].setValue(JSON.stringify(headerObj, null, 2));
     }
-    catch(e) {
+    catch(_e) {
       /* gulp */
     }
     $this.data('prev', newSelection);
@@ -1452,15 +1467,15 @@ function onChangeVariant(event) {
 function contriveJson(segment) {
   if (segment == 'payload') {
     const nowSeconds = Math.floor((new Date()).valueOf() / 1000),
-        sub = selectRandomValue(sampledata.names),
-        aud = selectRandomValueExcept(sampledata.names, sub),
-        payload = {
-          iss:"DinoChiesa.github.io",
-          sub,
-          aud,
-          iat: nowSeconds,
-          exp: nowSeconds + tenMinutesInSeconds
-        };
+          sub = selectRandomValue(sampledata.names),
+          aud = selectRandomValueExcept(sampledata.names, sub),
+          payload = {
+            iss:"DinoChiesa.github.io",
+            sub,
+            aud,
+            iat: nowSeconds,
+            exp: nowSeconds + tenMinutesInSeconds
+          };
     if (randomBoolean()) {
       const propname = selectRandomValue(sampledata.props);
       payload[propname] = generateRandomValue(null, null, propname);
@@ -1479,7 +1494,7 @@ function contriveJson(segment) {
   }
   if (randomBoolean()) {
     const propname = selectRandomValue(sampledata.props),
-        type = selectRandomValueExcept(sampledata.types, ['array', 'object']);
+          type = selectRandomValueExcept(sampledata.types, ['array', 'object']);
     header[propname] = generateRandomValue(type, 0, propname);
   }
   return header;
@@ -1487,14 +1502,14 @@ function contriveJson(segment) {
 
 function newJson(segment, _event) {
   const jsonBlob = contriveJson(segment),
-      elementId = `token-decoded-${segment}` ;
+        elementId = `token-decoded-${segment}` ;
   gtag('event', 'newJson', { segment });
   editors[elementId].setValue(JSON.stringify(jsonBlob,null,2));
 }
 
 function contriveJwt(event) {
   const payload = contriveJson('payload'),
-      header = contriveJson('header');
+        header = contriveJson('header');
   gtag('event', 'contriveJwt');
   editors['token-decoded-header'].setValue(JSON.stringify(header));
   editors['token-decoded-payload'].setValue(JSON.stringify(payload));
@@ -1503,7 +1518,7 @@ function contriveJwt(event) {
 
 function decoratePayloadLine(_instance, _handle, lineElement) {
   const lastComma = new RegExp(',\s*$');
-  $(lineElement).find('span.cm-property').each( (ix, element) => {
+  $(lineElement).find('span.cm-property').each( (_ix, element) => {
     const $this = $(element),
           text = $this.text();
     if (['"exp"', '"iat"', '"nbf"'].indexOf(text) >= 0) {
@@ -1514,7 +1529,7 @@ function decoratePayloadLine(_instance, _handle, lineElement) {
         const stringRep = time.toISOString();
         $valueSpan.attr('title', stringRep);
       }
-      catch(e) {
+      catch(_e) {
         // possibly invalid time
         $valueSpan.attr('title', 'looks like an invalid time value');
         console.log(`found invalid time value while decoding ${text}`);
@@ -1562,12 +1577,12 @@ function applyState() {
     .forEach(key => {
       const value = datamodel[key];
       if (value) {
-        const $item = $('#' + key);
+        let $item = $('#' + key);
         if (key.startsWith('sel-alg-')) {
           // selection of alg, stored separately for signing and encrypting
           const currentlySelectedVariant = datamodel['sel-variant'];
           if (currentlySelectedVariant) {
-            let storedVariant = key.substr(8);
+            const storedVariant = key.substr(8);
             if (storedVariant == currentlySelectedVariant.toLowerCase()) {
               $item = $('#sel-alg');
               $item.find("option[value='"+value+"']").prop('selected', 'selected');
@@ -1655,7 +1670,7 @@ $(document).ready(function() {
     lineWrapping: true,
     singleCursorHeightPerLine: false
   });
-  editors.encodedjwt.on('inputRead', function(cm, event) {
+  editors.encodedjwt.on('inputRead', function(_cm, event) {
     /* event -> object{
        origin: string, can be '+input', '+move' or 'paste'
        doc for origins >> http://codemirror.net/doc/manual.html#selection_origin
@@ -1679,7 +1694,7 @@ $(document).ready(function() {
 
   // create editors for the public and private keys
   ['private', 'public'].forEach( flavor => {
-    let keytype = flavor+'key', // private || public
+    const keytype = flavor+'key', // private || public
         elementId = 'ta_'+ keytype;
     editors[keytype] = CodeMirror.fromTextArea(document.getElementById(elementId), {
       mode: 'encodedjwt', // not really, its just plaintext
@@ -1692,16 +1707,16 @@ $(document).ready(function() {
   });
       if (event.origin == 'paste') {
         setTimeout(function() {
-          let fieldvalue = reformNewlines(editors[keytype]);
+          const fieldvalue = reformNewlines(editors[keytype]);
           if (looksLikePem(fieldvalue)) {
             editors[keytype].setOption('mode', 'encodedjwt');
             updateAsymmetricKeyValue(flavor, reformIndents(fieldvalue));
           }
           else {
-            let possiblyJwks = looksLikeJwks(fieldvalue);
+            const possiblyJwks = looksLikeJwks(fieldvalue);
             if (possiblyJwks) {
               editors[keytype].setOption('mode', 'javascript');
-              let prettyPrintedJson = JSON.stringify(possiblyJwks,null,2);
+              const prettyPrintedJson = JSON.stringify(possiblyJwks,null,2);
               editors[keytype].setValue(prettyPrintedJson);
             }
             else {
@@ -1718,7 +1733,7 @@ $(document).ready(function() {
 
   // create CM editors for decoded (JSON) payload and header
   ['header', 'payload'].forEach( portion => {
-    let elementId = 'token-decoded-' + portion;
+    const elementId = 'token-decoded-' + portion;
     editors[elementId] = CodeMirror.fromTextArea(document.getElementById(elementId), {
       mode: {
         name: 'javascript',
@@ -1738,12 +1753,12 @@ $(document).ready(function() {
   $('#pbkdf2_params').hide();
 
   // handle inbound query or hash
-  let inboundJwt = window.location.hash,
-      hash = {},
-      fnStartsWith = function(s, searchString, position) {
-        position = position || 0;
-        return s.lastIndexOf(searchString, position) === position;
-      };
+  const inboundJwt = window.location.hash;
+      // hash = {},
+      // fnStartsWith = function(s, searchString, position) {
+      //   position = position || 0;
+      //   return s.lastIndexOf(searchString, position) === position;
+      // };
 
   if ( inboundJwt ) {
     inboundJwt = inboundJwt.slice(1);
