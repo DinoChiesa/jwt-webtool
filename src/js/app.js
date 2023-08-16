@@ -13,7 +13,7 @@ import LocalStorage from './LocalStorage.js';
 const html5AppId = '2084664E-BF2B-4C76-BD5F-1087502F580B';
 
 const storage = LocalStorage.init(html5AppId);
-let datamodel = {
+const datamodel = {
       'sel-variant': '',
       'sel-enc': '',
       'sel-alg-encrypted': '',
@@ -83,7 +83,7 @@ const rsaSigningAlgs = algPermutations(['RS','PS']),
         ['Mirror', 'Caliper', 'Postage', 'Return', 'Roadway', 'Passage', 'Statement', 'Toolbox', 'Paradox', 'Orbit', 'Bridge', 'Artifact', 'Puzzle']
       ];
 
-let editors = {}; // codemirror editors
+const editors = {}; // codemirror editors
 
 CodeMirror.defineSimpleMode("encodedjwt", {
   start : [
@@ -103,8 +103,8 @@ CodeMirror.defineSimpleMode("encodedjwt", {
 const curry = (fn, arg1) => (...args) => fn.apply(this,[arg1].concat(args));
 
 const quantify = (quantity, term) => {
-        let termIsPlural = term.endsWith('s'),
-            quantityIsPlural = (quantity != 1 && quantity != -1);
+        const termIsPlural = term.endsWith('s'),
+              quantityIsPlural = (quantity != 1 && quantity != -1);
 
         if (termIsPlural && !quantityIsPlural)
           return term.slice(0, -1);
@@ -114,7 +114,7 @@ const quantify = (quantity, term) => {
       };
 
 function reformIndents(s) {
-  let s2 = s.split(new RegExp('\n', 'g'))
+  const s2 = s.split(new RegExp('\n', 'g'))
     .map(s => s.trim())
     .join("\n");
   return s2.trim();
@@ -125,28 +125,28 @@ const randomString = () => Math.random().toString(36).substring(2, 15) + Math.ra
 const randomBoolean = () => Math.floor(Math.random() * 2) == 1;
 
 const randomNumber = () => {
-        let min = (randomBoolean())? 10: 100,
-            max = (randomBoolean())? 100000: 1000;
+        const min = (randomBoolean())? 10: 100,
+              max = (randomBoolean())? 100000: 1000;
         return Math.floor(Math.random() * (max - min)) + min;
       };
 
 function randomArray() {
-  let n = Math.floor(Math.random() * 4) + 1, // at least 1 element
-      a = [], type;
-  for(var i = 0; i < n; i++){
-    type = selectRandomValueExcept(sampledata.types, ['array', 'object']);
+  const n = Math.floor(Math.random() * 4) + 1, // at least 1 element
+      a = [];
+  for(let i = 0; i < n; i++){
+    const type = selectRandomValueExcept(sampledata.types, ['array', 'object']);
     a[i] = generateRandomValue(type);
   }
   return a;
 }
 
 function randomObject(depth, exclusion) {
-  let n = Math.floor(Math.random() * 4) + 1,
-      obj = {}, propname, type;
-  for(var i = 0; i < n; i++) {
-    propname = selectRandomValueExcept(sampledata.props, exclusion);
+  const n = Math.floor(Math.random() * 4) + 1,
+        obj = {};
+  for(let i = 0; i < n; i++) {
+    const propname = selectRandomValueExcept(sampledata.props, exclusion);
     // limit complexity
-    type = (depth >1) ?
+    const type = (depth >1) ?
       selectRandomValueExcept(sampledata.types, ['array', 'object']) :
       selectRandomValue(sampledata.types);
     obj[propname] = generateRandomValue(type, depth, propname);
@@ -192,7 +192,7 @@ function selectRandomValue (a) {
 
 function randomOctetKey(L) {
   L = L || 48;
-  var array = new Uint8Array(L);
+  const array = new Uint8Array(L);
   window.crypto.getRandomValues(array);
   return array;
 }
@@ -202,9 +202,9 @@ const randomPassphrase = () => randomPassword(0, true);
 function randomPassword(L, noTruncate) {
   L = L || 23;
   let r = '';
-  let totalLength = (items) => items.reduce((a, c) => a += c.length, 0);
+  const totalLength = (items) => items.reduce((a, c) => a += c.length, 0);
   do {
-    let items = pwComponents.map(selectRandomValue);
+    const items = pwComponents.map(selectRandomValue);
     while (totalLength(items) < L) {
       items.push(
         randomNumber().toFixed(0).padStart(4, '0').substr(-4) );
@@ -229,7 +229,7 @@ function hmacToKeyBits(alg) {
 
 function requiredKeyBitsForAlg(alg) {
   if (alg.startsWith('PBES2')) {
-    let hmac = alg.substring(6, 11);
+    const hmac = alg.substring(6, 11);
     return hmacToKeyBits(hmac);
   }
   if (alg.startsWith('HS')) {
@@ -1278,7 +1278,7 @@ function getHeaderFromForm() {
   return {}; // hack in case of no header
 }
 
-async function onKeyTextChange(event) {
+async function onKeyTextChange(_event) {
   const $this = $(this),
       id = $this.attr('id'),
       alg = $('.sel-alg').find(':selected').text(),
@@ -1306,7 +1306,7 @@ async function onKeyTextChange(event) {
   }
 }
 
-function onChangeEnc(event) {
+function onChangeEnc(_event) {
   const $this = $('#sel-enc'),
       newSelection = $this.find(':selected').text(),
       previousSelection = $this.data('prev'),
@@ -1411,7 +1411,7 @@ function onChangeAlg(event) {
     });
 }
 
-function onChangeVariant(event) {
+function onChangeVariant(_event) {
   // change signed to encrypted or vice versa
   const $this = $('#sel-variant'),
       newSelection = $this.find(':selected').text(),
@@ -1753,7 +1753,7 @@ $(document).ready(function() {
   $('#pbkdf2_params').hide();
 
   // handle inbound query or hash
-  const inboundJwt = window.location.hash;
+  let inboundJwt = window.location.hash;
       // hash = {},
       // fnStartsWith = function(s, searchString, position) {
       //   position = position || 0;
