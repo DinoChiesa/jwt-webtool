@@ -1,6 +1,6 @@
 {
   "name": "jwt-webtool",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "web tool to parse, generate, and validate JWT, whether signed or encrypted",
   "repository": {
     "type": "git",
@@ -20,8 +20,10 @@
   "author": "Dino Chiesa <dchiesa@google.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@popperjs/core": "^2.11.8",
     "bootstrap": "^4.5.3",
     "codemirror": "^5.65.2",
+    "javascript-time-ago": "^2.5.9",
     "jquery": "^3.5.0",
     "node-jose": "^2.2.0",
     "open-iconic": "^1.1.1",
@@ -32,8 +34,8 @@
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^6.7.1",
     "mini-css-extract-plugin": "^1.5.0",
-    "sass-loader": "^12.3.0",
     "node-sass": "^7.0.1",
+    "sass-loader": "^12.3.0",
     "style-loader": "^3.3.1",
     "url-loader": "^4.1.1",
     "webpack": "^5.76.0",
@@ -47,7 +49,7 @@
     "yargs": "^17.0.1",
     "http-cache-semantics": "^4.1.1",
     "tough-cookie": "^4.1.3",
-    "semver":"^7.5.2",
+    "semver": "^7.5.2",
     "json5": "^2.2.3"
   }
 }

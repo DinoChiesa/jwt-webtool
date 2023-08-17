@@ -4,11 +4,17 @@
 //   'event_label': <label>,
 //   'value': <value>
 // });
+
 import 'bootstrap';
 import CodeMirror from 'codemirror/lib/codemirror.js';
 import $ from "jquery";
 import jose from "node-jose";
 import LocalStorage from './LocalStorage.js';
+import TimeAgo from 'javascript-time-ago';
+import en from 'javascript-time-ago/locale/en';
+TimeAgo.addDefaultLocale(en);
+
+window.jq = $;
 
 const html5AppId = '2084664E-BF2B-4C76-BD5F-1087502F580B';
 
@@ -118,6 +124,14 @@ function reformIndents(s) {
     .map(s => s.trim())
     .join("\n");
   return s2.trim();
+}
+
+function timeAgo(time) {
+  return (new TimeAgo('en-US')).format(time);
+}
+
+function formatTimeString(time) {
+  return time.toISOString().replace('.000Z', 'Z');
 }
 
 const randomString = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -675,7 +689,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   // 8.1 expired time 'exp' check
   if (pPayload.exp !== undefined && typeof pPayload.exp == "number") {
     const expiry = new Date(pPayload.exp * 1000),
-        expiresString = expiry.toISOString(),
+          expiresString = formatTimeString(expiry),
         delta = nowSeconds - pPayload.exp,
         timeUnit = quantify(delta, 'seconds');
     if (delta > 0) {
@@ -686,7 +700,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   // 8.2 not before time 'nbf' check
   if (pPayload.nbf !== undefined && typeof pPayload.nbf == "number") {
     const notBefore = new Date(pPayload.nbf * 1000),
-        notBeforeString = notBefore.toISOString(),
+          notBeforeString = formatTimeString(notBefore),
         delta = pPayload.nbf - nowSeconds,
         timeUnit = quantify(delta, 'seconds');
     if (delta > 0) {
@@ -698,7 +712,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
   if (wantCheckIat) {
     if (pPayload.iat !== undefined && typeof pPayload.iat == "number") {
     const issuedAt = new Date(pPayload.iat * 1000),
-        issuedAtString = issuedAt.toISOString(),
+          issuedAtString = formatTimeString(issuedAt),
         delta = pPayload.iat - nowSeconds,
         timeUnit = quantify(delta, 'seconds');
       if (delta > 0) {
@@ -1516,23 +1530,42 @@ function contriveJwt(event) {
   encodeJwt(event);
 }
 
-function decoratePayloadLine(_instance, _handle, lineElement) {
+function decoratePayload(_instance) {
   const lastComma = new RegExp(',\s*$');
-  $(lineElement).find('span.cm-property').each( (_ix, element) => {
+
+  // inspect each property and look for time values
+  $('span.cm-property').each( (_ix, element) => {
     const $this = $(element),
           text = $this.text();
     if (['"exp"', '"iat"', '"nbf"'].indexOf(text) >= 0) {
       const $valueSpan = $this.nextAll('span').first(),
-            value = $valueSpan.text().replace(lastComma, ''),
-            time = new Date(Number(value) * 1000);
+            value = $valueSpan.text().replace(lastComma, ''); // just in case
+      // Set attributes for use with bootstrap popover.
+      // Cannot use .data() here; it does not update the DOM.
+      $valueSpan.attr('data-toggle', 'popover');
+      $valueSpan.attr('data-time', value);
+    }
+  });
+
+  // For each time value, on hover, show a tooltip with dynamic content,
+  // displaying an ISO8601 time string, and a relative time. "5 minutes ago",
+  // etc.  The popover element is styled with .bs-popover-right, and it is
+  // appended near the end of the DOM. It shows and hides automatically on
+  // hover. This is basically a better, more nicely styled title attribute.
+  $('#payload span [data-toggle="popover"]').popover({
+    placement : 'right',
+    trigger : 'hover',
+    html: true,
+    content: function() {
+      const value = Number(this.getAttribute('data-time'));
       try {
-        const stringRep = time.toISOString();
-        $valueSpan.attr('title', stringRep);
+        const time = new Date(Number(value) * 1000);
+        return formatTimeString(time) + ' - ' + timeAgo(time);
       }
       catch(_e) {
-        // possibly invalid time
-        $valueSpan.attr('title', 'looks like an invalid time value');
-        console.log(`found invalid time value while decoding ${text}`);
+        // possibly an invalid time
+        console.log(`found invalid time value while decoding ${value}`);
+        return 'looks like an invalid time value';
       }
     }
   });
@@ -1701,10 +1734,10 @@ $(document).ready(function() {
       lineWrapping: true,
       singleCursorHeightPerLine: false
     });
-    editors[keytype].on('inputRead', function(cm, event) {
-  gtag('event', 'paste', {
-    event_category: keytype
-  });
+    editors[keytype].on('inputRead', function(_cm, event) {
+      gtag('event', 'paste', {
+        event_category: keytype
+      });
       if (event.origin == 'paste') {
         setTimeout(function() {
           const fieldvalue = reformNewlines(editors[keytype]);
@@ -1748,7 +1781,7 @@ $(document).ready(function() {
   });
 
   // to label fields in the decoded payload. We don't do the same in the header.
-  editors['token-decoded-payload'].on('renderLine', decoratePayloadLine);
+  editors['token-decoded-payload'].on('update', decoratePayload);
   $('#symmetrickey').hide();
   $('#pbkdf2_params').hide();
 

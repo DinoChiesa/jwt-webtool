@@ -314,3 +314,12 @@ span.cm-jwt-signature + div {
     color: #636C77;
     background-color: #E9ECEF;
 }
+
+.popover.bs-popover-right {
+  max-width: 480px;
+  background-color: #dedede;
+}
+
+.bs-popover-right .arrow::after {
+    border-right-color: #dedede !important;
+}
