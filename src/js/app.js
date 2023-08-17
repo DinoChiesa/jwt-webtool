@@ -1656,6 +1656,11 @@ function applyState() {
         }
       }
     });
+
+  const currentlySelectedVariant = $('.sel-variant').find(':selected').text().toLowerCase();
+  if (currentlySelectedVariant == "signed") {
+    $('#sel-enc').hide(); // not used for signing
+  }
 }
 
 function fixupTextInEditor(replacer, editor) {

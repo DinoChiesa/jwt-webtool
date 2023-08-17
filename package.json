@@ -1,6 +1,6 @@
 {
   "name": "jwt-webtool",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "web tool to parse, generate, and validate JWT, whether signed or encrypted",
   "repository": {
     "type": "git",
@@ -24,10 +24,9 @@
     "bootstrap": "^4.5.3",
     "codemirror": "^5.65.2",
     "javascript-time-ago": "^2.5.9",
-    "jquery": "^3.5.0",
+    "jquery": "^3.7.0",
     "node-jose": "^2.2.0",
-    "open-iconic": "^1.1.1",
-    "popper.js": "^1.16.0"
+    "open-iconic": "^1.1.1"
   },
   "devDependencies": {
     "child_process": "^1.0.2",

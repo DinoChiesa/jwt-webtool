@@ -8,7 +8,7 @@ lots of cases.  It also has a few limitations; details below.
 
 ## License
 
-This code is Copyright (c) 2019-2021 Google LLC, and is released under the Apache
+This code is Copyright (c) 2019-2023 Google LLC, and is released under the Apache
 Source License v2.0. For information see the [LICENSE](LICENSE) file.
 
 ## Purpose
@@ -90,15 +90,26 @@ better way to optimize this, I am interested to learn.
 
 If you fork this repo to mess with the code, here's what I advise.
 
+Before you do anything you need to install the dependencies.
+
+```
+npm install
+```
+
 To build a "development" distribution:
 
 ```
 npm run devbuild
 ```
 
+This build will allow you to run the page and debug with the browser dev tools,
+and see the original source lines in your in-browser debugger. You can load the
+page via a file:/// url, and it will work just fine. For that, open a Chrome
+browser tab (or whatever browser you use) to
+file:///path/to/dist/index.html .
+
 During development, I prefer to use the webpack "watch" capability, which
-rebuilds as I modify the source code. For that, open a Chrome browser tab to
-file:///path/to/dist/index.html .  Then in a terminal,
+rebuilds as I modify the source code. To do that, execute this in a terminal:
 
 ```
 npm run watch
@@ -124,4 +135,3 @@ npm run build
 * When using ECDH encryption, the tool always chooses the P-256 curve.
 
 * It is not possible to use an x509v3 certificate for the source of the public key.
-
