@@ -726,8 +726,8 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
 function verifyJwt(event) {
   editors.encodedjwt.save();
   editors.publickey.save();
-  const tokenString = editors.encodedjwt.getValue(),
-      matches = re.signed.jwt.exec(tokenString);
+  const tokenString = editors.encodedjwt.getValue();
+  let matches = re.signed.jwt.exec(tokenString);
   // verify a signed JWT
   if (matches && matches.length == 4) {
     $("#mainalert").addClass('fade').removeClass('show');
@@ -1035,8 +1035,8 @@ function selectEnc(encName) {
 function showDecoded(skipEncryptedPayload) {
   editors.encodedjwt.save();
 
-  const tokenString = editors.encodedjwt.getValue(), //$('#encodedjwt').val(),
-      matches = re.signed.jwt.exec(tokenString);
+  const tokenString = editors.encodedjwt.getValue(); //$('#encodedjwt').val();
+  let matches = re.signed.jwt.exec(tokenString);
 
   gtag('event', 'decode', {
     event_category: 'click'
