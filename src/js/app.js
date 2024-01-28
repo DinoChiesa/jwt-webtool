@@ -398,6 +398,11 @@ function getPublicKey(header, options) {
     .then(keystore => keystore.get(header));
 }
 
+function clearJwt(_event) {
+  editors.encodedjwt.setValue('');
+  editors.encodedjwt.save();
+}
+
 function copyToClipboard(_event) {
   const $elt = $(this),
       sourceElement = $elt.data('target'),
@@ -1685,6 +1690,7 @@ function parseAndDisplayToken(token) {
 $(document).ready(function() {
   $( '#version_id').text(BUILD_VERSION);
   $( '.btn-copy' ).on('click', copyToClipboard);
+  $( '.btn-clear' ).on('click', clearJwt);
   $( '.btn-encode' ).on('click', encodeJwt);
   $( '.btn-decode' ).on('click', showDecoded);
   $( '.btn-verify' ).on('click', verifyJwt);
