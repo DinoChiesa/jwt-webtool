@@ -340,6 +340,11 @@ function getPublicKey(header, options) {
   );
 }
 
+function clearJwt(_event) {
+  editors.encodedjwt.setValue("");
+  editors.encodedjwt.save();
+}
+
 function copyToClipboard(event) {
   const sourceElement = event.currentTarget.getAttribute("data-target"),
     $source = document.getElementById(sourceElement),
@@ -1778,14 +1783,13 @@ document.addEventListener("DOMContentLoaded", function () {
   $all(".btn-copy").forEach((btn) =>
     btn.addEventListener("click", copyToClipboard)
   );
+  $sel(".btn-clear").addEventListener("click", clearJwt);
   $sel(".btn-encode").addEventListener("click", encodeJwt);
   $sel(".btn-decode").addEventListener("click", showDecoded);
   $sel(".btn-verify").addEventListener("click", verifyJwt);
   $all(".btn-newkey").forEach((btn) => btn.addEventListener("click", newKey));
   $sel("#btn-new-payload").addEventListener("click", newJson);
   $sel("#btn-new-header").addEventListener("click", newJson);
-
-  //$( '.btn-regen' ).on('click', contriveJwt);
 
   populateEncSelectOptions();
 
