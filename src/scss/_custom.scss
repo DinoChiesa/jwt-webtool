@@ -110,6 +110,23 @@ body.dark-mode .outdated {
   color: #fff;
 }
 
+body.dark-mode #directkey, #symmetrickey {
+  > input {
+    background-color: #333 !important;
+    color: #fff;
+  }
+}
+
+body.dark-mode #symmetrickey input[disabled] {
+    background-color: #000 !important;
+    color: #fff;
+}
+
+body.dark-mode .popover.bs-popover-right * {
+  background-color: #333;
+  color: #fff;
+}
+
 /* Based on Sublime Text's Monokai theme */
 
 .cm-s-monokai.CodeMirror { background: #272822; color: #f8f8f2; }
