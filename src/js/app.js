@@ -7,11 +7,15 @@
 
 import "bootstrap";
 import CodeMirror from "codemirror/lib/codemirror.js";
+import "codemirror/mode/javascript/javascript";
+import "codemirror/addon/mode/simple";
 import $ from "jquery";
 import jose from "node-jose";
 import LocalStorage from "./LocalStorage.js";
+import rdg from "./random-data-generator";
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
+
 TimeAgo.addDefaultLocale(en);
 
 window.jq = $;
@@ -38,15 +42,13 @@ const datamodel = {
   "chk-typ": true
 };
 
-import "codemirror/mode/javascript/javascript";
-import "codemirror/addon/mode/simple";
-
 const tenMinutesInSeconds = 10 * 60;
 
 const PBKDF2_SALT_DEFAULT = "abcdefghijkl",
   ITERATION_DEFAULT = 8192,
   ITERATION_MAX = 100001,
   ITERATION_MIN = 50;
+
 const re = {
   signed: {
     jwt: new RegExp("^([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$"),
@@ -61,36 +63,9 @@ const re = {
     )
   }
 };
-const sampledata = {
-  names: [
-    "audrey",
-    "olaf",
-    "antonio",
-    "alma",
-    "ming",
-    "naimish",
-    "anna",
-    "sheniqua",
-    "tamara",
-    "kina",
-    "maxine",
-    "arya",
-    "asa",
-    "idris",
-    "evander",
-    "natalia"
-  ],
-  props: [
-    "propX",
-    "propY",
-    "aaa",
-    "version",
-    "entitlement",
-    "alpha",
-    "classid"
-  ],
-  types: ["number", "string", "object", "array", "boolean"]
-};
+
+const $sel = (query) => document.querySelector(query),
+  $all = (query) => document.querySelectorAll(query);
 
 function algPermutations(prefixes) {
   return prefixes.reduce(
@@ -123,43 +98,6 @@ const rsaSigningAlgs = algPermutations(["RS", "PS"]),
     "A256CBC-HS512",
     "A128GCM",
     "A256GCM"
-  ],
-  pwComponents = [
-    [
-      "Vaguely",
-      "Undoubtedly",
-      "Indisputably",
-      "Understandably",
-      "Definitely",
-      "Possibly"
-    ],
-    [
-      "Salty",
-      "Fresh",
-      "Ursine",
-      "Excessive",
-      "Daring",
-      "Delightful",
-      "Stable",
-      "Evolving",
-      "Instructive",
-      "Engaging"
-    ],
-    [
-      "Mirror",
-      "Caliper",
-      "Postage",
-      "Return",
-      "Roadway",
-      "Passage",
-      "Statement",
-      "Toolbox",
-      "Paradox",
-      "Orbit",
-      "Bridge",
-      "Artifact",
-      "Puzzle"
-    ]
   ];
 
 const editors = {}; // codemirror editors
@@ -197,9 +135,7 @@ const curry =
 const quantify = (quantity, term) => {
   const termIsPlural = term.endsWith("s"),
     quantityIsPlural = quantity != 1 && quantity != -1;
-
   if (termIsPlural && !quantityIsPlural) return term.slice(0, -1);
-
   return !termIsPlural && quantityIsPlural ? term + "s" : term;
 };
 
@@ -217,107 +153,6 @@ function timeAgo(time) {
 
 function formatTimeString(time) {
   return time.toISOString().replace(".000Z", "Z");
-}
-
-const randomString = () =>
-  Math.random().toString(36).substring(2, 15) +
-  Math.random().toString(36).substring(2, 15);
-
-const randomBoolean = () => Math.floor(Math.random() * 2) == 1;
-
-const randomNumber = () => {
-  const min = randomBoolean() ? 10 : 100,
-    max = randomBoolean() ? 100000 : 1000;
-  return Math.floor(Math.random() * (max - min)) + min;
-};
-
-function randomArray() {
-  const n = Math.floor(Math.random() * 4) + 1, // at least 1 element
-    a = [];
-  for (let i = 0; i < n; i++) {
-    const type = selectRandomValueExcept(sampledata.types, ["array", "object"]);
-    a[i] = generateRandomValue(type);
-  }
-  return a;
-}
-
-function randomObject(depth, exclusion) {
-  const n = Math.floor(Math.random() * 4) + 1,
-    obj = {};
-  for (let i = 0; i < n; i++) {
-    const propname = selectRandomValueExcept(sampledata.props, exclusion);
-    // limit complexity
-    const type =
-      depth > 1
-        ? selectRandomValueExcept(sampledata.types, ["array", "object"])
-        : selectRandomValue(sampledata.types);
-    obj[propname] = generateRandomValue(type, depth, propname);
-  }
-  return obj;
-}
-
-function generateRandomValue(type, depth, parentName) {
-  type = type || selectRandomValue(sampledata.types);
-  depth = typeof depth == "number" ? depth + 1 : 1;
-  switch (type) {
-    case "number":
-      return randomNumber();
-    case "string":
-      return randomString();
-    case "array":
-      return randomArray();
-    case "object":
-      return randomObject(depth, parentName);
-    case "boolean":
-      return randomBoolean();
-  }
-  return null;
-}
-
-function selectRandomValueExcept(a, exclusion) {
-  let v = null;
-  if (!exclusion) {
-    exclusion = [];
-  }
-  if (!Array.isArray(exclusion)) {
-    exclusion = [exclusion];
-  }
-  do {
-    v = selectRandomValue(a);
-  } while (exclusion.indexOf(v) >= 0);
-  return v;
-}
-
-function selectRandomValue(a) {
-  let L = a.length,
-    n = Math.floor(Math.random() * L);
-  return a[n];
-}
-
-function randomOctetKey(L) {
-  L = L || 48;
-  const array = new Uint8Array(L);
-  window.crypto.getRandomValues(array);
-  return array;
-}
-
-const randomPassphrase = () => randomPassword(0, true);
-
-function randomPassword(L, noTruncate) {
-  L = L || 23;
-  let r = "";
-  const totalLength = (items) => items.reduce((a, c) => (a += c.length), 0);
-  do {
-    const items = pwComponents.map(selectRandomValue);
-    while (totalLength(items) < L) {
-      items.push(randomNumber().toFixed(0).padStart(4, "0").substr(-4));
-    }
-    r = items.join("-");
-    if (!noTruncate) {
-      r = r.substring(0, L);
-    }
-  } while (r.endsWith("-"));
-  return r;
 }
 
 function hmacToKeyBits(alg) {
@@ -417,7 +252,7 @@ function getBufferForSymmetricKey(item, alg) {
     let b = null;
     try {
       b = Buffer.from(keyvalue, coding);
-    } catch (e) {
+    } catch (_e) {
       // bad coding: either bad length, invalid chars for the given coding, etc.
       b = Buffer.from([]);
     }
@@ -613,14 +448,13 @@ const isAppropriateSigningAlg = (alg, key) =>
 const isAppropriateEncryptingAlg = (alg, key) =>
   getAcceptableEncryptionAlgs(key).indexOf(alg) >= 0;
 
-const pickSigningAlg = (key) =>
-  selectRandomValue(getAcceptableSigningAlgs(key));
+const pickSigningAlg = (key) => rdg.arrayItem(getAcceptableSigningAlgs(key));
 
 const pickKeyEncryptionAlg = (key) =>
-  selectRandomValue(getAcceptableEncryptionAlgs(key));
+  rdg.arrayItem(getAcceptableEncryptionAlgs(key));
 
 const pickContentEncryptionAlg = () =>
-  datamodel["sel-enc"] || selectRandomValue(contentEncryptionAlgs);
+  datamodel["sel-enc"] || rdg.arrayItem(contentEncryptionAlgs);
 
 const isSymmetric = (alg) => alg.startsWith("HS");
 
@@ -675,17 +509,17 @@ function retrieveCryptoKey(header, options) {
   return getPrivateKey(header, { use: "enc" });
 }
 
-function encodeJwt(event) {
-  let values = {},
-    parseError;
+function encodeJwt(_event) {
+  const values = {};
+  let parseError;
   ["header", "payload"].forEach((segment) => {
-    let elementId = "token-decoded-" + segment;
+    const elementId = "token-decoded-" + segment;
     if (editors[elementId]) {
       editors[elementId].save();
-      let text = $("#" + elementId).val();
+      const text = $("#" + elementId).val();
       try {
         values[segment] = JSON.parse(text);
-      } catch (e) {
+      } catch (_e) {
         parseError = segment;
       }
     }
@@ -1145,16 +979,16 @@ function newKey(event) {
     let keyString = null;
     if (coding == "pbkdf2") {
       // password can be of arbitrary length
-      keyString = randomPassphrase();
+      keyString = rdg.passphrase();
     } else {
       // want key of specific length. Not REQUIRED for HS* signing, but it's ok.
       const cls = alg === "dir" ? ".sel-enc" : ".sel-alg",
         cipherAlg = $(cls).find(":selected").text(),
         benchmark = requiredKeyBitsForAlg(cipherAlg) / 8;
       if (coding == "utf-8") {
-        keyString = randomPassword(benchmark);
+        keyString = rdg.password(benchmark);
       } else if (coding == "base64" || coding == "hex") {
-        keyString = Buffer.from(randomOctetKey(benchmark)).toString(coding);
+        keyString = Buffer.from(rdg.octetKey(benchmark)).toString(coding);
       }
     }
     if (keyString) {
@@ -1324,7 +1158,7 @@ function showDecoded(skipEncryptedPayload) {
 }
 
 function populateEncSelectOptions() {
-  $.each(contentEncryptionAlgs, (val, text) =>
+  $.each(contentEncryptionAlgs, (_val, text) =>
     $(".sel-enc").append($("<option></option>").val(text).html(text))
   );
 }
@@ -1334,7 +1168,7 @@ function populateAlgorithmSelectOptions() {
     $selAlg = $(".sel-alg");
   $selAlg.find("option").remove();
   const a = variant == "signed" ? signingAlgs : keyEncryptionAlgs;
-  $.each(a, (val, text) =>
+  $.each(a, (_val, text) =>
     $selAlg.append($("<option></option>").val(text).html(text))
   );
 
@@ -1477,12 +1311,12 @@ function initialized() {
   return !!editors["token-decoded-header"];
 }
 
-function onChangeCheckbox(id, event) {
+function onChangeCheckbox(id, _event) {
   const booleanValue = $("#" + id).prop("checked");
   saveSetting(id, String(booleanValue));
 }
 
-function onChangeExpiry(event) {
+function onChangeExpiry(_event) {
   const $this = $(this),
     selectedExpiry = $this.find(":selected").text();
   saveSetting("sel-expiry", selectedExpiry);
@@ -1493,7 +1327,7 @@ function getHeaderFromForm() {
   if (headerText) {
     try {
       return JSON.parse(headerText);
-    } catch (e) {
+    } catch (_e) {
       console.log("invalid header");
     }
   }
@@ -1702,8 +1536,8 @@ function onChangeVariant(_event) {
 function contriveJson(segment) {
   if (segment == "payload") {
     const nowSeconds = Math.floor(new Date().valueOf() / 1000),
-      sub = selectRandomValue(sampledata.names),
-      aud = selectRandomValueExcept(sampledata.names, sub),
+      sub = rdg.name(),
+      aud = rdg.nameExcept(sub),
       payload = {
         iss: "DinoChiesa.github.io",
         sub,
@@ -1711,9 +1545,9 @@ function contriveJson(segment) {
         iat: nowSeconds,
         exp: nowSeconds + tenMinutesInSeconds
       };
-    if (randomBoolean()) {
-      const propname = selectRandomValue(sampledata.props);
-      payload[propname] = generateRandomValue(null, null, propname);
+    if (rdg.boolean()) {
+      const propname = rdg.propertyName();
+      payload[propname] = rdg.value(null, null, propname);
     }
     return payload;
   }
@@ -1721,16 +1555,16 @@ function contriveJson(segment) {
   const header = { alg: $(".sel-alg").find(":selected").text() };
   if (keyEncryptionAlgs.indexOf(header.alg) >= 0) {
     if (!header.enc) {
-      header.enc = selectRandomValue(contentEncryptionAlgs);
+      header.enc = rdg.arrayItem(contentEncryptionAlgs);
     }
   }
-  if (randomBoolean()) {
+  if (rdg.boolean()) {
     header.typ = "JWT";
   }
-  if (randomBoolean()) {
-    const propname = selectRandomValue(sampledata.props),
-      type = selectRandomValueExcept(sampledata.types, ["array", "object"]);
-    header[propname] = generateRandomValue(type, 0, propname);
+  if (rdg.boolean()) {
+    const propname = rdg.propertyName(),
+      type = rdg.typeExcept(["array", "object"]);
+    header[propname] = rdg.value(type, 0, propname);
   }
   return header;
 }
@@ -2027,12 +1861,6 @@ $(document).ready(function () {
 
   // handle inbound query or hash
   let inboundJwt = window.location.hash;
-  // hash = {},
-  // fnStartsWith = function(s, searchString, position) {
-  //   position = position || 0;
-  //   return s.lastIndexOf(searchString, position) === position;
-  // };
-
   if (inboundJwt) {
     inboundJwt = inboundJwt.slice(1);
   } else {
