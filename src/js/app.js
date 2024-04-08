@@ -5,11 +5,10 @@
 //   'value': <value>
 // });
 
-import "bootstrap";
+import { _Tooltip, Popover } from "bootstrap";
 import CodeMirror from "codemirror/lib/codemirror.js";
 import "codemirror/mode/javascript/javascript";
 import "codemirror/addon/mode/simple";
-import $ from "jquery";
 import jose from "node-jose";
 import LocalStorage from "./LocalStorage.js";
 import rdg from "./random-data-generator";
@@ -65,7 +64,15 @@ const re = {
 };
 
 const $sel = (query) => document.querySelector(query),
-  $all = (query) => document.querySelectorAll(query);
+  $all = (query) => document.querySelectorAll(query),
+  hide = (el) => {
+    el.classList.add("hidden");
+    el.classList.remove("show");
+  },
+  show = (el) => {
+    el.classList.remove("hidden");
+    el.classList.add("show");
+  };
 
 function algPermutations(prefixes) {
   return prefixes.reduce(
@@ -199,8 +206,8 @@ function requiredKeyBitsForAlg(alg) {
 }
 
 function getPbkdf2IterationCount() {
-  const icountvalue = $("#ta_pbkdf2_iterations").val().trim(),
-    icount = ITERATION_DEFAULT;
+  const icountvalue = $sel("#ta_pbkdf2_iterations").value.trim();
+  let icount = ITERATION_DEFAULT;
   if (icountvalue == "") {
     setAlert("not a number? defaulting to iteration count: " + icount);
   } else {
@@ -218,11 +225,10 @@ function getPbkdf2IterationCount() {
 }
 
 function getPbkdf2SaltBuffer() {
-  const saltText = $("#ta_pbkdf2_salt").val().trim(),
-    coding = $(".sel-symkey-pbkdf2-salt-coding")
-      .find(":selected")
-      .text()
-      .toLowerCase(),
+  const saltText = $sel("#ta_pbkdf2_salt").value.trim(),
+    coding = $sel(
+      ".sel-symkey-pbkdf2-salt-coding"
+    ).selectedOptions[0].text.toLowerCase(),
     knownCodecs = ["utf-8", "base64", "hex"];
 
   if (knownCodecs.indexOf(coding) >= 0) {
@@ -232,20 +238,20 @@ function getPbkdf2SaltBuffer() {
 }
 
 function getBufferForSymmetricKey(item, alg) {
-  let $div, $ta;
+  /* let $div; */
+  let $ta;
   if (typeof item == "string") {
-    $div = $("#" + item);
-    $ta = $div.find(".ta-key");
+    const s = `#${item}`;
+    //$div = $sel(s);
+    $ta = $sel(`${s} .ta-key`);
   } else {
     $ta = item;
-    $div = $ta.parent();
+    // $div = $ta.parentElement;
   }
 
-  const keyvalue = $ta.val().trim(),
-    coding = $("#" + $ta.data("coding"))
-      .find(":selected")
-      .text()
-      .toLowerCase(),
+  const keyvalue = $ta.value.trim(),
+    select = $sel(`#${$ta.getAttribute("data-coding")}`),
+    coding = select.selectedOptions[0].text.toLowerCase(),
     knownCodecs = ["utf-8", "base64", "hex"];
 
   if (knownCodecs.indexOf(coding) >= 0) {
@@ -300,9 +306,8 @@ function looksLikeJwks(s) {
 
 function getPrivateKey(header, options) {
   editors.privatekey.save();
-  const keyvalue = $("#ta_privatekey")
-    .val()
-    .trim()
+  const keyvalue = $sel("#ta_privatekey")
+    .value.trim()
     .replace(new RegExp("[^\x00-\x7F]", "g"), ""); // strip non - ASCII
 
   return jose.JWK.asKey(keyvalue, "pem", { ...options, ...header });
@@ -311,9 +316,8 @@ function getPrivateKey(header, options) {
 function getPublicKey(header, options) {
   options = options || {};
   editors.publickey.save();
-  const fieldValue = $("#ta_publickey")
-    .val()
-    .trim()
+  const fieldValue = $sel("#ta_publickey")
+    .value.trim()
     .replace(new RegExp("[^\x00-\x7F]", "g"), ""); // strip non - ASCII
 
   if (looksLikePem(fieldValue)) {
@@ -338,13 +342,12 @@ function getPublicKey(header, options) {
   );
 }
 
-function copyToClipboard(_event) {
-  const $elt = $(this),
-    sourceElement = $elt.data("target"),
+function copyToClipboard(event) {
+  const sourceElement = event.currentTarget.getAttribute("data-target"),
     // grab the element to copy
-    $source = $("#" + sourceElement),
+    $source = $sel(`#${sourceElement}`),
     // Create a temporary hidden textarea.
-    $temp = $("<textarea>");
+    $temp = document.createElement("textarea");
 
   if (editors[sourceElement]) {
     editors[sourceElement].save();
@@ -357,14 +360,15 @@ function copyToClipboard(_event) {
 
   //let textToCopy = $source.val();
   // in which case do I need text() ?
-  const sourceType = $source[0].tagName;
+  const sourceType = $source.tagName;
   const textToCopy =
-    sourceType == "TEXTAREA" || sourceType.tagName == "INPUT"
-      ? $source.val()
-      : $source.text();
+    sourceType == "TEXTAREA" || sourceType == "INPUT"
+      ? $source.value
+      : $source.text;
 
-  $("body").append($temp);
-  $temp.val(textToCopy).select();
+  $sel("body").appendChild($temp);
+  $temp.value = textToCopy;
+  $temp.select();
   let success;
   try {
     success = document.execCommand("copy");
@@ -373,51 +377,33 @@ function copyToClipboard(_event) {
     // Animation to indicate copy.
     // CodeMirror obscures the original textarea, and appends a div as the next sibling.
     // We want to flash THAT.
-    const $cmdiv = $source.next();
+    const $cmdiv = $source.nextElementSibling;
     if (
-      $cmdiv.prop("tagName").toLowerCase() == "div" &&
-      $cmdiv.hasClass("CodeMirror")
+      $cmdiv.tagName.toLowerCase() == "div" &&
+      $cmdiv.classList.contains("CodeMirror")
     ) {
-      // There seems to be  a bug in Chrome which recomputes the font size, seemingly incorrectly,
-      // after removing the copy-to-clipboard-flash-bg class. So this logic just leaves it there.
-      // It needs to be removed _prior_ to adding it the next time.
+      // At one point there seemed to be a bug in Chrome which recomputes the
+      // font size, seemingly incorrectly, after removing the
+      // copy-to-clipboard-flash-bg class.
 
-      // $cmdiv
-      //   .removeClass('dummy')
-      //   .addClass('copy-to-clipboard-flash-bg')
-      //   .delay('1200')
-      //   .queue( _ => $cmdiv
-      //           .removeClass('copy-to-clipboard-flash-bg')
-      //           .dequeue() )
-      //   .delay('3')
-      //   .queue( _ => $cmdiv
-      //           .addClass('dummy')
-      //           .dequeue() );
-      $cmdiv
-        .removeClass("copy-to-clipboard-flash-bg")
-        .delay("6")
-        .queue((_) => $cmdiv.addClass("copy-to-clipboard-flash-bg").dequeue());
+      // Not sure if that is still happening.  If so, this logic should be
+      // changed to just leave the class there, and then remove it _prior_ to
+      // adding it the next time.
+
+      $cmdiv.classList.remove("copy-to-clipboard-flash-bg");
+      setTimeout((_) => $cmdiv.classList.add("copy-to-clipboard-flash-bg"), 6);
     } else {
       // no codemirror (probably the secretkey field, which is just an input)
-      $source.addClass("copy-to-clipboard-flash-bg");
+      $source.classList.add("copy-to-clipboard-flash-bg");
       setTimeout(
-        (_) => $source.removeClass("copy-to-clipboard-flash-bg"),
+        (_) => $source.classList.remove("copy-to-clipboard-flash-bg"),
         1800
       );
-
-      // $source.addClass('copy-to-clipboard-flash-bg')
-      //   .delay('1800')
-      //   .queue( _ => $source.removeClass('copy-to-clipboard-flash-bg').dequeue() );
-
-      // $source
-      //   .removeClass('copy-to-clipboard-flash-bg')
-      //   .delay('6')
-      //   .queue( _ => $source.addClass('copy-to-clipboard-flash-bg').dequeue() );
     }
   } catch (_e) {
     success = false;
   }
-  $temp.remove();
+  $temp.parentNode.removeChild($temp);
   return success;
 }
 
@@ -516,7 +502,7 @@ function encodeJwt(_event) {
     const elementId = "token-decoded-" + segment;
     if (editors[elementId]) {
       editors[elementId].save();
-      const text = $("#" + elementId).val();
+      const text = $sel("#" + elementId).value;
       try {
         values[segment] = JSON.parse(text);
       } catch (_e) {
@@ -532,15 +518,13 @@ function encodeJwt(_event) {
   }
 
   const { header, payload } = values;
-  if (!header.typ && $("#chk-typ").prop("checked")) {
+  if (!header.typ && $sel("#chk-typ").checked) {
     header.typ = "JWT";
   }
 
   // optionally set expiry in payload
-  const desiredExpiryOverride = $(".sel-expiry")
-    .find(":selected")
-    .text()
-    .toLowerCase();
+  const desiredExpiryOverride =
+    $sel(".sel-expiry").selectedOptions[0].text.toLowerCase();
   if (desiredExpiryOverride == "no expiry") {
     delete payload.exp;
   } else {
@@ -555,7 +539,7 @@ function encodeJwt(_event) {
     }
   }
 
-  const wantIssuedTime = $("#chk-iat").prop("checked");
+  const wantIssuedTime = $sel("#chk-iat").checked;
   if (wantIssuedTime) {
     payload.iat = Math.floor(new Date().valueOf() / 1000);
   }
@@ -620,7 +604,9 @@ function encodeJwt(_event) {
   return p
     .then((jwt) => {
       //editors.encodedjwt.setValue(jwt);
-      $("#panel_encoded > p > span.length").text("(" + jwt.length + " bytes)");
+      $sel(
+        "#panel_encoded > p > span.length"
+      ).textContent = `(${jwt.length} bytes)`;
       editors.encodedjwt.setValue(jwt);
       editors.encodedjwt.save();
       if (header.enc) {
@@ -636,8 +622,8 @@ function encodeJwt(_event) {
       }
     })
     .then(() => {
-      $("#privatekey .CodeMirror-code").removeClass("outdated");
-      $("#publickey .CodeMirror-code").removeClass("outdated");
+      $sel("#privatekey .CodeMirror-code").classList.remove("outdated");
+      $sel("#publickey .CodeMirror-code").classList.remove("outdated");
     })
     .catch((e) => {
       //console.log(e.stack);
@@ -709,7 +695,8 @@ function verifyJwt(event) {
   let matches = re.signed.jwt.exec(tokenString);
   // verify a signed JWT
   if (matches && matches.length == 4) {
-    $("#mainalert").addClass("fade").removeClass("show");
+    $sel("#mainalert").classList.add("fade");
+    $sel("#mainalert").classList.remove("show");
     const json = Buffer.from(matches[1], "base64").toString("utf8"),
       header = JSON.parse(json);
     let p = null;
@@ -755,8 +742,8 @@ function verifyJwt(event) {
                 setAlert(message, "success");
               }
               selectAlgorithm(result.header.alg);
-              $("#privatekey .CodeMirror-code").removeClass("outdated");
-              $("#publickey .CodeMirror-code").removeClass("outdated");
+              $sel("#privatekey .CodeMirror-code").classList.remove("outdated");
+              $sel("#publickey .CodeMirror-code").classList.remove("outdated");
             } else {
               const label = reasons.length == 1 ? "Reason" : "Reasons";
               setAlert(
@@ -823,17 +810,18 @@ function verifyJwt(event) {
             elementId = "token-decoded-payload",
             flavor = "payload";
           editors[elementId].setValue(prettyPrintedJson);
-          $("#" + flavor + " > p > .length").text(
-            "( " + stringPayload.length + " bytes)"
-          );
+          $sel(
+            `#${flavor} > p > .length`
+          ).textContent = `( ${stringPayload.length} bytes)`;
+
           if (reasons.length == 0) {
             const message =
               "The JWT has been decrypted successfully, and the times are valid.";
             if (event) {
               setAlert(message, "success");
             }
-            $("#privatekey .CodeMirror-code").removeClass("outdated");
-            $("#publickey .CodeMirror-code").removeClass("outdated");
+            $sel("#privatekey .CodeMirror-code").classList.remove("outdated");
+            $sel("#publickey .CodeMirror-code").classList.remove("outdated");
           } else {
             const label = reasons.length == 1 ? "Reason" : "Reasons";
             setAlert(
@@ -852,9 +840,10 @@ function verifyJwt(event) {
         const elementId = "token-decoded-payload",
           flavor = "payload";
         editors[elementId].setValue(stringPayload);
-        $("#" + flavor + " > p > .length").text(
-          "( " + stringPayload.length + "" + " bytes)"
-        );
+        $sel(
+          `#${flavor} > p > .length`
+        ).textContent = `( ${stringPayload.length} bytes)`;
+
         return null;
       })
       .catch((e) => {
@@ -870,26 +859,30 @@ function setAlert(html, alertClass) {
       '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
       ' <span aria-hidden="true">&times;</span>\n' +
       "</button>",
-    $mainalert = $("#mainalert");
-  $mainalert.html(html + buttonHtml);
+    $mainalert = $sel("#mainalert");
+  $mainalert.innerHTML = html + buttonHtml;
   if (alertClass) {
-    $mainalert.removeClass("alert-warning"); // this is the default
-    $mainalert.addClass("alert-" + alertClass); // success, primary, warning, etc
+    $mainalert.classList.remove("alert-warning"); // this is the default
+    $mainalert.classList.add("alert-" + alertClass); // success, primary, warning, etc
   } else {
-    $mainalert.addClass("alert-warning");
+    $mainalert.classList.add("alert-warning");
   }
   // show()
-  $mainalert.removeClass("fade").addClass("show");
-  $("#mainalert").css("z-index", 99);
+  $mainalert.classList.remove("fade");
+  $mainalert.classList.add("show");
+  $mainalert.setAttribute("style", `z-index: 99`);
   setTimeout(() => {
-    $("#mainalert").addClass("fade").removeClass("show");
-    setTimeout(() => $("#mainalert").css("z-index", -1), 800);
+    $mainalert.classList.add("fade");
+    $mainalert.classList.remove("show");
+    setTimeout(() => $mainalert.setAttribute("style", `z-index: -1`), 800);
   }, 5650);
 }
 
-function closeAlert(event) {
-  $("#mainalert").addClass("fade").removeClass("show");
-  setTimeout(() => $("#mainalert").css("z-index", -1), 800);
+function closeAlert(_event) {
+  const $mainalert = $sel("#mainalert");
+  $mainalert.classList.add("fade");
+  $mainalert.classList.remove("show");
+  setTimeout(() => $mainalert.setAttribute("style", "z-index: -1"), 800);
   return false; // Keep close.bs.alert event from removing from DOM
 }
 
@@ -927,9 +920,9 @@ function getGenKeyParams(alg) {
 }
 
 function maybeNewKey() {
-  const alg = $(".sel-alg").find(":selected").text();
+  const alg = $sel(".sel-alg").selectedOptions[0].text;
   if (alg === "dir") {
-    if (!$("#ta_directkey").val()) {
+    if (!$sel("#ta_directkey").value) {
       return newKey(null);
     }
   } else if (
@@ -937,14 +930,14 @@ function maybeNewKey() {
     alg.startsWith("PB") ||
     alg.startsWith("A")
   ) {
-    if (!$("#ta_symmetrickey").val()) {
+    if (!$sel("#ta_symmetrickey").value) {
       return newKey(null);
     }
   } else {
     editors.privatekey.save();
     editors.publickey.save();
-    const privatekey = $("#ta_privatekey").val().trim(),
-      publickey = $("#ta_publickey").val().trim();
+    const privatekey = $sel("#ta_privatekey").value.trim(),
+      publickey = $sel("#ta_publickey").value.trim();
     if (!privatekey || !publickey) {
       return newKey(null);
     }
@@ -956,7 +949,7 @@ const getKeyUse = (alg) =>
   alg.startsWith("ECDH") ? ["deriveKey", "deriveBits"] : ["sign", "verify"];
 
 function newKey(event) {
-  const alg = $(".sel-alg").find(":selected").text();
+  const alg = $sel(".sel-alg").selectedOptions[0].text;
 
   gtag("event", "newKey", {
     event_category: event ? "click" : "implicit",
@@ -970,12 +963,10 @@ function newKey(event) {
     alg.startsWith("A")
   ) {
     const domid = alg === "dir" ? "directkey" : "symmetrickey",
-      $div = $("#" + domid),
-      $ta = $div.find(".ta-key").first(),
-      coding = $("#" + $ta.data("coding"))
-        .find(":selected")
-        .text()
-        .toLowerCase();
+      $ta = $sel(`#${domid} .ta-key`),
+      coding = $sel(
+        `#${$ta.getAttribute("data-coding")}`
+      ).selectedOptions[0].text.toLowerCase();
     let keyString = null;
     if (coding == "pbkdf2") {
       // password can be of arbitrary length
@@ -983,7 +974,7 @@ function newKey(event) {
     } else {
       // want key of specific length. Not REQUIRED for HS* signing, but it's ok.
       const cls = alg === "dir" ? ".sel-enc" : ".sel-alg",
-        cipherAlg = $(cls).find(":selected").text(),
+        cipherAlg = $sel(cls).selectedOptions[0].text,
         benchmark = requiredKeyBitsForAlg(cipherAlg) / 8;
       if (coding == "utf-8") {
         keyString = rdg.password(benchmark);
@@ -992,8 +983,8 @@ function newKey(event) {
       }
     }
     if (keyString) {
-      $ta.val(keyString);
-      onKeyTextChange.call($ta, null);
+      $ta.value = keyString;
+      $ta.dispatchEvent(new Event("change"));
       saveSetting("ta_" + domid, keyString);
     }
     return Promise.resolve({});
@@ -1017,9 +1008,10 @@ function newKey(event) {
         )
     )
     .then(() => {
-      $("#mainalert").removeClass("show").addClass("fade");
-      $("#privatekey .CodeMirror-code").removeClass("outdated");
-      $("#publickey .CodeMirror-code").removeClass("outdated");
+      $sel("#mainalert").classList.remove("show");
+      $sel("#mainalert").classList.add("fade");
+      $sel("#privatekey .CodeMirror-code").classList.remove("outdated");
+      $sel("#publickey .CodeMirror-code").classList.remove("outdated");
       // why only publickey, not also privatekey?
       editors.publickey.setOption("mode", "encodedjwt");
       return {};
@@ -1028,37 +1020,37 @@ function newKey(event) {
 }
 
 function selectAlgorithm(algName) {
-  const currentlySelectedAlg = $(".sel-alg")
-    .find(":selected")
-    .text()
-    .toLowerCase();
+  const currentlySelectedAlg =
+    $sel(".sel-alg").selectedOptions[0].text.toLowerCase();
   if (algName.toLowerCase() != currentlySelectedAlg) {
-    let $option = $('.sel-alg option[value="' + algName + '"]');
-    if (!$option.length) {
-      $option = $('.sel-alg option[value="??"]');
+    let $option = $sel(`.sel-alg option[value="${algName}"]`);
+    if (!$option) {
+      $option = $sel('.sel-alg option[value="??"]');
     }
-    $option.prop("selected", true).trigger("change");
+    $option.selected = true;
+    //$option.prop("selected", true).trigger("change");
+    $sel(".sel-alg").dispatchEvent(new Event("change"));
   }
 }
 
 function selectEnc(encName) {
-  const currentlySelectedEnc = $(".sel-enc")
-    .find(":selected")
-    .text()
-    .toLowerCase();
+  const currentlySelectedEnc =
+    $sel(".sel-enc").selectedOptions[0].text.toLowerCase();
   if (encName.toLowerCase() != currentlySelectedEnc) {
-    let $option = $('.sel-enc option[value="' + encName + '"]');
-    if (!$option.length) {
-      $option = $('.sel-enc option[value="??"]');
+    let $option = $sel(`.sel-enc option[value="${encName}"]`);
+    if (!$option) {
+      $option = $sel('.sel-enc option[value="??"]');
     }
-    $option.prop("selected", true).trigger("change");
+    $option.selected = true;
+    //$option.prop("selected", true).trigger("change");
+    $sel(".sel-enc").dispatchEvent(new Event("change"));
   }
 }
 
 function showDecoded(skipEncryptedPayload) {
   editors.encodedjwt.save();
 
-  const tokenString = editors.encodedjwt.getValue(); //$('#encodedjwt').val(),
+  const tokenString = editors.encodedjwt.getValue();
   let matches = re.signed.jwt.exec(tokenString);
 
   gtag("event", "decode", {
@@ -1066,21 +1058,17 @@ function showDecoded(skipEncryptedPayload) {
   });
 
   saveSetting("encodedjwt", tokenString); // for reload
-  $("#panel_encoded > p > span.length").text(
-    "(" + tokenString.length + " bytes)"
-  );
+  $sel(
+    "#panel_encoded > p > span.length"
+  ).textContent = `(${tokenString.length} bytes)`;
 
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", "info");
-    const currentlySelectedVariant = $(".sel-variant")
-      .find(":selected")
-      .text()
-      .toLowerCase();
+    const currentlySelectedVariant =
+      $sel(".sel-variant").selectedOptions[0].text.toLowerCase();
     if (currentlySelectedVariant != "signed") {
-      $(".sel-variant option[value=Signed]")
-        .prop("selected", true)
-        .trigger("change");
-      setTimeout(() => onChangeVariant(), 2);
+      $sel(".sel-variant option[value=Signed]").selected = true;
+      setTimeout(() => $sel(".sel-variant").dispatchEvent(new Event("change")));
     }
 
     const flavors = ["header", "payload"]; // cannot decode signature
@@ -1093,15 +1081,16 @@ function showDecoded(skipEncryptedPayload) {
           prettyPrintedJson = JSON.stringify(obj, null, 2),
           flatJson = JSON.stringify(obj);
         editors[elementId].setValue(prettyPrintedJson);
-        $("#" + flavor + " > p > .length").text(
-          "(" + flatJson.length + " bytes)"
-        );
+        $sel(
+          `#${flavor} > p > .length`
+        ).textContent = `(${flatJson.length} bytes)`;
+
         if (flavor == "header" && obj.alg) {
           selectAlgorithm(obj.alg);
         }
       } catch (e) {
         // probably not json
-        setAlert("the " + flavor + " may not be valid JSON", "info");
+        setAlert(`the ${flavor} may not be valid JSON`, "info");
         editors[elementId].setValue(json);
       }
     });
@@ -1111,15 +1100,11 @@ function showDecoded(skipEncryptedPayload) {
   matches = re.encrypted.jwt.exec(tokenString);
   if (matches && matches.length == 6) {
     setAlert("an encrypted JWT", "info");
-    const currentlySelectedVariant = $(".sel-variant")
-      .find(":selected")
-      .text()
-      .toLowerCase();
+    const currentlySelectedVariant =
+      $sel(".sel-variant").selectedOptions[0].text.toLowerCase();
     if (currentlySelectedVariant != "encrypted") {
-      $(".sel-variant option[value=Encrypted]")
-        .prop("selected", true)
-        .trigger("change"); //.trigger seems not to work?
-      setTimeout(() => onChangeVariant(), 2);
+      $sel(".sel-variant option[value=Encrypted]").selected = true;
+      setTimeout(() => $sel(".sel-variant").dispatchEvent(new Event("change")));
     }
     // Display the decoded header.
     // It is not possible to 'decode' the payload; it requires decryption.
@@ -1130,13 +1115,15 @@ function showDecoded(skipEncryptedPayload) {
         prettyPrintedJson = JSON.stringify(obj, null, 2),
         flatJson = JSON.stringify(obj);
       editors["token-decoded-header"].setValue(prettyPrintedJson);
-      $("#header > p > .length").text("(" + flatJson.length + "" + "bytes)");
+      $sel("#header > p > .length").textContent = `(${flatJson.length} bytes)`;
       if (!skipEncryptedPayload) {
         // Just display a fixed value.
         // Must decrypt the ciphertext payload to display claims,
         // and it's not possible to decrypt just now.
         editors["token-decoded-payload"].setValue("?ciphertext?");
-        $("#payload > p > .length").text("( " + matches[2].length + " bytes)");
+        $sel(
+          "#payload > p > .length"
+        ).textcontent = `(${matches[2].length} bytes)`;
       }
       if (obj.alg) {
         selectAlgorithm(obj.alg);
@@ -1158,42 +1145,45 @@ function showDecoded(skipEncryptedPayload) {
 }
 
 function populateEncSelectOptions() {
-  $.each(contentEncryptionAlgs, (_val, text) =>
-    $(".sel-enc").append($("<option></option>").val(text).html(text))
+  const select = $sel(".sel-enc");
+  contentEncryptionAlgs.forEach((text) =>
+    select.options.add(new Option(text, text))
   );
 }
 
 function populateAlgorithmSelectOptions() {
-  const variant = $(".sel-variant").find(":selected").text().toLowerCase(),
-    $selAlg = $(".sel-alg");
-  $selAlg.find("option").remove();
+  const variant = $sel(".sel-variant").selectedOptions[0].text.toLowerCase(),
+    $selAlg = $sel(".sel-alg");
+
+  // remove all options
+  //$selAlg.find("option").remove();
+  while ($selAlg.options.length) {
+    $selAlg.remove(0);
+  }
+
   const a = variant == "signed" ? signingAlgs : keyEncryptionAlgs;
-  $.each(a, (_val, text) =>
-    $selAlg.append($("<option></option>").val(text).html(text))
-  );
+  a.forEach((text) => $selAlg.options.add(new Option(text, text)));
 
   const headerObj = getHeaderFromForm();
+  let $option = null;
   if (headerObj && headerObj.alg) {
     // select that one
-    const $option = $selAlg.find(`option[value='${headerObj.alg}']`);
-    if ($option.length) {
-      $option.prop("selected", "selected");
+    $option = $sel(`.sel-alg option[value='${headerObj.alg}']`);
+    if ($option) {
       saveSetting("sel-alg-" + variant, headerObj.alg);
-    } else {
-      // pull from data model and select that
-      const value = datamodel["sel-alg-" + variant];
-      $selAlg.find(`option[value='${value}']`).prop("selected", "selected");
     }
-  } else {
+  }
+  if (!$option) {
     // pull from data model and select that
     const value = datamodel["sel-alg-" + variant];
-    $selAlg.find(`option[value='${value}']`).prop("selected", "selected");
+    $option = $sel(`.sel-alg option[value='${value}']`);
   }
-  // store currently selected alg:
-  //$( '.sel-alg').data("prev", $( '.sel-alg').find(':selected').text());
+  if ($option) {
+    $option.selected = true;
+  }
 
-  $(".sel-alg").data("prev", "NONE"); // do we always want this?
-  setTimeout(() => onChangeAlg(), 1);
+  $selAlg.setAttribute("data-prev", "NONE"); // do we always want this?
+  setTimeout(() => $selAlg.dispatchEvent(new Event("change")), 1);
 }
 
 function keysAreCompatible(alg1, alg2) {
@@ -1206,12 +1196,16 @@ function keysAreCompatible(alg1, alg2) {
 }
 
 function changeKeyCoding(event) {
-  // fires for changes in either key or salt coding
-  const $this = $(this),
-    newCodingCased = $this.find(":selected").text(),
-    id = $this.attr("id"),
+  // fires for changes in coding for either key (dir, symmetric) or salt  (for PBKDF2)
+  const sourceElement = event.currentTarget;
+  if (sourceElement.tagName != "SELECT") {
+    throw new Error("misconfiguration with event handler");
+  }
+
+  const newCodingCased = sourceElement.selectedOptions[0].text,
+    id = sourceElement.getAttribute("id"),
     newCoding = newCodingCased.toLowerCase(),
-    previousCoding = $this.data("prev");
+    previousCoding = sourceElement.getAttribute("data-prev");
 
   const effectivePrevCoding = () => {
     if (previousCoding == "PBKDF2" || previousCoding == "pbkdf2")
@@ -1222,23 +1216,24 @@ function changeKeyCoding(event) {
     // When the coding changes, try to re-encode the existing key.
     // This will not always work nicely when switching to UTF-8.
     // You will get a utf-8 string with unicode escape sequences, eg \u000b.
-    const $ta = $("#" + $this.data("target")),
-      textVal = $ta.val(),
+    const targetElement = sourceElement.getAttribute("data-target"),
+      $ta = $sel(`#${targetElement}`),
+      textVal = $ta.value,
       keybuf = Buffer.from(textVal, effectivePrevCoding());
 
     if (newCoding == "pbkdf2") {
-      $ta.val(keybuf.toString("utf-8"));
+      $ta.value = keybuf.toString("utf-8");
       // display the salt and iteration count
-      $("#pbkdf2_params").show();
+      show($sel("#pbkdf2_params"));
     } else {
-      $ta.val(keybuf.toString(newCoding));
+      $ta.value = keybuf.toString(newCoding);
       if (id.indexOf("salt") < 0) {
-        $("#pbkdf2_params").hide();
+        hide($sel("#pbkdf2_params"));
       }
     }
   }
 
-  $this.data("prev", newCoding);
+  sourceElement.setAttribute("data-prev", newCoding);
   const suffix = newCoding == "pbkdf2" ? "-pb" : "";
   saveSetting(id + suffix, newCodingCased);
 }
@@ -1248,44 +1243,49 @@ function checkSymmetryChange(newalg, oldalg) {
   //oldPrefix = oldalg && oldalg.substring(0, 2);
   if (newalg == "dir") {
     if (oldalg != "dir") {
-      $("#privatekey").hide();
-      $("#publickey").hide();
-      $("#symmetrickey").hide();
-      $("#directkey").show();
+      hide($sel("#privatekey"));
+      hide($sel("#publickey"));
+      hide($sel("#symmetrickey"));
+      show($sel("#directkey"));
     }
-  } else if (
-    newPrefix == "HS" ||
-    newPrefix == "PB" ||
-    newPrefix == "A1" ||
-    newPrefix == "A2"
-  ) {
-    $("#privatekey").hide();
-    $("#publickey").hide();
-    $("#symmetrickey").show();
-    $("#directkey").hide();
+    return;
+  }
 
-    const $keycoding = $("#sel-symkey-coding");
+  if (["HS", "PB", "A1", "A2"].includes(newPrefix)) {
+    hide($sel("#privatekey"));
+    hide($sel("#publickey"));
+    show($sel("#symmetrickey"));
+    hide($sel("#directkey"));
+
+    const $keycoding = $sel("#sel-symkey-coding");
     if (newPrefix == "PB") {
-      const currentlySelectedCoding = $keycoding
-        .find(":selected")
-        .text()
-        .toLowerCase();
-      $keycoding.find("option[value=PBKDF2]").show();
+      const currentlySelectedCoding =
+        $keycoding.selectedOptions[0].text.toLowerCase();
+      //$keycoding.find("option[value=PBKDF2]").show();
       if (currentlySelectedCoding != "pbkdf2") {
-        $keycoding
-          .find("option[value=PBKDF2]")
-          .prop("selected", true)
-          .trigger("change");
+        const $option = $sel('#sel-symkey-coding option[value="PBKDF2"]');
+        if ($option) {
+          show($option);
+          $option.selected = true;
+        }
+        $keycoding.dispatchEvent(new Event("change"));
       }
-      $keycoding.prop("disabled", true);
+      // when it's a PBES2 alg, there's no option to switch key coding.
+      $keycoding.setAttribute("disabled", "disabled");
     } else {
       let value = datamodel["sel-symkey-coding"];
       if (value == "PBKDF2") {
+        // alg is not PBES2, but stored key coding is PBKDF2. Must force switch.
         value = "UTF-8";
+        saveSetting("sel-symkey-coding", value);
       }
-      $keycoding.find("option[value=PBKDF2]").hide();
-      $keycoding.find(`option[value='${value}']`).prop("selected", "selected");
-      $keycoding.prop("disabled", false);
+      const $item = $sel(`#sel-symkey-coding option[value='${value}']`);
+      if ($item) {
+        $item.selected = true;
+      }
+      const $option = $sel('#sel-symkey-coding option[value="PBKDF2"]');
+      hide($option);
+      $keycoding.removeAttribute("disabled");
     }
 
     if (newPrefix.startsWith("A")) {
@@ -1293,16 +1293,13 @@ function checkSymmetryChange(newalg, oldalg) {
       // key wrapping, do not need PBKDF2
     }
     return true;
-  } else if (
-    newPrefix == "RS" ||
-    newPrefix == "PS" ||
-    newPrefix == "ES" ||
-    newPrefix == "EC"
-  ) {
-    $("#privatekey").show();
-    $("#publickey").show();
-    $("#symmetrickey").hide();
-    $("#directkey").hide();
+  }
+
+  if (["RS", "PS", "ES", "EC"].includes(newPrefix)) {
+    show($sel("#privatekey"));
+    show($sel("#publickey"));
+    hide($sel("#symmetrickey"));
+    hide($sel("#directkey"));
     return true;
   }
 }
@@ -1311,19 +1308,21 @@ function initialized() {
   return !!editors["token-decoded-header"];
 }
 
-function onChangeCheckbox(id, _event) {
-  const booleanValue = $("#" + id).prop("checked");
+function onChangeCheckbox(event) {
+  const target = event.target,
+    id = target.getAttribute("id"),
+    booleanValue = target.checked;
   saveSetting(id, String(booleanValue));
 }
 
-function onChangeExpiry(_event) {
-  const $this = $(this),
-    selectedExpiry = $this.find(":selected").text();
+function onChangeExpiry(event) {
+  const target = event.target,
+    selectedExpiry = target.selectedOptions[0].text;
   saveSetting("sel-expiry", selectedExpiry);
 }
 
 function getHeaderFromForm() {
-  const headerText = $("#token-decoded-header").val();
+  const headerText = $sel("#token-decoded-header").value;
   if (headerText) {
     try {
       return JSON.parse(headerText);
@@ -1335,12 +1334,12 @@ function getHeaderFromForm() {
 }
 
 async function onKeyTextChange(_event) {
-  const $this = $(this),
-    id = $this.attr("id"),
-    alg = $(".sel-alg").find(":selected").text(),
-    variant = $(".sel-variant").find(":selected").text().toLowerCase();
+  const target = _event.target,
+    id = target.id,
+    alg = $sel(".sel-alg").selectedOptions[0].text,
+    variant = $sel(".sel-variant").selectedOptions[0].text.toLowerCase();
 
-  saveSetting(id, $this.val());
+  saveSetting(id, target.value);
 
   // If the key will be used in a symmetric alg (signing or encrypting), show
   // some helpful text on the actual size of the key, and the required size of
@@ -1350,26 +1349,25 @@ async function onKeyTextChange(_event) {
     (variant == "signed" && alg.startsWith("HS"))
   ) {
     if (!alg.startsWith("PB")) {
-      const buf = await getBufferForSymmetricKey($this, alg),
+      const buf = await getBufferForSymmetricKey(target, alg),
         cls = id.indexOf("direct") >= 0 ? ".sel-enc" : ".sel-alg",
-        realAlg = $(cls).find(":selected").text(),
+        realAlg = $sel(cls).selectedOptions[0].text,
         benchmark = requiredKeyBitsForAlg(realAlg) / 8,
         requirement = variant == "encrypted" ? "required" : "minimum";
-      $this
-        .parent()
-        .find("p > span.length")
-        .text(`(${buf.byteLength} bytes, ${requirement}: ${benchmark})`);
+      target.parentElement.querySelector(
+        "p > span.length"
+      ).textContent = `(${buf.byteLength} bytes, ${requirement}: ${benchmark})`;
     } else {
       // there is no minimum with PBKDF2...
     }
   }
 }
 
-function onChangeEnc(_event) {
-  const $this = $("#sel-enc"),
-    newSelection = $this.find(":selected").text(),
-    previousSelection = $this.data("prev"),
-    alg = $(".sel-alg").find(":selected").text();
+function onChangeEnc(event) {
+  const target = event.target,
+    newSelection = target.selectedOptions[0].text,
+    previousSelection = target.getAttribute("data-prev"),
+    alg = $sel(".sel-alg").selectedOptions[0].text;
   let headerObj = null;
 
   if (!initialized()) {
@@ -1380,9 +1378,7 @@ function onChangeEnc(_event) {
     event_label: `${previousSelection} -> ${newSelection}`
   });
   if (alg == "dir" || alg.startsWith("PB")) {
-    Array.prototype.forEach.call($(".ta-key"), ($ta) =>
-      onKeyTextChange.call($ta, null)
-    );
+    $all(".ta-key").forEach(($ta) => $ta.dispatchEvent(new Event("change")));
   }
 
   if (newSelection != previousSelection) {
@@ -1402,10 +1398,10 @@ function onChangeEnc(_event) {
   }
 }
 
-function onChangeAlg(_event) {
-  const $this = $("#sel-alg"),
-    newSelection = $this.find(":selected").text(),
-    previousSelection = $this.data("prev");
+function onChangeAlg(event) {
+  const target = event.target,
+    newSelection = target.selectedOptions[0].text,
+    previousSelection = target.getAttribute("data-prev");
   let headerObj = null;
   const updateHeader = () => {
     try {
@@ -1437,10 +1433,10 @@ function onChangeAlg(_event) {
       headerObj.alg = newSelection;
 
       if (!keysAreCompatible(newSelection, previousSelection)) {
-        $("#privatekey .CodeMirror-code").addClass("outdated");
-        $("#publickey .CodeMirror-code").addClass("outdated");
+        $sel("#privatekey .CodeMirror-code").classList.add("outdated");
+        $sel("#publickey .CodeMirror-code").classList.add("outdated");
       }
-      $this.data("prev", newSelection);
+      target.setAttribute("data-prev", newSelection);
     }
     if (!newSelection.startsWith("ECDH")) {
       if (headerObj.epk) {
@@ -1454,35 +1450,33 @@ function onChangeAlg(_event) {
       if (headerObj.p2s) {
         delete headerObj.p2s;
       }
-      $("#pbkdf2_params").hide();
-      Array.prototype.forEach.call($(".ta-key"), ($ta) =>
-        onKeyTextChange.call($ta, null)
-      );
+      hide($sel("#pbkdf2_params"));
+      $all(".ta-key").forEach(($ta) => $ta.dispatchEvent(new Event("change")));
     }
 
     if (newSelection.startsWith("PB")) {
-      $("#pbkdf2_params").show();
+      show($sel("#pbkdf2_params"));
       if (!headerObj.p2c) {
         headerObj.p2c = ITERATION_DEFAULT;
       }
-      $("#ta_pbkdf2_iterations").val(headerObj.p2c);
+      $sel("#ta_pbkdf2_iterations").value = headerObj.p2c;
       if (!headerObj.p2s) {
         headerObj.p2s = PBKDF2_SALT_DEFAULT;
       }
-      $("#ta_pbkdf2_salt").val(headerObj.p2s);
+      $sel("#ta_pbkdf2_salt").value = headerObj.p2s;
     }
     updateHeader();
-    const variant = $("#sel-variant").find(":selected").text().toLowerCase();
+    const variant = $sel("#sel-variant").selectedOptions[0].text.toLowerCase();
     saveSetting("sel-alg-" + variant, newSelection);
   });
 }
 
-function onChangeVariant(_event) {
+function onChangeVariant(event) {
   // change signed to encrypted or vice versa
-  const $this = $("#sel-variant"),
-    newSelection = $this.find(":selected").text(),
-    previousSelection = $this.data("prev"),
-    priorAlgSelection = $(".sel-alg").data("prev");
+  const target = event.target,
+    newSelection = target.selectedOptions[0].text,
+    previousSelection = target.getAttribute("data-prev"),
+    priorAlgSelection = $sel(".sel-alg").getAttribute("data-prev");
 
   editors["token-decoded-header"].save();
 
@@ -1501,9 +1495,9 @@ function onChangeVariant(_event) {
         if (!headerObj.enc) {
           headerObj.enc = pickContentEncryptionAlg();
         }
-        $("#sel-enc").show();
+        show($sel("#sel-enc"));
       } else {
-        $("#sel-enc").hide(); // not used for signing
+        hide($sel("#sel-enc")); // not used for signing
         // these fields are defined for use only with signed JWT
         delete headerObj.enc;
         delete headerObj.p2s;
@@ -1517,7 +1511,7 @@ function onChangeVariant(_event) {
     } catch (_e) {
       /* gulp */
     }
-    $this.data("prev", newSelection);
+    target.setAttribute("data-prev", newSelection);
   }
 
   populateAlgorithmSelectOptions();
@@ -1527,8 +1521,8 @@ function onChangeVariant(_event) {
     !priorAlgSelection.startsWith("PS") &&
     !priorAlgSelection.startsWith("RS")
   ) {
-    $("#privatekey .CodeMirror-code").addClass("outdated");
-    $("#publickey .CodeMirror-code").addClass("outdated");
+    $sel("#privatekey .CodeMirror-code").classList.add("outdated");
+    $sel("#publickey .CodeMirror-code").classList.add("outdated");
   }
   saveSetting("sel-variant", newSelection);
 }
@@ -1552,7 +1546,7 @@ function contriveJson(segment) {
     return payload;
   }
 
-  const header = { alg: $(".sel-alg").find(":selected").text() };
+  const header = { alg: $sel(".sel-alg").selectedOptions[0].text };
   if (keyEncryptionAlgs.indexOf(header.alg) >= 0) {
     if (!header.enc) {
       header.enc = rdg.arrayItem(contentEncryptionAlgs);
@@ -1569,8 +1563,10 @@ function contriveJson(segment) {
   return header;
 }
 
-function newJson(segment, _event) {
-  const jsonBlob = contriveJson(segment),
+function newJson(event) {
+  const target = event.currentTarget,
+    segment = target.getAttribute("data-jsontype"),
+    jsonBlob = contriveJson(segment),
     elementId = `token-decoded-${segment}`;
   gtag("event", "newJson", { segment });
   editors[elementId].setValue(JSON.stringify(jsonBlob, null, 2));
@@ -1589,16 +1585,17 @@ function decoratePayload(_instance) {
   const lastComma = new RegExp(",s*$");
 
   // inspect each property and look for time values
-  $("span.cm-property").each((_ix, element) => {
-    const $this = $(element),
-      text = $this.text();
-    if (['"exp"', '"iat"', '"nbf"'].indexOf(text) >= 0) {
-      const $valueSpan = $this.nextAll("span").first(),
-        value = $valueSpan.text().replace(lastComma, ""); // just in case
-      // Set attributes for use with bootstrap popover.
-      // Cannot use .data() here; it does not update the DOM.
-      $valueSpan.attr("data-toggle", "popover");
-      $valueSpan.attr("data-time", value);
+  $all("span.cm-property").forEach((element, _ix) => {
+    const label = element.textContent;
+    if (['"exp"', '"iat"', '"nbf"'].includes(label)) {
+      const valueSpan = element.nextElementSibling;
+      if (valueSpan && valueSpan.tagName == "SPAN") {
+        const value = valueSpan.textContent.replace(lastComma, ""); // just in case
+        // Set attributes for use with bootstrap popover.
+        // Cannot use .data() here; it does not update the DOM.
+        valueSpan.setAttribute("data-toggle", "popover");
+        valueSpan.setAttribute("data-time", value);
+      }
     }
   });
 
@@ -1607,21 +1604,42 @@ function decoratePayload(_instance) {
   // etc.  The popover element is styled with .bs-popover-right, and it is
   // appended near the end of the DOM. It shows and hides automatically on
   // hover. This is basically a better, more nicely styled title attribute.
-  $('#payload span [data-toggle="popover"]').popover({
-    placement: "right",
-    trigger: "hover",
-    html: true,
-    content: function () {
-      const value = Number(this.getAttribute("data-time"));
-      try {
-        const time = new Date(Number(value) * 1000);
-        return formatTimeString(time) + " - " + timeAgo(time);
-      } catch (_e) {
-        // possibly an invalid time
-        console.log(`found invalid time value while decoding ${value}`);
-        return "looks like an invalid time value";
+
+  $all('#payload span[data-toggle="popover"]').forEach((span) => {
+    const pop = new Popover(span, {
+      placement: "left",
+      trigger: "manual", // could not get 'hover' to work properly
+      html: true,
+      content: function () {
+        const value = Number(this.getAttribute("data-time"));
+        try {
+          const time = new Date(Number(value) * 1000);
+          return formatTimeString(time) + " - " + timeAgo(time);
+        } catch (_e) {
+          // possibly an invalid time
+          console.log(`found invalid time value while decoding ${value}`);
+          return "looks like an invalid time value";
+        }
       }
-    }
+    });
+
+    const maybeDismiss = () =>
+      setTimeout(() => {
+        const hoveringOnSpanOrPopover =
+          $sel(".popover:hover") || span.querySelector(":hover");
+        if (!hoveringOnSpanOrPopover) {
+          pop.hide();
+        } else {
+          maybeDismiss();
+        }
+      }, 450);
+
+    span.addEventListener("mouseenter", () => {
+      pop.show();
+      $sel(".popover").addEventListener("mouseleave", maybeDismiss);
+    });
+
+    span.addEventListener("mouseleave", maybeDismiss);
   });
 }
 
@@ -1661,49 +1679,53 @@ function saveSetting(key, value) {
 function applyState() {
   // ordering is important. We must apply variant before alg.
   const keys = Object.keys(datamodel);
+
+  // need the variant to be applied first
   keys.sort((a, b) =>
     a == "sel-variant" ? -1 : b == "sel-variant" ? 1 : a.localeCompare(b)
   );
   keys.forEach((key) => {
     const value = datamodel[key];
     if (value) {
-      let $item = $("#" + key);
+      let $item = $sel("#" + key);
       if (key.startsWith("sel-alg-")) {
         // selection of alg, stored separately for signing and encrypting
         const currentlySelectedVariant = datamodel["sel-variant"];
         if (currentlySelectedVariant) {
           const storedVariant = key.substr(8);
           if (storedVariant == currentlySelectedVariant.toLowerCase()) {
-            $item = $("#sel-alg");
-            $item
-              .find("option[value='" + value + "']")
-              .prop("selected", "selected");
+            $item = $sel(`#sel-alg option[value='${value}']`);
+            if ($item) {
+              $item.selected = true;
+            }
           }
         }
       } else if (key.startsWith("sel-symkey-coding")) {
-        $item = $("#sel-symkey-coding");
+        $item = $sel("#sel-symkey-coding");
         if (key == "sel-symkey-coding-pb") {
           const currentlySelectedAlg = datamodel["sel-alg-encrypted"];
-          if (currentlySelectedAlg.startsWith("PB")) {
-            $item
-              .find("option[value='" + value + "']")
-              .prop("selected", "selected");
-          }
+          $item =
+            currentlySelectedAlg.startsWith("PB") &&
+            $sel(`#sel-symkey-coding option[value='PBKDF2']`);
         } else {
-          $item
-            .find("option[value='" + value + "']")
-            .prop("selected", "selected");
+          $item = $sel(`#sel-symkey-coding option[value='${value}']`);
+        }
+        if ($item) {
+          $item.selected = true;
         }
       } else if (key.startsWith("sel-")) {
         // selection
-        $item
-          .find("option[value='" + value + "']")
-          .prop("selected", "selected");
+        $item = $sel(`#${key} option[value='${value}']`);
+        if ($item) {
+          $item.selected = true;
+        }
         if (key == "sel-variant") {
-          onChangeVariant.call(document.querySelector("#sel-variant"), null);
+          //onChangeVariant.call(document.querySelector("#sel-variant"), null);
+          populateAlgorithmSelectOptions();
+          $sel("#sel-variant").dispatchEvent(new Event("change"));
         }
       } else if (key.startsWith("chk-")) {
-        $item.prop("checked", String(value) == "true");
+        $item.checked = String(value) == "true";
       } else if (key == "encodedjwt") {
         if (value) {
           parseAndDisplayToken(value);
@@ -1712,17 +1734,15 @@ function applyState() {
         const keytype = key.substr(3);
         editors[keytype].setValue(value); // will update the visible text area
       } else {
-        $item.val(value);
+        $item.value = value;
       }
     }
   });
 
-  const currentlySelectedVariant = $(".sel-variant")
-    .find(":selected")
-    .text()
-    .toLowerCase();
+  const currentlySelectedVariant =
+    $sel(".sel-variant").selectedOptions[0].text.toLowerCase();
   if (currentlySelectedVariant == "signed") {
-    $("#sel-enc").hide(); // not used for signing
+    hide($sel("#sel-enc")); // not used for signing
   }
 }
 
@@ -1741,29 +1761,30 @@ function parseAndDisplayToken(token) {
   editors.encodedjwt.setValue(token);
   editors.encodedjwt.save();
   showDecoded();
-  $("#privatekey .CodeMirror-code").addClass("outdated");
-  $("#publickey .CodeMirror-code").addClass("outdated");
+  $sel("#privatekey .CodeMirror-code").classList.add("outdated");
+  $sel("#publickey .CodeMirror-code").classList.add("outdated");
 }
 
-$(document).ready(function () {
-  $("#version_id").text(BUILD_VERSION);
-  $(".btn-copy").on("click", copyToClipboard);
-  $(".btn-encode").on("click", encodeJwt);
-  $(".btn-decode").on("click", showDecoded);
-  $(".btn-verify").on("click", verifyJwt);
-  $(".btn-newkey").on("click", newKey);
-  $(".btn-newpayload").on("click", curry(newJson, "payload"));
-  $(".btn-newheader").on("click", curry(newJson, "header"));
+document.addEventListener("DOMContentLoaded", function () {
+  $sel("#version_id").textContent = BUILD_VERSION;
+
+  $sel(".btn-copy").addEventListener("click", copyToClipboard);
+  $sel(".btn-encode").addEventListener("click", encodeJwt);
+  $sel(".btn-decode").addEventListener("click", showDecoded);
+  $sel(".btn-verify").addEventListener("click", verifyJwt);
+  $all(".btn-newkey").forEach((btn) => btn.addEventListener("click", newKey));
+  $sel("#btn-new-payload").addEventListener("click", newJson);
+  $sel("#btn-new-header").addEventListener("click", newJson);
 
   //$( '.btn-regen' ).on('click', contriveJwt);
 
-  populateAlgorithmSelectOptions();
   populateEncSelectOptions();
 
-  $(".sel-key-coding").on("change", changeKeyCoding);
-
-  $("#mainalert").addClass("fade");
-  $("#mainalert").on("close.bs.alert", closeAlert);
+  $all(".sel-key-coding").forEach((sel) =>
+    sel.addEventListener("change", changeKeyCoding)
+  );
+  $sel("#mainalert").classList.add("fade");
+  $sel("#mainalert").addEventListener("close.bs.alert", closeAlert);
 
   // editor for the encoded JWT (left hand column)
   editors.encodedjwt = CodeMirror.fromTextArea(
@@ -1856,8 +1877,8 @@ $(document).ready(function () {
 
   // to label fields in the decoded payload. We don't do the same in the header.
   editors["token-decoded-payload"].on("update", decoratePayload);
-  $("#symmetrickey").hide();
-  $("#pbkdf2_params").hide();
+  hide($sel("#symmetrickey"));
+  hide($sel("#pbkdf2_params"));
 
   // handle inbound query or hash
   let inboundJwt = window.location.hash;
@@ -1870,17 +1891,19 @@ $(document).ready(function () {
   retrieveLocalState();
   applyState();
 
-  $(".ta-key").on("change keyup input", onKeyTextChange);
-  Array.prototype.forEach.call($(".ta-key"), ($ta) =>
-    onKeyTextChange.call($ta, null)
-  );
+  $all(".ta-key").forEach(($ta) => {
+    ["change", "keyup", "input"].forEach((eventname) =>
+      $ta.addEventListener(eventname, onKeyTextChange)
+    );
+    $ta.dispatchEvent(new Event("change"));
+  });
 
-  $("#sel-variant").on("change", onChangeVariant);
-  $("#sel-alg").on("change", onChangeAlg);
-  $("#sel-enc").on("change", onChangeEnc);
-  $("#sel-expiry").on("change", onChangeExpiry);
-  $("#chk-iat").on("change", curry(onChangeCheckbox, "chk-iat"));
-  $("#chk-typ").on("change", curry(onChangeCheckbox, "chk-typ"));
+  $sel("#sel-variant").addEventListener("change", onChangeVariant);
+  $sel("#sel-alg").addEventListener("change", onChangeAlg);
+  $sel("#sel-enc").addEventListener("change", onChangeEnc);
+  $sel("#sel-expiry").addEventListener("change", onChangeExpiry);
+  $sel("#chk-iat").addEventListener("change", onChangeCheckbox);
+  $sel("#chk-typ").addEventListener("change", onChangeCheckbox);
 
   if (looksLikeJwt(inboundJwt)) {
     maybeNewKey().then((_) => parseAndDisplayToken(inboundJwt));

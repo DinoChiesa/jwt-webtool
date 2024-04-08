@@ -223,7 +223,7 @@ pre.CodeMirror-line > span {
   z-index: 10;
 }
 
-.btn-copy, .btn-newkey, .btn-newpayload, .btn-newheader {
+.btn-copy, .btn-newkey, .btn-newjson {
   padding: 2px 6px;
   margin: 0 4px;
   float: right;
@@ -322,4 +322,12 @@ span.cm-jwt-signature + div {
 
 .bs-popover-right .arrow::after {
     border-right-color: #dedede !important;
+}
+
+.hidden {
+  display: none;
+}
+
+.show {
+  display:auto;
 }

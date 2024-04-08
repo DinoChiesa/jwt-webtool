@@ -8,7 +8,7 @@ lots of cases.  It also has a few limitations; details below.
 
 ## License
 
-This code is Copyright (c) 2019-2023 Google LLC, and is released under the Apache
+This code is Copyright (c) 2019-2024 Google LLC, and is released under the Apache
 Source License v2.0. For information see the [LICENSE](LICENSE) file.
 
 ## Purpose
@@ -64,8 +64,7 @@ may not agree..
 ## Dependencies
 
 The web app depends on
-* [jQuery](https://jquery.com/) - for interactivity
-* [Bootstrap 4.0](https://getbootstrap.com/) - for UI and styling
+* [Bootstrap 5.0](https://getbootstrap.com/docs/5.0) - for UI and styling
 * [node-jose](https://github.com/cisco/node-jose) - for JWT
 * [CodeMirror](https://codemirror.net/) - for the in-browser editors
 * [webcrypto](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) - for generating RSA and ECDSA keys
@@ -73,17 +72,13 @@ The web app depends on
 
 ## Build Dependencies
 
-This tool uses [webpack v4](https://webpack.js.org/) for bundling the assets.
+This tool uses [webpack v5](https://webpack.js.org/) for bundling the assets.
 
 
 ## Please send pull requests
 
-This is my first webpack project, so if anyone has some constructive feedback on
-my webpack config, how to improve or optimize it, please let me know.  PR's will be
-appreciated.
-
-For example, the JS bundle is about 1mb and the css bundle is 400kb.  If there is a
-better way to optimize this, I am interested to learn.
+Constructive feedback is always appreciated.
+PR's will be appreciated.
 
 
 ## Developing
@@ -129,9 +124,6 @@ npm run build
 
 ## Bugs / Feature Gaps
 
-* The support for key-encryption algorithms is incomplete. Missing are:
-  AES based key-wrapping algorithms, and direct keys.
-
-* When using ECDH encryption, the tool always chooses the P-256 curve.
-
-* It is not possible to use an x509v3 certificate for the source of the public key.
+* For verification of signed JWT, or creation of encrypted JWT, it is not
+  possible to use an x509v3 certificate for the source of the public key. You
+  need to extract the public key yourself.
