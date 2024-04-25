@@ -1,4 +1,4 @@
-@import 'custom';
+@import "custom";
 
 body {
   margin: 12px 20px;
@@ -31,8 +31,7 @@ textarea {
   font-size: 120%;
   padding: 0 8px;
   p {
-    // margin-bottom: 0.2rem;
-    color: #BDBDBD;
+    color: #bdbdbd;
   }
 }
 
@@ -55,7 +54,7 @@ textarea {
   > div {
     margin-left: 32px;
     span {
-      color: #BDBDBD;
+      color: #bdbdbd;
       display: inline-block;
       font-size: 80%;
       width: 140px;
@@ -113,17 +112,34 @@ div.CodeMirror {
   height: auto;
 }
 
-
 pre.CodeMirror-line > span {
   /* all below, to handle really long JWTs */
-  white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
-  white-space: -pre-wrap;      /* Opera 4-6 */
-  white-space: -o-pre-wrap;    /* Opera 7 */
-  white-space: pre-wrap;       /* css-3 */
-  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+  white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+  white-space: -pre-wrap; /* Opera 4-6 */
+  white-space: -o-pre-wrap; /* Opera 7 */
+  white-space: pre-wrap; /* css-3 */
+  word-wrap: break-word; /* Internet Explorer 5.5+ */
   white-space: -webkit-pre-wrap; /* Newer versions of Chrome/Safari*/
   word-break: break-all;
   /* white-space: normal; */
+}
+
+.alert-dismissible {
+  padding-right: 16px;
+}
+
+.alert-dismissible > div:first-child {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /*    margin-left: 24px; */
+}
+
+.dismiss {
+  border: 1px solid #696969;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-left: 12px;
 }
 
 .rawvalue {
@@ -132,15 +148,15 @@ pre.CodeMirror-line > span {
   border-radius: 4px;
   padding: 4px;
   margin: 0 0 8px 0;
-  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   font-size: 2rem;
 
   /* all below, to handle really long JWTs */
-  white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
-  white-space: -pre-wrap;      /* Opera 4-6 */
-  white-space: -o-pre-wrap;    /* Opera 7 */
-  white-space: pre-wrap;       /* css-3 */
-  word-wrap: break-word;       /* Internet Explorer 5.5+ */
+  white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+  white-space: -pre-wrap; /* Opera 4-6 */
+  white-space: -o-pre-wrap; /* Opera 7 */
+  white-space: pre-wrap; /* css-3 */
+  word-wrap: break-word; /* Internet Explorer 5.5+ */
   white-space: -webkit-pre-wrap; /* Newer versions of Chrome/Safari*/
   word-break: break-all;
   white-space: normal;
@@ -154,57 +170,29 @@ pre.CodeMirror-line > span {
   color: #b100ff;
 }
 .cm-jwt-iv {
-  color: #FF948A;
+  color: #ff948a;
 }
 .cm-jwt-key {
-  color: #89BB86;
+  color: #89bb86;
 }
-.cm-jwt-signature, .cm-jwt-authtag {
+.cm-jwt-signature,
+.cm-jwt-authtag {
   color: #3184fb;
 }
 
-/*
-
-.cm-jwt-header:hover::after {
-    display: inline-flex;
-}
-.cm-jwt-header::after {
-    content: "JWT Header";
-}
-
-.cm-jwt-header::after,
-.cm-jwt-payload::after,
-.cm-jwt-signature::after {
-    background-color: #fef4c5;
-    border: 1px solid #d4b943;
-    -moz-border-radius: 2px;
-    -ms-border-radius: 2px;
-    -webkit-border-radius: 2px;
-    border-radius: 2px;
-    display: none;
-    padding: 2px;
-    position: relative;
-    right: -30px;
-    text-align: center;
-    top: -20px;
-    width: 150px;
-    z-index:100;
-}
-
-*/
-
-#privatekey, #publickey {
+#privatekey,
+#publickey {
   > .CodeMirror {
     font-size: 84%;
     max-height: 232px;
   }
 }
 
-#privatekey  .CodeMirror-scroll {
+#privatekey .CodeMirror-scroll {
   max-height: 162px;
 }
 
-#publickey  .CodeMirror-scroll {
+#publickey .CodeMirror-scroll {
   max-height: 216px;
 }
 
@@ -213,8 +201,8 @@ pre.CodeMirror-line > span {
 }
 
 .banner {
-  margin-bottom:24px;
-  background-color: #DFDDDD;
+  margin-bottom: 24px;
+  background-color: #dfdddd;
   height: 138px;
 }
 
@@ -223,7 +211,9 @@ pre.CodeMirror-line > span {
   z-index: 10;
 }
 
-.btn-copy, .btn-newkey, .btn-newjson {
+.btn-copy,
+.btn-newkey,
+.btn-newjson {
   padding: 2px 6px;
   margin: 0 4px;
   float: right;
@@ -231,25 +221,28 @@ pre.CodeMirror-line > span {
   position: relative;
 }
 
-.banner, .footer {
+.banner,
+.footer {
   border: 1px dotted grey;
 }
 
 .footer {
-  margin-top:24px;
-  background-color: #ECECEC;
+  margin-top: 24px;
+  background-color: #ececec;
   padding: 0 4px;
   min-height: 120px;
 }
 
-.banner > h2, .banner > div {
+.banner > h2,
+.banner > div {
   margin: 0;
   position: absolute;
   left: 50%;
   margin-right: -50%;
-  transform: translate(-50%, -50%)
+  transform: translate(-50%, -50%);
 }
-.banner > h2, .footer > h2 {
+.banner > h2,
+.footer > h2 {
   top: 46px;
 }
 
@@ -270,58 +263,46 @@ pre.CodeMirror-line > span {
 
 .alert.fade {
   opacity: 0;
-  transition: opacity .85s linear;
+  transition: opacity 0.85s linear;
 }
 
 .copy-to-clipboard-flash-bg {
-    animation-name: flashbg;
-    animation-timing-function: ease-out;
-    animation-duration: 1s;
+  animation-name: flashbg;
+  animation-timing-function: ease-out;
+  animation-duration: 1s;
 }
 
 @keyframes flashbg {
-    0% {
-        background: #539EDB;
-    }
-    100% {
-        background: transparent;
-    }
+  0% {
+    background: #539edb;
+  }
+  100% {
+    background: transparent;
+  }
 }
 
 .outdated {
-  // indicates that the keypair is not known to correspond to the JWT/JWE
-  background-color: #DCDCDC;
+  /* indicates that the keypair is not known to correspond to the JWT/JWE */
+  background-color: #dcdcdc;
 }
-
-/*
-span.cm-jwt-header + div,
-span.cm-jwt-payload + div,
-span.cm-jwt-signature + div {
-  position: absolute;
-  z-index: 99;
-  display:inline-block;
-  top: 2px;
-  left: 10px;
-  background: #C9D7E5;
-  border: 1px dotted #0c0c0c;
-  font-family: Roboto, sans-serif;
-  font-size: 12pt;
-  padding:0 6px;
-}
-*/
 
 #symmetrickey input[disabled] {
-    color: #636C77;
-    background-color: #E9ECEF;
+  color: #636c77;
+  background-color: #e9ecef;
+}
+
+.popover,
+.popover-body {
+  --bs-popover-max-width: auto;
 }
 
 .popover.bs-popover-right {
-  max-width: 480px;
+  /* max-width: 580px; */
   background-color: #dedede;
 }
 
 .bs-popover-right .arrow::after {
-    border-right-color: #dedede !important;
+  border-right-color: #dedede !important;
 }
 
 .hidden {
@@ -329,5 +310,5 @@ span.cm-jwt-signature + div {
 }
 
 .show {
-  display:auto;
+  display: auto;
 }

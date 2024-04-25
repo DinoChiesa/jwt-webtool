@@ -17,8 +17,6 @@ import en from "javascript-time-ago/locale/en";
 
 TimeAgo.addDefaultLocale(en);
 
-window.jq = $;
-
 const html5AppId = "2084664E-BF2B-4C76-BD5F-1087502F580B";
 
 const storage = LocalStorage.init(html5AppId);
@@ -344,9 +342,7 @@ function getPublicKey(header, options) {
 
 function copyToClipboard(event) {
   const sourceElement = event.currentTarget.getAttribute("data-target"),
-    // grab the element to copy
-    $source = $sel(`#${sourceElement}`),
-    // Create a temporary hidden textarea.
+    $source = document.getElementById(sourceElement),
     $temp = document.createElement("textarea");
 
   if (editors[sourceElement]) {
@@ -358,8 +354,6 @@ function copyToClipboard(event) {
     event_label: sourceElement
   });
 
-  //let textToCopy = $source.val();
-  // in which case do I need text() ?
   const sourceType = $source.tagName;
   const textToCopy =
     sourceType == "TEXTAREA" || sourceType == "INPUT"
@@ -373,15 +367,17 @@ function copyToClipboard(event) {
   try {
     success = document.execCommand("copy");
 
-    //if (success)
-    // Animation to indicate copy.
-    // CodeMirror obscures the original textarea, and appends a div as the next sibling.
-    // We want to flash THAT.
-    const $cmdiv = $source.nextElementSibling;
+    /*
+     * Animation to indicate copy.
+     * CodeMirror obscures the original textarea, and appends some DOM content
+     * as the next sibling. We want to flash THAT.
+     **/
+    const $putativeCmdiv = $source.nextElementSibling;
     if (
-      $cmdiv.tagName.toLowerCase() == "div" &&
-      $cmdiv.classList.contains("CodeMirror")
+      $putativeCmdiv.tagName.toLowerCase() == "div" &&
+      $putativeCmdiv.classList.contains("CodeMirror")
     ) {
+      const $divToFlash = $putativeCmdiv.querySelector(".CodeMirror-code");
       // At one point there seemed to be a bug in Chrome which recomputes the
       // font size, seemingly incorrectly, after removing the
       // copy-to-clipboard-flash-bg class.
@@ -390,8 +386,11 @@ function copyToClipboard(event) {
       // changed to just leave the class there, and then remove it _prior_ to
       // adding it the next time.
 
-      $cmdiv.classList.remove("copy-to-clipboard-flash-bg");
-      setTimeout((_) => $cmdiv.classList.add("copy-to-clipboard-flash-bg"), 6);
+      $divToFlash.classList.remove("copy-to-clipboard-flash-bg");
+      setTimeout(
+        (_) => $divToFlash.classList.add("copy-to-clipboard-flash-bg"),
+        6
+      );
     } else {
       // no codemirror (probably the secretkey field, which is just an input)
       $source.classList.add("copy-to-clipboard-flash-bg");
@@ -856,26 +855,33 @@ function verifyJwt(event) {
 
 function setAlert(html, alertClass) {
   const buttonHtml =
-      '<button type="button" class="close" data-dismiss="alert" aria-label="Close">\n' +
+      '<button type="button" class="close dismiss" data-dismiss="alert" aria-label="Close">\n' +
       ' <span aria-hidden="true">&times;</span>\n' +
       "</button>",
     $mainalert = $sel("#mainalert");
-  $mainalert.innerHTML = html + buttonHtml;
+  $mainalert.innerHTML = `<div>${html}\n${buttonHtml}</div>`;
   if (alertClass) {
     $mainalert.classList.remove("alert-warning"); // this is the default
     $mainalert.classList.add("alert-" + alertClass); // success, primary, warning, etc
   } else {
     $mainalert.classList.add("alert-warning");
   }
+
+  const dismiss = () => {
+    $mainalert.classList.add("fade");
+    $mainalert.classList.remove("show");
+    setTimeout(() => $mainalert.setAttribute("style", `z-index: -1`), 800);
+  };
+
   // show()
   $mainalert.classList.remove("fade");
   $mainalert.classList.add("show");
   $mainalert.setAttribute("style", `z-index: 99`);
-  setTimeout(() => {
-    $mainalert.classList.add("fade");
-    $mainalert.classList.remove("show");
-    setTimeout(() => $mainalert.setAttribute("style", `z-index: -1`), 800);
-  }, 5650);
+  const t = setTimeout(dismiss, 5650);
+  $sel("button.dismiss").addEventListener("click", () => {
+    dismiss();
+    clearTimeout(t);
+  });
 }
 
 function closeAlert(_event) {
@@ -1156,7 +1162,6 @@ function populateAlgorithmSelectOptions() {
     $selAlg = $sel(".sel-alg");
 
   // remove all options
-  //$selAlg.find("option").remove();
   while ($selAlg.options.length) {
     $selAlg.remove(0);
   }
@@ -1599,19 +1604,21 @@ function decoratePayload(_instance) {
     }
   });
 
-  // For each time value, on hover, show a tooltip with dynamic content,
-  // displaying an ISO8601 time string, and a relative time. "5 minutes ago",
-  // etc.  The popover element is styled with .bs-popover-right, and it is
-  // appended near the end of the DOM. It shows and hides automatically on
-  // hover. This is basically a better, more nicely styled title attribute.
+  /*
+   * For each time value, on hover, show a tooltip with dynamic content,
+   * displaying an ISO8601 time string, and a relative time. "5 minutes ago",
+   * etc.  The popover element is styled with .bs-popover-right, and it is
+   * appended near the end of the DOM. It shows and hides automatically on
+   * hover. This is basically a better, more nicely styled title attribute.
+   **/
 
   $all('#payload span[data-toggle="popover"]').forEach((span) => {
     const pop = new Popover(span, {
-      placement: "left",
+      placement: "right",
       trigger: "manual", // could not get 'hover' to work properly
       html: true,
       content: function () {
-        const value = Number(this.getAttribute("data-time"));
+        const value = Number(span.getAttribute("data-time"));
         try {
           const time = new Date(Number(value) * 1000);
           return formatTimeString(time) + " - " + timeAgo(time);
@@ -1768,7 +1775,9 @@ function parseAndDisplayToken(token) {
 document.addEventListener("DOMContentLoaded", function () {
   $sel("#version_id").textContent = BUILD_VERSION;
 
-  $sel(".btn-copy").addEventListener("click", copyToClipboard);
+  $all(".btn-copy").forEach((btn) =>
+    btn.addEventListener("click", copyToClipboard)
+  );
   $sel(".btn-encode").addEventListener("click", encodeJwt);
   $sel(".btn-decode").addEventListener("click", showDecoded);
   $sel(".btn-verify").addEventListener("click", verifyJwt);
