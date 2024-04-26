@@ -49,6 +49,7 @@ textarea {
   > input {
     background-color: white; /* must be explicit to allow flash? */
     font-family: monospace;
+    font-size: 85%;
     padding-left: 6px;
     width: 100%;
   }
@@ -63,6 +64,7 @@ textarea {
     input {
       font-family: monospace;
       margin-left: 8px;
+      font-size: 85%;
       padding-left: 6px;
       width: 440px;
     }

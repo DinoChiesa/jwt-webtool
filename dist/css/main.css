@@ -10411,96 +10411,48 @@ span.CodeMirror-selectedtext {
 body.dark-mode {
   background-color: #121212;
   color: #e0e0e0; }
-
-body.dark-mode .panel {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .panel.panel-center {
-  background-color: #121212; }
-
-body.dark-mode .form-control {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .form-control:focus {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .modal-content {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .modal-header {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .modal-footer {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .alert {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .alert .close {
-  color: #fff; }
-
-body.dark-mode .alert .close:hover {
-  color: #fff; }
-
-body.dark-mode .badge {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .btn {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .btn:hover {
-  background-color: #555;
-  color: #fff; }
-
-body.dark-mode .btn:focus {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .btn:active {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .btn:active:focus {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .btn:active:hover {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .banner {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .banner a {
-  color: lightblue; }
-
-body.dark-mode .footer {
-  background-color: #333;
-  color: #fff; }
-
-body.dark-mode .footer a {
-  color: lightblue; }
-
-body.dark-mode .outdated {
-  background-color: #000;
-  color: #fff; }
-
-body.dark-mode .dismiss {
-  border: 1px solid #696969;
-  background-color: #636363;
-  border-radius: 4px;
-  padding: 4px 8px;
-  margin-left: 12px; }
+  body.dark-mode .panel,
+  body.dark-mode .form-control,
+  body.dark-mode .form-control:focus,
+  body.dark-mode .modal-content,
+  body.dark-mode .modal-header,
+  body.dark-mode .modal-footer,
+  body.dark-mode .alert,
+  body.dark-mode .badge,
+  body.dark-mode .btn,
+  body.dark-mode .btn:focus,
+  body.dark-mode .btn:active,
+  body.dark-mode .btn:active:focus,
+  body.dark-mode .btn:active:hover,
+  body.dark-mode .banner,
+  body.dark-mode .footer {
+    background-color: #333;
+    color: #fff; }
+  body.dark-mode .panel.panel-center {
+    background-color: #121212; }
+  body.dark-mode #directkey > input,
+  body.dark-mode #symmetrickey > input {
+    background-color: #333;
+    color: #fff; }
+  body.dark-mode #pbkdf2_params input {
+    background-color: #333;
+    color: #fff; }
+  body.dark-mode .alert .close,
+  body.dark-mode .alert .close:hover {
+    color: #fff; }
+  body.dark-mode .btn:hover {
+    background-color: #555;
+    color: #fff; }
+  body.dark-mode .banner a {
+    color: lightblue; }
+  body.dark-mode .footer a {
+    color: lightblue; }
+  body.dark-mode .outdated {
+    background-color: #000;
+    color: #fff; }
+  body.dark-mode .dismiss {
+    border: 1px solid #696969;
+    background-color: #636363; }
 
 /* Based on Sublime Text's Monokai theme */
 .cm-s-monokai.CodeMirror {
@@ -10539,9 +10491,7 @@ body.dark-mode .dismiss {
 .cm-s-monokai span.cm-comment {
   color: #75715e; }
 
-.cm-s-monokai span.cm-atom {
-  color: #ae81ff; }
-
+.cm-s-monokai span.cm-atom,
 .cm-s-monokai span.cm-number {
   color: #ae81ff; }
 
@@ -10589,9 +10539,7 @@ body.dark-mode .dismiss {
 .cm-s-monokai span.cm-tag {
   color: #f92672; }
 
-.cm-s-monokai span.cm-header {
-  color: #ae81ff; }
-
+.cm-s-monokai span.cm-header,
 .cm-s-monokai span.cm-link {
   color: #ae81ff; }
 
@@ -10646,6 +10594,7 @@ textarea {
   background-color: white;
   /* must be explicit to allow flash? */
   font-family: monospace;
+  font-size: 85%;
   padding-left: 6px;
   width: 100%; }
 
@@ -10662,6 +10611,7 @@ textarea {
   #symmetrickey > div input {
     font-family: monospace;
     margin-left: 8px;
+    font-size: 85%;
     padding-left: 6px;
     width: 440px; }
   #directkey > div select,
