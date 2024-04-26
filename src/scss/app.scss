@@ -1,10 +1,11 @@
 @import "custom";
+@import "darkmode";
 
 body {
   margin: 12px 20px;
 }
 
-// extend bootstrap run for wider displays
+/* extend bootstrap run for wider displays */
 @media (min-width: 1600px) {
   body .container {
     max-width: 1540px;
@@ -84,7 +85,7 @@ textarea {
   border-width: 0;
   float: left;
   margin: 2px 0;
-  width: 162px;
+  width: 156px;
   > button {
     margin-top: 14px;
   }
@@ -99,6 +100,23 @@ textarea {
   }
   .form-control-sm {
     padding-left: 0.25rem;
+  }
+  > div:first-of-type {
+    margin-top: 20px;
+    text-transform: uppercase;
+  }
+  > div {
+    font-size: 60%;
+    margin-right: 6px;
+  }
+  > div:has(> #chk-darkmode) {
+    margin-top: 20px;
+    text-transform: uppercase;
+    font-size: 70%;
+  }
+  > div > input[type="checkbox"] {
+    top: 4px;
+    position: relative;
   }
 }
 

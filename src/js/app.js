@@ -36,7 +36,8 @@ const datamodel = {
   "sel-symkey-pbkdf2-salt-coding": "",
   "sel-expiry": 10,
   "chk-iat": true,
-  "chk-typ": true
+  "chk-typ": true,
+  "chk-darkmode": true
 };
 
 const tenMinutesInSeconds = 10 * 60;
@@ -864,6 +865,10 @@ function setAlert(html, alertClass) {
       ' <span aria-hidden="true">&times;</span>\n' +
       "</button>",
     $mainalert = $sel("#mainalert");
+  let tid = $mainalert.getAttribute("data-tid");
+  if (tid) {
+    clearTimeout(Number(tid));
+  }
   $mainalert.innerHTML = `<div>${html}\n${buttonHtml}</div>`;
   if (alertClass) {
     $mainalert.classList.remove("alert-warning"); // this is the default
@@ -875,17 +880,21 @@ function setAlert(html, alertClass) {
   const dismiss = () => {
     $mainalert.classList.add("fade");
     $mainalert.classList.remove("show");
-    setTimeout(() => $mainalert.setAttribute("style", `z-index: -1`), 800);
+    setTimeout(() => {
+      $mainalert.setAttribute("style", `z-index: -1`);
+      $mainalert.removeAttribute("data-tid");
+    }, 800);
   };
 
   // show()
   $mainalert.classList.remove("fade");
   $mainalert.classList.add("show");
   $mainalert.setAttribute("style", `z-index: 99`);
-  const t = setTimeout(dismiss, 5650);
+  tid = setTimeout(dismiss, 5650);
+  $mainalert.setAttribute("data-tid", `${tid}`);
   $sel("button.dismiss").addEventListener("click", () => {
     dismiss();
-    clearTimeout(t);
+    clearTimeout(tid);
   });
 }
 
@@ -1323,6 +1332,7 @@ function onChangeCheckbox(event) {
     id = target.getAttribute("id"),
     booleanValue = target.checked;
   saveSetting(id, String(booleanValue));
+  return booleanValue;
 }
 
 function onChangeExpiry(event) {
@@ -1777,6 +1787,22 @@ function parseAndDisplayToken(token) {
   $sel("#publickey .CodeMirror-code").classList.add("outdated");
 }
 
+function changeDarkmode(event) {
+  if (event) {
+    onChangeCheckbox(event);
+  }
+  const isDarkMode = $sel("#chk-darkmode").checked;
+  const desiredTheme = isDarkMode ? "monokai" : "default";
+  const method = isDarkMode ? "add" : "remove";
+
+  $sel("body").classList[method]("dark-mode");
+
+  // Apply the theme to all CodeMirror instances
+  Object.keys(editors).forEach((editorKey) =>
+    editors[editorKey].setOption("theme", desiredTheme)
+  );
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   $sel("#version_id").textContent = BUILD_VERSION;
 
@@ -1903,6 +1929,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   retrieveLocalState();
   applyState();
+  changeDarkmode();
 
   $all(".ta-key").forEach(($ta) => {
     ["change", "keyup", "input"].forEach((eventname) =>
@@ -1917,6 +1944,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $sel("#sel-expiry").addEventListener("change", onChangeExpiry);
   $sel("#chk-iat").addEventListener("change", onChangeCheckbox);
   $sel("#chk-typ").addEventListener("change", onChangeCheckbox);
+  $sel("#chk-darkmode").addEventListener("change", changeDarkmode);
 
   if (looksLikeJwt(inboundJwt)) {
     maybeNewKey().then((_) => parseAndDisplayToken(inboundJwt));

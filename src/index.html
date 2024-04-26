@@ -66,9 +66,8 @@
           <button type="button" class="btn btn-outline-secondary btn-lg btn-verify" title='verify the encoded JWT with the given public key'>
             <span class="oi oi-check"></span>
           </button>
-          <div style='font-size:60%; margin-top:20px;'
-               title='these apply only when generating JWT'>overrides:</div>
-          <div style='font-size:60%; margin-bottom:6px;'>
+          <div title='these apply only when generating JWT'>overrides:</div>
+          <div>
             <span>exp:</span>
             <select class="form-control form-control-sm sel-expiry" id='sel-expiry' title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
               <option value='do nothing'>do nothing</option>
@@ -81,14 +80,18 @@
               <option value='60 minutes'>60 minutes</option>
             </select>
           </div>
-          <div style='font-size:60%; margin-right:6px;'>
+          <div>
             <span>iat:</span>
             <input id='chk-iat' type='checkbox' />
           </div>
-          <div style='font-size:60%; margin-right:6px;'>
+          <div>
             <span>typ:</span>
             <input id='chk-typ' type='checkbox' />
-            </div>
+          </div>
+          <div>
+            <input type="checkbox" id="chk-darkmode">
+            <label for="chk-darkmode">Dark Mode</label>
+          </div>
         </div>
 
         <div class='panel panel-right clearfix' id='panel_decoded'>
