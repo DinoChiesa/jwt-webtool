@@ -78294,6 +78294,16 @@ function getPbkdf2SaltBuffer() {
   throw new Error("unsupported salt encoding"); // will not happen
 }
 
+const getPbkdf2HashForAlg = (alg) => {
+  if (alg == "PBES2-HS384+A192KW") {
+    return "PBKDF2-SHA-384";
+  }
+  if (alg == "PBES2-HS512+A256KW") {
+    return "PBKDF2-SHA-512";
+  }
+  return "PBKDF2-SHA-256";
+};
+
 function getBufferForSymmetricKey(item, alg) {
   /* let $div; */
   let $ta;
@@ -78329,7 +78339,7 @@ function getBufferForSymmetricKey(item, alg) {
       length: requiredKeyBitsForAlg(alg) / 8
     };
     return node_jose__WEBPACK_IMPORTED_MODULE_4___default().JWA.derive(
-      "PBKDF2-SHA-256",
+      getPbkdf2HashForAlg(alg),
       Buffer.from(keyvalue, "utf-8"),
       kdfParams
     );
@@ -79862,7 +79872,7 @@ function changeDarkmode(event) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  $sel("#version_id").textContent = "1.1.1.95\n";
+  $sel("#version_id").textContent = "1.1.1.96\n";
 
   $all(".btn-copy").forEach((btn) =>
     btn.addEventListener("click", copyToClipboard)
