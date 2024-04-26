@@ -78409,9 +78409,12 @@ function getPublicKey(header, options) {
   );
 }
 
-function clearJwt(_event) {
-  editors.encodedjwt.setValue("");
-  editors.encodedjwt.save();
+function clearTextarea(event) {
+  const targetTextArea = event.currentTarget.getAttribute("data-target");
+  if (targetTextArea) {
+    editors[targetTextArea].setValue("");
+    editors[targetTextArea].save();
+  }
 }
 
 function copyToClipboard(event) {
@@ -79872,12 +79875,14 @@ function changeDarkmode(event) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  $sel("#version_id").textContent = "1.1.1.96\n";
+  $sel("#version_id").textContent = "1.1.1.98\n";
 
   $all(".btn-copy").forEach((btn) =>
     btn.addEventListener("click", copyToClipboard)
   );
-  $sel(".btn-clear").addEventListener("click", clearJwt);
+  $all(".btn-clear").forEach((btn) =>
+    btn.addEventListener("click", clearTextarea)
+  );
   $sel(".btn-encode").addEventListener("click", encodeJwt);
   $sel(".btn-decode").addEventListener("click", showDecoded);
   $sel(".btn-verify").addEventListener("click", verifyJwt);

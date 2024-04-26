@@ -39,7 +39,7 @@
             <button type="button" class="btn btn-outline-secondary btn-md btn-copy" data-target="encodedjwt" title='copy to clipboard'>
               <span class="oi oi-clipboard"></span>
             </button>
-            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear'>
+            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='encodedjwt'>
               <span class="oi oi-trash"></span>
             </button>
           </p>
@@ -106,6 +106,9 @@
                       title='generate a new header'>
                 <span class="oi oi-reload"></span>
               </button>
+            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='token-decoded-header'>
+              <span class="oi oi-trash"></span>
+            </button>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-header' class='jwt-header'></textarea>
           </div>
@@ -119,6 +122,9 @@
                       data-jsontype='payload' title='generate a new payload'>
                 <span class="oi oi-reload"></span>
               </button>
+            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='token-decoded-payload'>
+              <span class="oi oi-trash"></span>
+            </button>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-payload' class='jwt-payload'></textarea>
           </div>
