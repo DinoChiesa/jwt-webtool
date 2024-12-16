@@ -35,8 +35,9 @@ This tool has some limitations:
    as JWT that use the PBES2 algorithms. It does not currently support the "dir"
    alg type. It supports all types of enc algorithms.
 
- - In either case (signed or encrypted), this tool does not handle crit headers,
-   nor will it extract the certificate from an x5c header. Nor will it check
+ - With either signed or encrypted JWT, this tool explicitly ignores crit headers.
+
+ - This tool will not extract the certificate from an x5c header. Nor will it check
    thumbprints of an x5t header.
 
  - This tool uses EcmaScript v9, and webcrypto, which means it will run only on
@@ -52,7 +53,6 @@ static files.
 There's a shortcut: if you open the url with <baseurl>?JWT_HERE, it will decode *that* JWT.   It
 saves you a step, pasting in your own JWT. If you're paranoid you can also use
 the # as a separator.
-
 
 You may want to fork this and bundle it into an intranet, to allow developers
 within a company to experiment with JWT. You can also run it from a file:// URL.

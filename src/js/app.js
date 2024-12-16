@@ -711,11 +711,23 @@ function verifyJwt(event) {
   editors.encodedjwt.save();
   editors.publickey.save();
   const tokenString = editors.encodedjwt.getValue();
+  const getValidationOptions = (header) => {
+        // always implicitly handle ("ignore") crit headers
+        let validationOptions = [];
+        if (header.crit && Array.isArray(header.crit)) {
+          validationOptions.handlers = {};
+          let f = (val) => val;
+          // tell node-jose that the crit header is known & handled
+          header.crit.forEach( name => {
+            validationOptions.handlers[name] = f;
+          });
+        }
+        return validationOptions;
+      };
   let matches = re.signed.jwt.exec(tokenString);
 
   // verify a signed JWT
   if (matches && matches.length == 4) {
-    let verificationOptions = {};
     $sel("#mainalert").classList.add("fade");
     $sel("#mainalert").classList.remove("show");
     const json = Buffer.from(matches[1], "base64").toString("utf8"),
@@ -737,19 +749,10 @@ function verifyJwt(event) {
       p = getPublicKey(header);
     }
 
-    // always handle crit headers
-    if (header.crit && Array.isArray(header.crit)) {
-      verificationOptions.handlers = {};
-      let f = (val) => val;
-      // tell  node-jose that the crit header is known & handled
-      header.crit.forEach( name => {
-        verificationOptions.handlers[name] = f;
-      });
-    }
 
     p = p
       .then((key) =>
-        jose.JWS.createVerify(key, verificationOptions)
+        jose.JWS.createVerify(key, getValidationOptions(header))
           .verify(tokenString)
           .then((result) => {
             // {result} is a Object with:
@@ -814,7 +817,7 @@ function verifyJwt(event) {
 
     return retrieveCryptoKey(header, { direction: "decrypt" })
       .then(async (decryptionKey) => {
-        const decrypter = await jose.JWE.createDecrypt(decryptionKey);
+        const decrypter = await jose.JWE.createDecrypt(decryptionKey, getValidationOptions(header))
         const result = await decrypter.decrypt(tokenString);
         // {result} is a Object with:
         // *  header: the combined 'protected' and 'unprotected' header members
