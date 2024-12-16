@@ -17,7 +17,8 @@ import en from "javascript-time-ago/locale/en";
 
 TimeAgo.addDefaultLocale(en);
 
-const html5AppId = "2084664E-BF2B-4C76-BD5F-1087502F580B";
+//const html5AppId = "2084664E-BF2B-4C76-BD5F-1087502F580B";
+const html5AppId = "41bd71c8-2643-4e17-bc14-c8c48e37eb0f";
 
 const storage = LocalStorage.init(html5AppId);
 const datamodel = {
@@ -711,8 +712,10 @@ function verifyJwt(event) {
   editors.publickey.save();
   const tokenString = editors.encodedjwt.getValue();
   let matches = re.signed.jwt.exec(tokenString);
+
   // verify a signed JWT
   if (matches && matches.length == 4) {
+    let verificationOptions = {};
     $sel("#mainalert").classList.add("fade");
     $sel("#mainalert").classList.remove("show");
     const json = Buffer.from(matches[1], "base64").toString("utf8"),
@@ -734,9 +737,19 @@ function verifyJwt(event) {
       p = getPublicKey(header);
     }
 
+    // always handle crit headers
+    if (header.crit && Array.isArray(header.crit)) {
+      verificationOptions.handlers = {};
+      let f = (val) => val;
+      // tell  node-jose that the crit header is known & handled
+      header.crit.forEach( name => {
+        verificationOptions.handlers[name] = f;
+      });
+    }
+
     p = p
       .then((key) =>
-        jose.JWS.createVerify(key)
+        jose.JWS.createVerify(key, verificationOptions)
           .verify(tokenString)
           .then((result) => {
             // {result} is a Object with:
@@ -953,7 +966,12 @@ function getGenKeyParams(alg) {
 }
 
 function maybeNewKey() {
-  const alg = $sel(".sel-alg").selectedOptions[0].text;
+  const sel = $sel(".sel-alg"),
+        options = sel.selectedOptions,
+        options0 = options && options[0],
+        alg = options0 && options0.text;
+
+  if (alg){
   if (alg === "dir") {
     if (!$sel("#ta_directkey").value) {
       return newKey(null);
@@ -974,6 +992,7 @@ function maybeNewKey() {
     if (!privatekey || !publickey) {
       return newKey(null);
     }
+  }
   }
   return Promise.resolve({});
 }
@@ -1506,9 +1525,9 @@ function onChangeAlg(event) {
 
 function onChangeVariant(event) {
   // change signed to encrypted or vice versa
-  const target = event.target,
-    newSelection = target.selectedOptions[0].text,
-    previousSelection = target.getAttribute("data-prev"),
+  const target = event && event.target,
+    newSelection = target && target.selectedOptions[0].text,
+    previousSelection = target && target.getAttribute("data-prev"),
     priorAlgSelection = $sel(".sel-alg").getAttribute("data-prev");
 
   editors["token-decoded-header"].save();
@@ -1550,7 +1569,7 @@ function onChangeVariant(event) {
   populateAlgorithmSelectOptions();
 
   // still need this?
-  if (
+  if ( priorAlgSelection &&
     !priorAlgSelection.startsWith("PS") &&
     !priorAlgSelection.startsWith("RS")
   ) {
@@ -1966,6 +1985,10 @@ document.addEventListener("DOMContentLoaded", function () {
   } else if (datamodel.encodedjwt) {
     maybeNewKey();
   } else {
+    if ($sel('.sel-alg').selectedOptions.length == 0) {
+      // no options, maybe first time, need to trigger event to display the Signed options
+      onChangeVariant.call(document.querySelector("#sel-variant"), null);
+    }
     maybeNewKey().then((_) => contriveJwt());
   }
 });

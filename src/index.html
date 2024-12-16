@@ -220,32 +220,103 @@
       </div>
 
       <div class='footer'>
-        <div>Notes</div>
+        <h3>Notes</h3>
+        <p>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</p>
+
+        <h4>Privacy and Security</h4>
+
+        <p>Information that you paste here, including JWT and keys, whether secret, private or
+        public,<strong> never leaves your browser</strong>. Information from the decoding or
+        decrypting also stays in the browser. This page uses LocalStorage for state. Nothing
+        gets posted to a server. Still, you should take care. It's good hygiene to never submit
+        or enter private information - including production private keys, or production
+        credentials or tokens - into a website you do not own or trust.</p>
+
+        <h4>Algorithms</h4>
+
+        <p>For generating and verifying signed JWT, this page supports RSA, HMAC, or ECDSA
+          algorithms. For generating or verifying encrypted JWT, it supports RSA keys with
+          RSA-OAEP or RSA-OAEP-256 key encryption, EC keys with various ECDH key encryption
+          (always with the P-256 curve), as well as PBES2 key encryption algorithms and the Direct
+          Key approach. For details on algorithms, see<a href='https://tools.ietf.org/html/rfc7518'>
+          the JWA specification</a>.</p>
+
+        <h5>Actions Supported For Signed JWT</h5>
+
         <ol>
-          <li>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</li>
-          <li>Information that you paste here, including JWT and keys, whether secret, private or public, <strong>never leaves your browser</strong>. Information from the decoding or decrypting also stays in the browser. This page uses LocalStorage for state. Nothing gets posted to a server. Still, you should take care. It's good hygiene to never submit or enter private information - including production private keys, or production credentials or tokens - into a website you do not own or trust.</li>
-          <li>For generating and verifying signed JWT, this page supports RSA, HMAC, or ECDSA algorithms. For generating or verifying encrypted JWT, it supports RSA keys with RSA-OAEP or RSA-OAEP-256 key encryption, EC keys with various ECDH key encryption (always with the P-256 curve), as well as PBES2 key encryption algorithms and the Direct Key approach. For details on algorithms, see <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</li>
-          <li><p style='margin-bottom:0;'>For Signed JWT</p>
-            <ol type='a'>
-              <li>decode: paste in the signed JWT in the box on the left-hand side. The header and payload will automatically be decoded and displayed in the appropriate boxes. </li>
-              <li>verify: after pasting in the signed JWT, also specify your key: if using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a> into the box labeled "Public Key". Or paste a JWKS into that box. Or, if you're using a symmetric algorithm, specify the symmetric key.
-                Finally, and click the verify button (the one with a checkmark icon).</li>
-              <li>create: First, select the "signed" variant in the drop down. Set the payload and the header in the boxes on the right hand side, and paste in your key: either a <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a> for asymmetric algorithms, or the symmetric key for symmetric algorithms. Then, click the encode button (the leftward pointing arrow).</li>
-            </ol>
+          <li>decode: paste in the signed JWT in the box on the left-hand side. The header and
+          payload will automatically be decoded and displayed in the appropriate boxes.</li>
+
+          <li>
+            <p>verify: after pasting in the signed JWT, also specify your key: if using an
+              asymmetric algorithm, paste in your<a href='https://tools.ietf.org/html/rfc7468#section-13'>
+              PEM-formatted public key</a> into the box labeled "Public Key". Or paste a JWKS into
+              that box. Or, if you're using a symmetric algorithm, specify the symmetric key.
+              Finally, and click the verify button (the one with a checkmark icon).</p>
+
+            <p>If you have a <code>crit</code> header in the JWS header, this app will
+              always mark those headers as "handled".</p>
           </li>
-          <li><p style='margin-bottom:0;'>For Encrypted JWT</p>
-            <ol type='a'>
-              <li>decode: paste in the encrypted JWT in the box on the left-hand side. The header will be decoded and displayed in the appropriate box. The payload is encrypted, so it cannot be decoded without the private key.</li>
-              <li>decrypt and verify: after pasting in the encrypted JWT, if you are using an RSA algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8) private key</a>. If using PBES2, key in your password and the salt and iteration count.  The keys and passwords never leave your browser. Then click the verify button (the button with the checkmark icon).</li>
-              <li>create: First, select the "encrypted" variant in the dropdown. Set or paste the payload and the header in the boxes on the right hand side. If you're using an asymmetric algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a> into the box labeled "Public Key", or paste a JWKS into that box. (With this second option you need to specify a <tt>kid</tt> or <tt>x5t</tt> field in the JWT header). If you're using a symmetric algorithm, specify the password-based key parameters, or the direct key. Then, click the encode button (the one with the left-pointing arrow).</li>
-            </ol>
-          <li>On initial page load, the browser will  retrieve your previously used keys and JWT from LocalStorage. If none are found, the page will generate new contrived keys, and then generate a contrived JWT. You can replace keys or JWT payload or header with your own values. The page tries to retain those for you (on your own machine - LocalStorage!) when you reload the page.</li>
-          <li>You can generate a new asymmetric keypair, or a new symmetric key, by clicking the "key regen" button.</li>
-          <li>When specifying the symmetric key, you need at least 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512, whether signing or verifying. The <a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will generate keys of the appropriate size. If you choose a different coding system, you need to ensure minimum key size yourself. When generating or verifying an encrypted JWT using the "dir" algorithm, you need to specify a key of exactly the required length, depending on the content encryption (enc) value you choose. The UI provides hints to help you with this.</li>
-          <li>Ths page shows the header and payload "pretty-printed". The actual header and payload in a JWT do not have newlines or indents.</li>
-          <li>There's a shortcut: if you open the url with <tt>&lt;baseurl&gt;?JWT_HERE</tt>, it will decode *that* JWT. It
-            might save you the step of pasting in your encoded JWT, if you open this page from a program. If you're paranoid you can also use
-            the # as a separator. </li>
+
+          <li>create: First, select the "signed" variant in the drop down. Set the payload and
+            the header in the boxes on the right hand side, and paste in your key: either a
+            <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted (PKCS#8)
+            private key</a> for asymmetric algorithms, or the symmetric key for symmetric
+            algorithms. Then, click the encode button (the leftward pointing arrow).</li>
+        </ol>
+
+        <h5>Actions Supported For Encrypted JWT</h5>
+        <ol>
+          <li>decode: paste in the encrypted JWT in the box on the left-hand side. The header
+            will be decoded and displayed in the appropriate box. The payload is encrypted, so it
+            cannot be decoded without the private key.</li>
+
+          <li>decrypt and verify: after pasting in the encrypted JWT, if you are using an RSA
+            algorithm, paste in your<a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted
+            (PKCS#8) private key</a>. If using PBES2, key in your password and the salt and
+            iteration count.  The keys and passwords never leave your browser. Then click the
+            verify button (the button with the checkmark icon).</li>
+
+          <li>create: First, select the "encrypted" variant in the dropdown. Set or paste the
+            payload and the header in the boxes on the right hand side. If you're using an
+            asymmetric algorithm, paste in your<a href='https://tools.ietf.org/html/rfc7468#section-13'>
+            PEM-formatted public key</a> into the box labeled "Public Key", or paste a JWKS into
+            that box. (With this second option you need to specify a<tt>kid</tt> or <tt>x5t</tt> field
+            in the JWT header). If you're using a symmetric algorithm, specify the
+            password-based key parameters, or the direct key. Then, click the encode button (the
+            one with the left-pointing arrow).</li>
+        </ol>
+
+        <h4>App Behavior</h4>
+
+        <p>On initial page load, the browser will retrieve your previously used keys and JWT
+          from LocalStorage. If none are found, the page will generate new contrived keys, and
+          then generate a contrived JWT. You can replace keys or JWT payload or header with your
+          own values. The page tries to retain those for you (on your own machine -
+          LocalStorage!) when you reload the page.</p>
+
+        <p>You can generate a new asymmetric keypair, or a new symmetric key, by clicking the
+          "key regen" button.</p>
+
+        <p>When specifying the symmetric key, you need at least 32 bytes of key material for
+          HS256, 48 for HS384, and 64 for HS512, whether signing or verifying. The<a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will
+          generate keys of the appropriate size. If you choose a different coding system, you
+          need to ensure minimum key size yourself. When generating or verifying an encrypted
+          JWT using the "dir" algorithm, you need to specify a key of exactly the required
+          length, depending on the content encryption (enc) value you choose. The UI provides
+          hints to help you with this.</p>
+
+        <h4>Display</h4>
+
+        <p>Ths page shows the header and payload "pretty-printed". The actual header and payload
+        in a JWT do not have newlines or indents.</p>
+
+        <h4>URL hack</h4>
+
+        <p>There's a shortcut: if you open the url with<tt>&lt;baseurl&gt;?JWT_HERE</tt>, it
+            will decode *that* JWT. It might save you the step of pasting in your encoded JWT,
+            if you open this page from a program. If you're paranoid you can also use the # as a
+            separator.</p>
         </ol>
       </div>
 

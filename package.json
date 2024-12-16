@@ -1,6 +1,6 @@
 {
   "name": "jwt-webtool",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "web tool to parse, generate, and validate JWT, whether signed or encrypted",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --output-pathinfo --devtool source-map --mode=development --watch --color",
     "devbuild": "webpack --output-pathinfo --devtool source-map --mode=development --progress --color",
-    "build": "rm -rf dist/* && webpack --mode=production --progress --color"
+    "build": "rimraf dist && webpack --mode=production --progress --color"
   },
   "keywords": [
     "JWT",
@@ -32,7 +32,8 @@
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^6.7.1",
     "mini-css-extract-plugin": "^1.5.0",
-    "node-sass": "^7.0.1",
+    "rimraf": "^5.0.10",
+    "sass": "^1.83.0",
     "sass-loader": "^12.3.0",
     "style-loader": "^3.3.1",
     "url-loader": "^4.1.1",
