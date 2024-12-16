@@ -122,6 +122,10 @@ To build a production distribution:
 npm run build
 ```
 
+## Acknowledgments
+
+Thanks to <a href='https://github.com/rdavydov'>@rdavydov</a> for suggesting and implementing the dark mode for this tool.
+
 ## Bugs / Feature Gaps
 
 * For verification of signed JWT, or creation of encrypted JWT, it is not
