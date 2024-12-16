@@ -298,18 +298,24 @@
         <p>You can generate a new asymmetric keypair, or a new symmetric key, by clicking the
           "key regen" button.</p>
 
-        <p>When specifying the symmetric key, you need at least 32 bytes of key material for
-          HS256, 48 for HS384, and 64 for HS512, whether signing or verifying. The<a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will
-          generate keys of the appropriate size. If you choose a different coding system, you
-          need to ensure minimum key size yourself. When generating or verifying an encrypted
-          JWT using the "dir" algorithm, you need to specify a key of exactly the required
-          length, depending on the content encryption (enc) value you choose. The UI provides
-          hints to help you with this.</p>
+        <p>When specifying the symmetric key, you need to be aware of key length.
+          When working with signed JWT, you need to specify a key of <em>at least</em> the
+          required length: 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512,
+          whether signing or verifying.  The<a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will
+          generate keys of the appropriate size. </p>
+        
+        <p>When generating or verifying an encrypted JWT using the "dir" algorithm, or any of
+          the AES algorithms, you need to specify a key of <em>exactly</em> the required
+          length, depending on the content encryption (enc) value you choose. For example, if
+          you specify A256GCMKW for your key encryption algorithm, you need to specify a key
+          of exactly 256 bits.  The UI provides hints to help you with this.</p>
+        
+        <p>You can choose different coding systems for keys: utf-8, base64, or hex.</p>
 
         <h4>Display</h4>
 
         <p>Ths page shows the header and payload "pretty-printed". The actual header and payload
-        in a JWT do not have newlines or indents.</p>
+          in a JWT do not have newlines or indents.</p>
 
         <h4>URL hack</h4>
 
