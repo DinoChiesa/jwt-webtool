@@ -122,6 +122,16 @@ To build a production distribution:
 npm run build
 ```
 
+## Warnings
+
+When you run `npm run build` or `npm run watch` you may see warnings, especiall
+with regard to Bootstrap and its use of the deprecated `@import` rather than
+`@use`.  This is apparently benign. As of 2024 December 16, there is no
+workarund to avoid this. The scss compilation tool is suggesting to move away
+from `@import` but there is no version of bootstrap that has converted, yet.
+We'll resolve this warning in the future.
+
+
 ## Acknowledgments
 
 Thanks to <a href='https://github.com/rdavydov'>@rdavydov</a> for suggesting and implementing the dark mode for this tool.
