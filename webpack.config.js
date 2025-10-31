@@ -18,7 +18,7 @@ function makeConfig(mode) {
 
     output: {
       path: path.resolve("dist"),
-      filename: "js/main.js"
+      filename: "js/main.js",
     },
 
     module: {
@@ -28,13 +28,13 @@ function makeConfig(mode) {
           type: "asset",
           parser: {
             dataUrlCondition: {
-              maxSize: 8 * 1024 // in bytes
-            }
+              maxSize: 8 * 1024, // in bytes
+            },
           },
           generator: {
             // the file path to use when emitting a file
-            filename: "assets/[hash][ext][query]"
-          }
+            filename: "assets/[hash][ext][query]",
+          },
         },
         {
           test: /\.scss$/,
@@ -44,28 +44,31 @@ function makeConfig(mode) {
               loader: MiniCssExtractPlugin.loader,
               options: {
                 esModule: false,
-                publicPath: "../" // prepend this to url() in the CSS
-              }
+                publicPath: "../", // prepend this to url() in the CSS
+              },
             },
             "css-loader",
-            "sass-loader"
-          ]
-        }
-      ]
+            "sass-loader",
+          ],
+        },
+      ],
     },
 
     plugins: [
       new CopyPlugin({
-        patterns: [{ from: "src/index.html", to: "index.html" }]
+        patterns: [{ from: "src/index.html", to: "index.html" }],
+      }),
+      new CopyPlugin({
+        patterns: [{ from: "src/favicon.svg", to: "favicon.svg" }],
       }),
 
       new MiniCssExtractPlugin({
-        filename: "css/[name].css"
+        filename: "css/[name].css",
       }),
       new webpack.DefinePlugin({
-        BUILD_VERSION: JSON.stringify(packageVersion + "." + buildVersion)
-      })
-    ]
+        BUILD_VERSION: JSON.stringify(packageVersion + "." + buildVersion),
+      }),
+    ],
   };
 
   if (mode === "development") {

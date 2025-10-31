@@ -1,6 +1,6 @@
 {
   "name": "jwt-webtool",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "web tool to parse, generate, and validate JWT, whether signed or encrypted",
   "repository": {
     "type": "git",
@@ -11,32 +11,32 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --output-pathinfo --devtool source-map --mode=development --watch --color",
     "devbuild": "webpack --output-pathinfo --devtool source-map --mode=development --progress --color",
-    "build": "rimraf dist && webpack --mode=production --progress --color",
-    "clean": "rimraf package-lock.json && rimraf node_modules"
+    "build": "shx rm -fr dist && webpack --mode=production --progress --color",
+    "clean": "shx rm -f package-lock.json && shx rm -fr node_modules"
   },
   "keywords": ["JWT", "node-jose"],
   "author": "Dino Chiesa <dchiesa@google.com>",
   "license": "Apache-2.0",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "bootstrap": "^5.3.3",
+    "bootstrap": "^5.3.8",
     "codemirror": "^5.65.2",
-    "javascript-time-ago": "^2.5.9",
+    "javascript-time-ago": "^2.5.12",
     "node-jose": "^2.2.0",
     "open-iconic": "^1.1.1"
   },
   "devDependencies": {
     "child_process": "^1.0.2",
-    "copy-webpack-plugin": "^12.0.2",
+    "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
-    "mini-css-extract-plugin": "^2.9.2",
-    "rimraf": "^6.0.1",
+    "mini-css-extract-plugin": "^2.9.4",
+    "shx": "^0.4.0",
     "sass": "^1.83.0",
-    "sass-loader": "^16.0.4",
+    "sass-loader": "^16.0.6",
     "style-loader": "^4.0.0",
     "url-loader": "^4.1.1",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^4.9.1"
+    "webpack": "^5.102.1",
+    "webpack-cli": "^4.10.0"
   },
   "engines": {
     "node": ">= 18.20.1",

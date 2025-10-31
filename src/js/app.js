@@ -1,9 +1,17 @@
-/* global Buffer, TextDecoder, BUILD_VERSION, gtag */
-// gtag('event', <action>, {
-//   'event_category': <category>,
-//   'event_label': <label>,
-//   'value': <value>
-// });
+// Copyright © 2019-2025 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 import { _Tooltip, Popover } from "bootstrap";
 import CodeMirror from "codemirror/lib/codemirror.js";
@@ -17,7 +25,6 @@ import en from "javascript-time-ago/locale/en";
 
 TimeAgo.addDefaultLocale(en);
 
-//const html5AppId = "2084664E-BF2B-4C76-BD5F-1087502F580B";
 const html5AppId = "41bd71c8-2643-4e17-bc14-c8c48e37eb0f";
 
 const storage = LocalStorage.init(html5AppId);
@@ -38,7 +45,7 @@ const datamodel = {
   "sel-expiry": 10,
   "chk-iat": true,
   "chk-typ": true,
-  "chk-darkmode": true
+  "chk-darkmode": true,
 };
 
 const tenMinutesInSeconds = 10 * 60;
@@ -51,16 +58,16 @@ const PBKDF2_SALT_DEFAULT = "abcdefghijkl",
 const re = {
   signed: {
     jwt: new RegExp("^([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$"),
-    cm: new RegExp("^([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$")
+    cm: new RegExp("^([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$"),
   },
   encrypted: {
     jwt: new RegExp(
-      "^([^\\.]+)\\.([^\\.]*)\\.([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$"
+      "^([^\\.]+)\\.([^\\.]*)\\.([^\\.]+)\\.([^\\.]+)\\.([^\\.]+)$",
     ),
     cm: new RegExp(
-      "^([^\\.]+)(\\.)([^\\.]*)(\\.)([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$"
-    )
-  }
+      "^([^\\.]+)(\\.)([^\\.]*)(\\.)([^\\.]+)(\\.)([^\\.]+)(\\.)([^\\.]+)$",
+    ),
+  },
 };
 
 const $sel = (query) => document.querySelector(query),
@@ -77,7 +84,7 @@ const $sel = (query) => document.querySelector(query),
 function algPermutations(prefixes) {
   return prefixes.reduce(
     (a, v) => [...a, ...[256, 384, 512].map((x) => v + x)],
-    []
+    [],
   );
 }
 
@@ -90,7 +97,7 @@ const rsaSigningAlgs = algPermutations(["RS", "PS"]),
   pbes2KeyEncryptionAlgs = [
     "PBES2-HS256+A128KW",
     "PBES2-HS384+A192KW",
-    "PBES2-HS512+A256KW"
+    "PBES2-HS512+A256KW",
   ],
   kwKeyEncryptionAlgs = ["A128KW", "A256KW"],
   keyEncryptionAlgs = [
@@ -98,13 +105,13 @@ const rsaSigningAlgs = algPermutations(["RS", "PS"]),
     ...pbes2KeyEncryptionAlgs,
     ...kwKeyEncryptionAlgs,
     ...ecdhKeyEncryptionAlgs,
-    "dir"
+    "dir",
   ],
   contentEncryptionAlgs = [
     "A128CBC-HS256",
     "A256CBC-HS512",
     "A128GCM",
-    "A256GCM"
+    "A256GCM",
   ];
 
 const editors = {}; // codemirror editors
@@ -114,7 +121,7 @@ CodeMirror.defineSimpleMode("encodedjwt", {
     {
       regex: re.signed.cm,
       sol: true,
-      token: ["jwt-header", "", "jwt-payload", "", "jwt-signature"]
+      token: ["jwt-header", "", "jwt-payload", "", "jwt-signature"],
     },
     {
       regex: re.encrypted.cm,
@@ -128,10 +135,10 @@ CodeMirror.defineSimpleMode("encodedjwt", {
         "",
         "jwt-payload",
         "",
-        "jwt-authtag"
-      ]
-    }
-  ]
+        "jwt-authtag",
+      ],
+    },
+  ],
 });
 
 const curry =
@@ -227,7 +234,7 @@ function getPbkdf2IterationCount() {
 function getPbkdf2SaltBuffer() {
   const saltText = $sel("#ta_pbkdf2_salt").value.trim(),
     coding = $sel(
-      ".sel-symkey-pbkdf2-salt-coding"
+      ".sel-symkey-pbkdf2-salt-coding",
     ).selectedOptions[0].text.toLowerCase(),
     knownCodecs = ["utf-8", "base64", "hex"];
 
@@ -279,12 +286,12 @@ function getBufferForSymmetricKey(item, alg) {
     const kdfParams = {
       salt: getPbkdf2SaltBuffer(),
       iterations: getPbkdf2IterationCount(),
-      length: requiredKeyBitsForAlg(alg) / 8
+      length: requiredKeyBitsForAlg(alg) / 8,
     };
     return jose.JWA.derive(
       getPbkdf2HashForAlg(alg),
       Buffer.from(keyvalue, "utf-8"),
-      kdfParams
+      kdfParams,
     );
   }
 
@@ -348,7 +355,7 @@ function getPublicKey(header, options) {
   }
 
   return jose.JWK.asKeyStore(fieldValue).then((keystore) =>
-    keystore.get(header)
+    keystore.get(header),
   );
 }
 
@@ -371,7 +378,7 @@ function copyToClipboard(event) {
 
   gtag("event", "copyToClipboard", {
     event_category: "click",
-    event_label: sourceElement
+    event_label: sourceElement,
   });
 
   const sourceType = $source.tagName;
@@ -409,14 +416,14 @@ function copyToClipboard(event) {
       $divToFlash.classList.remove("copy-to-clipboard-flash-bg");
       setTimeout(
         (_) => $divToFlash.classList.add("copy-to-clipboard-flash-bg"),
-        6
+        6,
       );
     } else {
       // no codemirror (probably the secretkey field, which is just an input)
       $source.classList.add("copy-to-clipboard-flash-bg");
       setTimeout(
         (_) => $source.classList.remove("copy-to-clipboard-flash-bg"),
-        1800
+        1800,
       );
     }
   } catch (_e) {
@@ -483,14 +490,14 @@ function retrieveCryptoKey(header, options) {
     header.p2s = getPbkdf2SaltBuffer().toString("base64");
 
     return getBufferForSymmetricKey("symmetrickey", header.alg).then(
-      (keyBuffer) => jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "enc" })
+      (keyBuffer) => jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "enc" }),
     );
   }
   if (kwKeyEncryptionAlgs.indexOf(header.alg) >= 0) {
     return getBufferForSymmetricKey("symmetrickey", header.alg)
       .then((keyBuffer) => checkKeyLength(header.alg, true, keyBuffer))
       .then((keyBuffer) =>
-        jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "enc" })
+        jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "enc" }),
       );
   }
 
@@ -502,8 +509,8 @@ function retrieveCryptoKey(header, options) {
           kty: "oct",
           k: keyBuffer,
           use: "enc",
-          alg: header.enc
-        })
+          alg: header.enc,
+        }),
       );
   }
 
@@ -548,7 +555,7 @@ function encodeJwt(_event) {
     delete payload.exp;
   } else {
     const matches = new RegExp("^([1-9][0-9]*) (minutes|seconds)$").exec(
-      desiredExpiryOverride
+      desiredExpiryOverride,
     );
     if (matches && matches.length == 3) {
       const now = Math.floor(new Date().valueOf() / 1000),
@@ -570,21 +577,21 @@ function encodeJwt(_event) {
       (encryptingKey) => {
         if (!isAppropriateEncryptingAlg(header.alg, encryptingKey)) {
           throw new Error(
-            "the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?"
+            "the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?",
           );
         }
         const encryptOptions = {
             alg: header.alg,
             fields: header,
-            format: "compact"
+            format: "compact",
           },
           // createEncrypt will automatically inject the kid, unless I pass reference:false
           cipher = jose.JWE.createEncrypt(encryptOptions, [
-            { key: encryptingKey, reference: false }
+            { key: encryptingKey, reference: false },
           ]);
         cipher.update(JSON.stringify(payload), "utf8");
         return cipher.final();
-      }
+      },
     );
   } else {
     // create signed JWT
@@ -592,7 +599,7 @@ function encodeJwt(_event) {
       p = getBufferForSymmetricKey("symmetrickey", header.alg)
         .then((keyBuffer) => checkKeyLength(header.alg, false, keyBuffer))
         .then((keyBuffer) =>
-          jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "sig" })
+          jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "sig" }),
         );
     } else {
       p = getPrivateKey();
@@ -603,17 +610,17 @@ function encodeJwt(_event) {
       }
       if (!isAppropriateSigningAlg(header.alg, signingKey)) {
         throw new Error(
-          "the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?"
+          "the alg specified in the header is not compatible with the provided key. Maybe generate a fresh one?",
         );
       }
       const signOptions = {
         alg: header.alg,
         fields: header,
-        format: "compact"
+        format: "compact",
       };
       // use reference:false to omit the kid from the header
       const signer = jose.JWS.createSign(signOptions, [
-        { key: signingKey, reference: false }
+        { key: signingKey, reference: false },
       ]);
       signer.update(JSON.stringify(payload), "utf8");
       return signer.final();
@@ -623,16 +630,15 @@ function encodeJwt(_event) {
   return p
     .then((jwt) => {
       //editors.encodedjwt.setValue(jwt);
-      $sel(
-        "#panel_encoded > p > span.length"
-      ).textContent = `(${jwt.length} bytes)`;
+      $sel("#panel_encoded > p > span.length").textContent =
+        `(${jwt.length} bytes)`;
       editors.encodedjwt.setValue(jwt);
       editors.encodedjwt.save();
       if (header.enc) {
         // re-format the decoded JSON, incl added or modified properties like kid, alg
         showDecoded(true);
         editors["token-decoded-payload"].setValue(
-          JSON.stringify(payload, null, 2)
+          JSON.stringify(payload, null, 2),
         );
         setAlert("an encrypted JWT", "info");
       } else {
@@ -672,7 +678,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
       timeUnit = quantify(delta, "seconds");
     if (delta > 0) {
       reasons.push(
-        `the expiry time (${expiresString}) is in the past, ${delta} ${timeUnit} ago`
+        `the expiry time (${expiresString}) is in the past, ${delta} ${timeUnit} ago`,
       );
     }
   }
@@ -685,7 +691,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
       timeUnit = quantify(delta, "seconds");
     if (delta > 0) {
       reasons.push(
-        `the not-before time (${notBeforeString}) is in the future, in ${delta} ${timeUnit}`
+        `the not-before time (${notBeforeString}) is in the future, in ${delta} ${timeUnit}`,
       );
     }
   }
@@ -699,7 +705,7 @@ function checkValidityReasons(pHeader, pPayload, acceptableAlgorithms) {
         timeUnit = quantify(delta, "seconds");
       if (delta > 0) {
         reasons.push(
-          `the issued-at time (${issuedAtString}) is in the future, in ${delta} ${timeUnit}`
+          `the issued-at time (${issuedAtString}) is in the future, in ${delta} ${timeUnit}`,
         );
       }
     }
@@ -712,18 +718,18 @@ function verifyJwt(event) {
   editors.publickey.save();
   const tokenString = editors.encodedjwt.getValue();
   const getValidationOptions = (header) => {
-        // always implicitly handle ("ignore") crit headers
-        let validationOptions = [];
-        if (header.crit && Array.isArray(header.crit)) {
-          validationOptions.handlers = {};
-          let f = (val) => val;
-          // tell node-jose that the crit header is known & handled
-          header.crit.forEach( name => {
-            validationOptions.handlers[name] = f;
-          });
-        }
-        return validationOptions;
-      };
+    // always implicitly handle ("ignore") crit headers
+    let validationOptions = [];
+    if (header.crit && Array.isArray(header.crit)) {
+      validationOptions.handlers = {};
+      let f = (val) => val;
+      // tell node-jose that the crit header is known & handled
+      header.crit.forEach((name) => {
+        validationOptions.handlers[name] = f;
+      });
+    }
+    return validationOptions;
+  };
   let matches = re.signed.jwt.exec(tokenString);
 
   // verify a signed JWT
@@ -736,19 +742,18 @@ function verifyJwt(event) {
 
     gtag("event", "verifyJwt", {
       event_category: "click",
-      event_label: `signed ${header.alg}`
+      event_label: `signed ${header.alg}`,
     });
 
     if (isSymmetric(header.alg)) {
       p = getBufferForSymmetricKey("symmetrickey", header.alg)
         .then((keyBuffer) => checkKeyLength(header.alg, false, keyBuffer))
         .then((keyBuffer) =>
-          jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "sig" })
+          jose.JWK.asKey({ kty: "oct", k: keyBuffer, use: "sig" }),
         );
     } else {
       p = getPublicKey(header);
     }
-
 
     p = p
       .then((key) =>
@@ -765,7 +770,7 @@ function verifyJwt(event) {
               reasons = checkValidityReasons(
                 result.header,
                 parsedPayload,
-                getAcceptableSigningAlgs(key)
+                getAcceptableSigningAlgs(key),
               );
             if (reasons.length == 0) {
               const message =
@@ -786,7 +791,7 @@ function verifyJwt(event) {
                   ": " +
                   reasons.join(", and ") +
                   ".",
-                "warning"
+                "warning",
               );
             }
           })
@@ -796,7 +801,7 @@ function verifyJwt(event) {
             } else {
               setAlert("could not verify. " + e.message);
             }
-          })
+          }),
       )
       .catch((e) => {
         setAlert(e);
@@ -812,12 +817,15 @@ function verifyJwt(event) {
     const header = JSON.parse(json);
     gtag("event", "verifyJwt", {
       event_category: "click",
-      event_label: `encrypted ${header.alg}`
+      event_label: `encrypted ${header.alg}`,
     });
 
     return retrieveCryptoKey(header, { direction: "decrypt" })
       .then(async (decryptionKey) => {
-        const decrypter = await jose.JWE.createDecrypt(decryptionKey, getValidationOptions(header))
+        const decrypter = await jose.JWE.createDecrypt(
+          decryptionKey,
+          getValidationOptions(header),
+        );
         const result = await decrypter.decrypt(tokenString);
         // {result} is a Object with:
         // *  header: the combined 'protected' and 'unprotected' header members
@@ -839,14 +847,13 @@ function verifyJwt(event) {
             reasons = checkValidityReasons(
               result.header,
               parsedPayload,
-              getAcceptableEncryptionAlgs(decryptionKey)
+              getAcceptableEncryptionAlgs(decryptionKey),
             ),
             elementId = "token-decoded-payload",
             flavor = "payload";
           editors[elementId].setValue(prettyPrintedJson);
-          $sel(
-            `#${flavor} > p > .length`
-          ).textContent = `( ${stringPayload.length} bytes)`;
+          $sel(`#${flavor} > p > .length`).textContent =
+            `( ${stringPayload.length} bytes)`;
 
           if (reasons.length == 0) {
             const message =
@@ -864,7 +871,7 @@ function verifyJwt(event) {
                 ": " +
                 reasons.join(", and ") +
                 ".",
-              "warning"
+              "warning",
             );
           }
           return {};
@@ -874,9 +881,8 @@ function verifyJwt(event) {
         const elementId = "token-decoded-payload",
           flavor = "payload";
         editors[elementId].setValue(stringPayload);
-        $sel(
-          `#${flavor} > p > .length`
-        ).textContent = `( ${stringPayload.length} bytes)`;
+        $sel(`#${flavor} > p > .length`).textContent =
+          `( ${stringPayload.length} bytes)`;
 
         return null;
       })
@@ -956,7 +962,7 @@ function getGenKeyParams(alg) {
       name: "RSASSA-PKCS1-v1_5", // this name also works for RSA-PSS !
       modulusLength: 2048, //can be 1024, 2048, or 4096
       publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-      hash: { name: "SHA-256" }
+      hash: { name: "SHA-256" },
     };
   // signing with EC keys
   if (alg == "ES256") return { name: "ECDSA", namedCurve: "P-256" };
@@ -970,32 +976,32 @@ function getGenKeyParams(alg) {
 
 function maybeNewKey() {
   const sel = $sel(".sel-alg"),
-        options = sel.selectedOptions,
-        options0 = options && options[0],
-        alg = options0 && options0.text;
+    options = sel.selectedOptions,
+    options0 = options && options[0],
+    alg = options0 && options0.text;
 
-  if (alg){
-  if (alg === "dir") {
-    if (!$sel("#ta_directkey").value) {
-      return newKey(null);
+  if (alg) {
+    if (alg === "dir") {
+      if (!$sel("#ta_directkey").value) {
+        return newKey(null);
+      }
+    } else if (
+      alg.startsWith("HS") ||
+      alg.startsWith("PB") ||
+      alg.startsWith("A")
+    ) {
+      if (!$sel("#ta_symmetrickey").value) {
+        return newKey(null);
+      }
+    } else {
+      editors.privatekey.save();
+      editors.publickey.save();
+      const privatekey = $sel("#ta_privatekey").value.trim(),
+        publickey = $sel("#ta_publickey").value.trim();
+      if (!privatekey || !publickey) {
+        return newKey(null);
+      }
     }
-  } else if (
-    alg.startsWith("HS") ||
-    alg.startsWith("PB") ||
-    alg.startsWith("A")
-  ) {
-    if (!$sel("#ta_symmetrickey").value) {
-      return newKey(null);
-    }
-  } else {
-    editors.privatekey.save();
-    editors.publickey.save();
-    const privatekey = $sel("#ta_privatekey").value.trim(),
-      publickey = $sel("#ta_publickey").value.trim();
-    if (!privatekey || !publickey) {
-      return newKey(null);
-    }
-  }
   }
   return Promise.resolve({});
 }
@@ -1008,7 +1014,7 @@ function newKey(event) {
 
   gtag("event", "newKey", {
     event_category: event ? "click" : "implicit",
-    event_label: alg
+    event_label: alg,
   });
 
   if (
@@ -1020,7 +1026,7 @@ function newKey(event) {
     const domid = alg === "dir" ? "directkey" : "symmetrickey",
       $ta = $sel(`#${domid} .ta-key`),
       coding = $sel(
-        `#${$ta.getAttribute("data-coding")}`
+        `#${$ta.getAttribute("data-coding")}`,
       ).selectedOptions[0].text.toLowerCase();
     let keyString = null;
     if (coding == "pbkdf2") {
@@ -1055,12 +1061,12 @@ function newKey(event) {
       window.crypto.subtle
         .exportKey("spki", key.publicKey)
         .then((keydata) =>
-          updateAsymmetricKeyValue("public", key2pem("PUBLIC", keydata))
+          updateAsymmetricKeyValue("public", key2pem("PUBLIC", keydata)),
         )
         .then(() => window.crypto.subtle.exportKey("pkcs8", key.privateKey))
         .then((keydata) =>
-          updateAsymmetricKeyValue("private", key2pem("PRIVATE", keydata))
-        )
+          updateAsymmetricKeyValue("private", key2pem("PRIVATE", keydata)),
+        ),
     )
     .then(() => {
       $sel("#mainalert").classList.remove("show");
@@ -1109,13 +1115,12 @@ function showDecoded(skipEncryptedPayload) {
   let matches = re.signed.jwt.exec(tokenString);
 
   gtag("event", "decode", {
-    event_category: "click"
+    event_category: "click",
   });
 
   saveSetting("encodedjwt", tokenString); // for reload
-  $sel(
-    "#panel_encoded > p > span.length"
-  ).textContent = `(${tokenString.length} bytes)`;
+  $sel("#panel_encoded > p > span.length").textContent =
+    `(${tokenString.length} bytes)`;
 
   if (matches && matches.length == 4) {
     setAlert("looks like a signed JWT", "info");
@@ -1136,9 +1141,8 @@ function showDecoded(skipEncryptedPayload) {
           prettyPrintedJson = JSON.stringify(obj, null, 2),
           flatJson = JSON.stringify(obj);
         editors[elementId].setValue(prettyPrintedJson);
-        $sel(
-          `#${flavor} > p > .length`
-        ).textContent = `(${flatJson.length} bytes)`;
+        $sel(`#${flavor} > p > .length`).textContent =
+          `(${flatJson.length} bytes)`;
 
         if (flavor == "header" && obj.alg) {
           selectAlgorithm(obj.alg);
@@ -1176,9 +1180,8 @@ function showDecoded(skipEncryptedPayload) {
         // Must decrypt the ciphertext payload to display claims,
         // and it's not possible to decrypt just now.
         editors["token-decoded-payload"].setValue("?ciphertext?");
-        $sel(
-          "#payload > p > .length"
-        ).textcontent = `(${matches[2].length} bytes)`;
+        $sel("#payload > p > .length").textcontent =
+          `(${matches[2].length} bytes)`;
       }
       if (obj.alg) {
         selectAlgorithm(obj.alg);
@@ -1202,7 +1205,7 @@ function showDecoded(skipEncryptedPayload) {
 function populateEncSelectOptions() {
   const select = $sel(".sel-enc");
   contentEncryptionAlgs.forEach((text) =>
-    select.options.add(new Option(text, text))
+    select.options.add(new Option(text, text)),
   );
 }
 
@@ -1409,9 +1412,8 @@ async function onKeyTextChange(_event) {
         realAlg = $sel(cls).selectedOptions[0].text,
         benchmark = requiredKeyBitsForAlg(realAlg) / 8,
         requirement = variant == "encrypted" ? "required" : "minimum";
-      target.parentElement.querySelector(
-        "p > span.length"
-      ).textContent = `(${buf.byteLength} bytes, ${requirement}: ${benchmark})`;
+      target.parentElement.querySelector("p > span.length").textContent =
+        `(${buf.byteLength} bytes, ${requirement}: ${benchmark})`;
     } else {
       // there is no minimum with PBKDF2...
     }
@@ -1430,7 +1432,7 @@ function onChangeEnc(event) {
   }
   gtag("event", "changeEnc", {
     event_category: "click",
-    event_label: `${previousSelection} -> ${newSelection}`
+    event_label: `${previousSelection} -> ${newSelection}`,
   });
   if (alg == "dir" || alg.startsWith("PB")) {
     $all(".ta-key").forEach(($ta) => $ta.dispatchEvent(new Event("change")));
@@ -1443,7 +1445,7 @@ function onChangeEnc(event) {
       headerObj = getHeaderFromForm();
       headerObj.enc = newSelection;
       editors["token-decoded-header"].setValue(
-        JSON.stringify(headerObj, null, 2)
+        JSON.stringify(headerObj, null, 2),
       );
       saveSetting("sel-enc", newSelection);
     } catch (e) {
@@ -1461,7 +1463,7 @@ function onChangeAlg(event) {
   const updateHeader = () => {
     try {
       editors["token-decoded-header"].setValue(
-        JSON.stringify(headerObj, null, 2)
+        JSON.stringify(headerObj, null, 2),
       );
     } catch (e) {
       /* gulp */
@@ -1474,7 +1476,7 @@ function onChangeAlg(event) {
   }
   gtag("event", "changeAlg", {
     event_category: "click",
-    event_label: `${previousSelection} -> ${newSelection}`
+    event_label: `${previousSelection} -> ${newSelection}`,
   });
 
   editors["token-decoded-header"].save();
@@ -1537,7 +1539,7 @@ function onChangeVariant(event) {
 
   gtag("event", "changeVariant", {
     event_category: "click",
-    event_label: `${previousSelection} -> ${newSelection}`
+    event_label: `${previousSelection} -> ${newSelection}`,
   });
   if (newSelection != previousSelection) {
     try {
@@ -1561,7 +1563,7 @@ function onChangeVariant(event) {
         // alg will get set later
       }
       editors["token-decoded-header"].setValue(
-        JSON.stringify(headerObj, null, 2)
+        JSON.stringify(headerObj, null, 2),
       );
     } catch (_e) {
       /* gulp */
@@ -1572,7 +1574,8 @@ function onChangeVariant(event) {
   populateAlgorithmSelectOptions();
 
   // still need this?
-  if ( priorAlgSelection &&
+  if (
+    priorAlgSelection &&
     !priorAlgSelection.startsWith("PS") &&
     !priorAlgSelection.startsWith("RS")
   ) {
@@ -1592,7 +1595,7 @@ function contriveJson(segment) {
         sub,
         aud,
         iat: nowSeconds,
-        exp: nowSeconds + tenMinutesInSeconds
+        exp: nowSeconds + tenMinutesInSeconds,
       };
     if (rdg.boolean()) {
       const propname = rdg.propertyName();
@@ -1677,7 +1680,7 @@ function decoratePayload(_instance) {
           console.log(`found invalid time value while decoding ${value}`);
           return "looks like an invalid time value";
         }
-      }
+      },
     });
 
     const maybeDismiss = () =>
@@ -1739,7 +1742,7 @@ function applyState() {
 
   // need the variant to be applied first
   keys.sort((a, b) =>
-    a == "sel-variant" ? -1 : b == "sel-variant" ? 1 : a.localeCompare(b)
+    a == "sel-variant" ? -1 : b == "sel-variant" ? 1 : a.localeCompare(b),
   );
   keys.forEach((key) => {
     const value = datamodel[key];
@@ -1834,7 +1837,7 @@ function changeDarkmode(event) {
 
   // Apply the theme to all CodeMirror instances
   Object.keys(editors).forEach((editorKey) =>
-    editors[editorKey].setOption("theme", desiredTheme)
+    editors[editorKey].setOption("theme", desiredTheme),
   );
 }
 
@@ -1842,10 +1845,10 @@ document.addEventListener("DOMContentLoaded", function () {
   $sel("#version_id").textContent = BUILD_VERSION;
 
   $all(".btn-copy").forEach((btn) =>
-    btn.addEventListener("click", copyToClipboard)
+    btn.addEventListener("click", copyToClipboard),
   );
   $all(".btn-clear").forEach((btn) =>
-    btn.addEventListener("click", clearTextarea)
+    btn.addEventListener("click", clearTextarea),
   );
   $sel(".btn-encode").addEventListener("click", encodeJwt);
   $sel(".btn-decode").addEventListener("click", showDecoded);
@@ -1857,7 +1860,7 @@ document.addEventListener("DOMContentLoaded", function () {
   populateEncSelectOptions();
 
   $all(".sel-key-coding").forEach((sel) =>
-    sel.addEventListener("change", changeKeyCoding)
+    sel.addEventListener("change", changeKeyCoding),
   );
   $sel("#mainalert").classList.add("fade");
   $sel("#mainalert").addEventListener("close.bs.alert", closeAlert);
@@ -1868,8 +1871,8 @@ document.addEventListener("DOMContentLoaded", function () {
     {
       mode: "encodedjwt",
       lineWrapping: true,
-      singleCursorHeightPerLine: false
-    }
+      singleCursorHeightPerLine: false,
+    },
   );
   editors.encodedjwt.on("inputRead", function (_cm, event) {
     /* event -> object{
@@ -1882,7 +1885,7 @@ document.addEventListener("DOMContentLoaded", function () {
        } */
     if (event.origin == "paste") {
       gtag("event", "paste", {
-        event_category: "encodedJwt"
+        event_category: "encodedJwt",
       });
 
       setTimeout(() => {
@@ -1902,12 +1905,12 @@ document.addEventListener("DOMContentLoaded", function () {
       {
         mode: "encodedjwt", // not really, its just plaintext
         lineWrapping: true,
-        singleCursorHeightPerLine: false
-      }
+        singleCursorHeightPerLine: false,
+      },
     );
     editors[keytype].on("inputRead", function (_cm, event) {
       gtag("event", "paste", {
-        event_category: keytype
+        event_category: keytype,
       });
       if (event.origin == "paste") {
         setTimeout(function () {
@@ -1944,10 +1947,10 @@ document.addEventListener("DOMContentLoaded", function () {
           indentWithTabs: false,
           statementIndent: 2,
           indentUnit: 2,
-          tabSize: 2
+          tabSize: 2,
         },
-        singleCursorHeightPerLine: false
-      }
+        singleCursorHeightPerLine: false,
+      },
     );
   });
 
@@ -1970,7 +1973,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   $all(".ta-key").forEach(($ta) => {
     ["change", "keyup", "input"].forEach((eventname) =>
-      $ta.addEventListener(eventname, onKeyTextChange)
+      $ta.addEventListener(eventname, onKeyTextChange),
     );
     $ta.dispatchEvent(new Event("change"));
   });
@@ -1988,7 +1991,7 @@ document.addEventListener("DOMContentLoaded", function () {
   } else if (datamodel.encodedjwt) {
     maybeNewKey();
   } else {
-    if ($sel('.sel-alg').selectedOptions.length == 0) {
+    if ($sel(".sel-alg").selectedOptions.length == 0) {
       // no options, maybe first time, need to trigger event to display the Signed options
       onChangeVariant.call(document.querySelector("#sel-variant"), null);
     }
