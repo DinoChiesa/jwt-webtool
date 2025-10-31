@@ -99,7 +99,7 @@ const rsaSigningAlgs = algPermutations(["RS", "PS"]),
     "PBES2-HS384+A192KW",
     "PBES2-HS512+A256KW",
   ],
-  kwKeyEncryptionAlgs = ["A128KW", "A256KW"],
+  kwKeyEncryptionAlgs = ["A128KW", "A256KW", "A128GCMKW", "A256GCMKW"],
   keyEncryptionAlgs = [
     ...rsaKeyEncryptionAlgs,
     ...pbes2KeyEncryptionAlgs,
@@ -207,6 +207,10 @@ function requiredKeyBitsForAlg(alg) {
     case "A192KW":
       return 192;
     case "A256KW":
+      return 256;
+    case "A128GCMKW":
+      return 128;
+    case "A256GCMKW":
       return 256;
   }
   return 99999;
