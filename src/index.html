@@ -239,8 +239,8 @@
           algorithms. For generating or verifying encrypted JWT, it supports RSA keys with
           RSA-OAEP or RSA-OAEP-256 key encryption, EC keys with various ECDH key encryption
           (always with the P-256 curve), as well as PBES2 key encryption algorithms and the Direct
-          Key approach. For details on algorithms, see<a href='https://tools.ietf.org/html/rfc7518'>
-          the JWA specification</a>.</p>
+          Key approach. For details on algorithms, see
+          <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</p>
 
         <h5>Actions Supported For Signed JWT</h5>
 
@@ -250,8 +250,9 @@
 
           <li>
             <p>verify: after pasting in the signed JWT, also specify your key: if using an
-              asymmetric algorithm, paste in your<a href='https://tools.ietf.org/html/rfc7468#section-13'>
-              PEM-formatted public key</a> into the box labeled "Public Key". Or paste a JWKS into
+              asymmetric algorithm, paste in your
+              <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>
+              into the box labeled "Public Key". Or paste a JWKS into
               that box. Or, if you're using a symmetric algorithm, specify the symmetric key.
               Finally, and click the verify button (the one with a checkmark icon).</p>
 
@@ -273,15 +274,16 @@
             cannot be decoded without the private key.</li>
 
           <li>decrypt and verify: after pasting in the encrypted JWT, if you are using an RSA
-            algorithm, paste in your<a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted
+            algorithm, paste in your <a href='https://tools.ietf.org/html/rfc7468#section-10'>PEM-formatted
             (PKCS#8) private key</a>. If using PBES2, key in your password and the salt and
             iteration count.  The keys and passwords never leave your browser. Then click the
             verify button (the button with the checkmark icon).</li>
 
           <li>create: First, select the "encrypted" variant in the dropdown. Set or paste the
             payload and the header in the boxes on the right hand side. If you're using an
-            asymmetric algorithm, paste in your<a href='https://tools.ietf.org/html/rfc7468#section-13'>
-            PEM-formatted public key</a> into the box labeled "Public Key", or paste a JWKS into
+            asymmetric algorithm, paste in your
+            <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>
+            into the box labeled "Public Key", or paste a JWKS into
             that box. (With this second option you need to specify a<tt>kid</tt> or <tt>x5t</tt> field
             in the JWT header). If you're using a symmetric algorithm, specify the
             password-based key parameters, or the direct key. Then, click the encode button (the
@@ -302,15 +304,15 @@
         <p>When specifying the symmetric key, you need to be aware of key length.
           When working with signed JWT, you need to specify a key of <em>at least</em> the
           required length: 32 bytes of key material for HS256, 48 for HS384, and 64 for HS512,
-          whether signing or verifying.  The<a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will
+          whether signing or verifying. The <a href='https://en.wikipedia.org/wiki/PBKDF2'>PBKDF2</a> will
           generate keys of the appropriate size. </p>
-        
+
         <p>When generating or verifying an encrypted JWT using the "dir" algorithm, or any of
           the AES algorithms, you need to specify a key of <em>exactly</em> the required
           length, depending on the content encryption (enc) value you choose. For example, if
           you specify A256GCMKW for your key encryption algorithm, you need to specify a key
           of exactly 256 bits.  The UI provides hints to help you with this.</p>
-        
+
         <p>You can choose different coding systems for keys: utf-8, base64, or hex.</p>
 
         <h4>Display</h4>
