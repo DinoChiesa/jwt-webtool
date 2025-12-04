@@ -398,6 +398,18 @@ function copyToClipboard(event) {
   try {
     success = document.execCommand("copy");
 
+    if (success) {
+      const icon = event.currentTarget.querySelector("span.bi");
+      if (icon && icon.classList.contains("bi-clipboard")) {
+        icon.classList.remove("bi-clipboard");
+        icon.classList.add("bi-clipboard-check");
+        setTimeout(() => {
+          icon.classList.remove("bi-clipboard-check");
+          icon.classList.add("bi-clipboard");
+        }, 1800);
+      }
+    }
+
     /*
      * Animation to indicate copy.
      * CodeMirror obscures the original textarea, and appends some DOM content

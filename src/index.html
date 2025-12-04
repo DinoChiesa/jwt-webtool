@@ -4,6 +4,7 @@
     <title>JWT tool</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="An online tool to perform JWT verification, decoding, or generation. RSA keys and algorithms only." />
@@ -37,10 +38,10 @@
         <div class='panel panel-left' id='panel_encoded'>
           <p>Encoded Token <span class='length'></span>
             <button type="button" class="btn btn-outline-secondary btn-md btn-copy" data-target="encodedjwt" title='copy to clipboard'>
-              <span class="oi oi-clipboard"></span>
+              <span class="bi bi-clipboard"></span>
             </button>
             <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='encodedjwt'>
-              <span class="oi oi-trash"></span>
+              <span class="bi bi-trash"></span>
             </button>
           </p>
           <textarea rows=12 cols=34 id='encodedjwt' class='rawvalue'></textarea>
@@ -58,13 +59,13 @@
             <!-- this select will show only with variant = encrypted, options will be added at runtime -->
           </select>
           <button type="button" class="btn btn-outline-secondary btn-lg btn-encode" title='encode and sign a JWT'>
-            <span class="oi oi-arrow-thick-left"></span>
+            <span class="bi bi-arrow-left-square"></span>
           </button>
           <button type="button" class="btn btn-outline-secondary btn-lg btn-decode" title='decode a JWT'>
-            <span class="oi oi-arrow-thick-right"></span>
+            <span class="bi bi-arrow-right-square"></span>
           </button>
           <button type="button" class="btn btn-outline-secondary btn-lg btn-verify" title='verify the encoded JWT with the given public key'>
-            <span class="oi oi-check"></span>
+            <span class="bi bi-check-lg"></span>
           </button>
           <div title='these apply only when generating JWT'>overrides:</div>
           <div>
@@ -99,15 +100,15 @@
             <p>Decoded Header <span class='length'></span>
               <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="token-decoded-header" title="copy to clipboard">
-                <span class="oi oi-clipboard"></span>
+                <span class="bi bi-clipboard"></span>
               </button>
               <button type="button" id='btn-new-header' class="btn btn-outline-secondary btn-md btn-newjson"
                       data-jsontype='header'
                       title='generate a new header'>
-                <span class="oi oi-reload"></span>
+                <span class="bi bi-arrow-clockwise"></span>
               </button>
             <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='token-decoded-header'>
-              <span class="oi oi-trash"></span>
+              <span class="bi bi-trash"></span>
             </button>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-header' class='jwt-header'></textarea>
@@ -116,14 +117,14 @@
             <p>Decoded Payload <span class='length'></span>
               <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="token-decoded-payload" title="copy to clipboard">
-                <span class="oi oi-clipboard"></span>
+                <span class="bi bi-clipboard"></span>
               </button>
               <button type="button" id='btn-new-payload' class="btn btn-outline-secondary btn-md btn-newjson"
                       data-jsontype='payload' title='generate a new payload'>
-                <span class="oi oi-reload"></span>
+                <span class="bi bi-arrow-clockwise"></span>
               </button>
             <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='token-decoded-payload'>
-              <span class="oi oi-trash"></span>
+              <span class="bi bi-trash"></span>
             </button>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-payload' class='jwt-payload'></textarea>
@@ -132,13 +133,13 @@
             <p>Private Key
               <button type="button" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="ta_privatekey" title="copy to clipboard">
-                <span class="oi oi-clipboard"></span>
+                <span class="bi bi-clipboard"></span>
               </button>
 
               <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
                       data-target="dummy"
                       title='generate a new keypair'>
-                <span class="oi oi-reload"></span>
+                <span class="bi bi-arrow-clockwise"></span>
               </button>
 
             </p>
@@ -148,7 +149,7 @@
             <p><span id='publickey-label'>Public Key (PEM or JWKS)</span>
               <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="ta_publickey" title="copy to clipboard">
-                <span class="oi oi-clipboard"></span>
+                <span class="bi bi-clipboard"></span>
               </button>
             </p>
             <textarea rows=12 cols=34 id='ta_publickey'></textarea>
@@ -157,12 +158,12 @@
             <p>Direct Key <span class='length'></span>
               <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="ta_directkey" title="copy to clipboard">
-                <span class="oi oi-clipboard"></span>
+                <span class="bi bi-clipboard"></span>
               </button>
               <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
                       data-keytype="direct"
                       title='generate a new random key'>
-                <span class="oi oi-reload"></span>
+                <span class="bi bi-arrow-clockwise"></span>
               </button>
             </p>
             <input type='text' id='ta_directkey' class='ta-key' data-coding='sel-dirkey-coding' value='Key-Must-Be-16-or-32-or-64-bytes-exactly' spellcheck="false">
@@ -179,12 +180,12 @@
             <p>Symmetric Key <span class='length'></span>
               <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
                       data-target="ta_symmetrickey" title="copy to clipboard">
-                <span class="oi oi-clipboard"></span>
+                <span class="bi bi-clipboard"></span>
               </button>
               <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
                       data-keytype="symmetric"
                       title='generate a new random key'>
-                <span class="oi oi-reload"></span>
+                <span class="bi bi-arrow-clockwise"></span>
               </button>
             </p>
             <input type='text' id='ta_symmetrickey' class='ta-key' data-coding='sel-symkey-coding' value='Key-Must-Be-at-least-32-bytes-in-length!' spellcheck="false">
@@ -342,8 +343,6 @@
           <li><a href='https://github.com/cisco/node-jose'>node-jose v2.2</a> library for JWT decoding, verification, and generation.</li>
           <li> <a href='https://codemirror.net/doc/manual.html'>CodeMirror v5.65</a> for the interactive editors</li>
           <li><a href='https://getbootstrap.com/docs/5.0'>Bootstrap 5</a> for styling</li>
-          <li><a href='https://useiconic.com/open/'>Open Iconic fonts v1.1</a> for button symbols</li>
-          </li>
         </ul>
 
       </div>
