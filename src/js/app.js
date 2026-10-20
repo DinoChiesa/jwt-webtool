@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-import { _Tooltip, Popover } from "bootstrap";
+import { Popover } from "bootstrap";
 import CodeMirror from "codemirror/lib/codemirror.js";
 import "codemirror/mode/javascript/javascript";
 import "codemirror/addon/mode/simple";

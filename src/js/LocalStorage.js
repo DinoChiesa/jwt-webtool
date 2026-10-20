@@ -24,6 +24,6 @@ const init = function(id) {
         return new AppScopedStoreManager(id);
       };
 
-module.exports = {
+export default {
   init
 };
