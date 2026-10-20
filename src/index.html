@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <title>JWT tool</title>
     <meta charset="utf-8">
@@ -21,55 +21,68 @@
 
   <!-- ======================================================= -->
   <body>
-    <div class='container'>
-      <a href="https://github.com/DinoChiesa/jwt-webtool" style='float:right;'>
-        <img loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">
-      </a>
+    <div class="alert alert-warning fade" role="alert" id="mainalert"></div>
 
-      <div class='banner'>
-        <h2>JWT Decoder, Verifier, Generator, Decryptor</h2>
-        <div>For information on JWT see <a href='https://tools.ietf.org/html/rfc7519'>IETF RFC 7519</a>.</div>
-        <div class="alert alert-warning alert-dismissible fade" role="alert" id="mainalert"></div>
+    <main class="page">
+      <header class="card hero">
+        <a class="github-link" href="https://github.com/DinoChiesa/jwt-webtool"
+           title="View the source on GitHub" aria-label="View the source on GitHub">
+          <span class="bi bi-github"></span>
+        </a>
+        <span class="kicker">JOSE Utility</span>
+        <h1 class="title">JWT Decoder, Verifier, Generator, Decryptor</h1>
+        <p class="subtitle">For information on JWT see <a href='https://tools.ietf.org/html/rfc7519'>IETF RFC 7519</a>.</p>
         <div id='buildversion'>version <span id='version_id'>??</span></div>
-      </div>
+      </header>
 
-      <div class='panel-group'>
-        <div class='panel panel-left' id='panel_encoded'>
-          <p>Encoded Token <span class='length'></span>
-            <button type="button" class="btn btn-outline-secondary btn-md btn-copy" data-target="encodedjwt" title='copy to clipboard'>
-              <span class="bi bi-clipboard"></span>
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='encodedjwt'>
-              <span class="bi bi-trash"></span>
-            </button>
+      <div class="workbench">
+        <section class='card panel' id='panel_encoded'>
+          <p class="panel-head"><span class="panel-title">Encoded Token</span> <span class='length'></span>
+            <span class="panel-tools">
+              <button type="button" class="btn-icon btn-clear" title='clear' data-target='encodedjwt'>
+                <span class="bi bi-trash"></span>
+              </button>
+              <button type="button" class="btn-icon btn-copy" data-target="encodedjwt" title='copy to clipboard'>
+                <span class="bi bi-clipboard"></span>
+              </button>
+            </span>
           </p>
           <textarea rows=12 cols=34 id='encodedjwt' class='rawvalue'></textarea>
-        </div>
+        </section>
 
-        <div class='panel panel-center' id='panel_buttons'>
-          <select class="form-control form-control-sm sel-variant" id='sel-variant'>
-            <option value='Signed'>Signed</option>
-            <option value='Encrypted'>Encrypted</option>
-          </select>
-          <select class="form-control form-control-sm sel-alg" title='alg' id='sel-alg'>
-            <!-- options will be dynamically added -->
-          </select>
-          <select class="form-control form-control-sm sel-enc" title='enc' id='sel-enc'>
-            <!-- this select will show only with variant = encrypted, options will be added at runtime -->
-          </select>
-          <button type="button" class="btn btn-outline-secondary btn-lg btn-encode" title='encode and sign a JWT'>
-            <span class="bi bi-arrow-left-square"></span>
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-lg btn-decode" title='decode a JWT'>
-            <span class="bi bi-arrow-right-square"></span>
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-lg btn-verify" title='verify the encoded JWT with the given public key'>
-            <span class="bi bi-check-lg"></span>
-          </button>
-          <div title='these apply only when generating JWT'>overrides:</div>
-          <div>
-            <span>exp:</span>
-            <select class="form-control form-control-sm sel-expiry" id='sel-expiry' title='override expiry; used only when encoding and signing.' style='margin-top:6px;'>
+        <aside class='card actions' id='panel_buttons'>
+          <div class="action-group">
+            <label class="field-label" for="sel-variant">Variant</label>
+            <select class="field sel-variant" id='sel-variant'>
+              <option value='Signed'>Signed</option>
+              <option value='Encrypted'>Encrypted</option>
+            </select>
+            <label class="field-label" for="sel-alg">alg</label>
+            <select class="field sel-alg" title='alg' id='sel-alg'>
+              <!-- options will be dynamically added -->
+            </select>
+            <label class="field-label enc-label" for="sel-enc">enc</label>
+            <select class="field sel-enc" title='enc' id='sel-enc'>
+              <!-- this select will show only with variant = encrypted, options will be added at runtime -->
+            </select>
+          </div>
+
+          <div class="action-group">
+            <button type="button" class="btn-action btn-encode" title='encode and sign a JWT'>
+              <span class="bi bi-arrow-left-square"></span><span>Encode</span>
+            </button>
+            <button type="button" class="btn-action btn-decode" title='decode a JWT'>
+              <span>Decode</span><span class="bi bi-arrow-right-square"></span>
+            </button>
+            <button type="button" class="btn-action btn-action-primary btn-verify" title='verify the encoded JWT with the given public key'>
+              <span class="bi bi-check-lg"></span><span>Verify</span>
+            </button>
+          </div>
+
+          <div class="action-group" title='these apply only when generating JWT'>
+            <span class="group-title">Overrides</span>
+            <label class="field-label" for="sel-expiry">exp</label>
+            <select class="field sel-expiry" id='sel-expiry' title='override expiry; used only when encoding and signing.'>
               <option value='do nothing'>do nothing</option>
               <option value='no expiry'>no expiry</option>
               <option value='10 seconds'>10 seconds</option>
@@ -79,151 +92,161 @@
               <option value='30 minutes'>30 minutes</option>
               <option value='60 minutes'>60 minutes</option>
             </select>
+            <label class="switch-row" for="chk-iat">
+              <input id='chk-iat' type='checkbox' class="switch" />
+              <span>iat</span>
+            </label>
+            <label class="switch-row" for="chk-typ">
+              <input id='chk-typ' type='checkbox' class="switch" />
+              <span>typ</span>
+            </label>
           </div>
-          <div>
-            <span>iat:</span>
-            <input id='chk-iat' type='checkbox' />
-          </div>
-          <div>
-            <span>typ:</span>
-            <input id='chk-typ' type='checkbox' />
-          </div>
-          <div>
-            <input type="checkbox" id="chk-darkmode">
-            <label for="chk-darkmode">Dark Mode</label>
-          </div>
-        </div>
 
-        <div class='panel panel-right clearfix' id='panel_decoded'>
-          <div id='header'>
-            <p>Decoded Header <span class='length'></span>
-              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
-                      data-target="token-decoded-header" title="copy to clipboard">
-                <span class="bi bi-clipboard"></span>
-              </button>
-              <button type="button" id='btn-new-header' class="btn btn-outline-secondary btn-md btn-newjson"
-                      data-jsontype='header'
-                      title='generate a new header'>
-                <span class="bi bi-arrow-clockwise"></span>
-              </button>
-            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='token-decoded-header'>
-              <span class="bi bi-trash"></span>
-            </button>
+          <div class="action-group">
+            <label class="switch-row" for="chk-darkmode">
+              <input type="checkbox" id="chk-darkmode" class="switch">
+              <span>Dark Mode</span>
+            </label>
+          </div>
+        </aside>
+
+        <section class='decoded' id='panel_decoded'>
+          <div class="card panel" id='header'>
+            <p class="panel-head"><span class="panel-title">Decoded Header</span> <span class='length'></span>
+              <span class="panel-tools">
+                <button type="button" class="btn-icon btn-clear" title='clear' data-target='token-decoded-header'>
+                  <span class="bi bi-trash"></span>
+                </button>
+                <button type="button" id='btn-new-header' class="btn-icon btn-newjson"
+                        data-jsontype='header' title='generate a new header'>
+                  <span class="bi bi-arrow-clockwise"></span>
+                </button>
+                <button type="button" class="btn-icon btn-copy" data-target="token-decoded-header" title="copy to clipboard">
+                  <span class="bi bi-clipboard"></span>
+                </button>
+              </span>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-header' class='jwt-header'></textarea>
           </div>
-          <div id='payload'>
-            <p>Decoded Payload <span class='length'></span>
-              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
-                      data-target="token-decoded-payload" title="copy to clipboard">
-                <span class="bi bi-clipboard"></span>
-              </button>
-              <button type="button" id='btn-new-payload' class="btn btn-outline-secondary btn-md btn-newjson"
-                      data-jsontype='payload' title='generate a new payload'>
-                <span class="bi bi-arrow-clockwise"></span>
-              </button>
-            <button type="button" class="btn btn-outline-secondary btn-md btn-clear" title='clear' data-target='token-decoded-payload'>
-              <span class="bi bi-trash"></span>
-            </button>
+
+          <div class="card panel" id='payload'>
+            <p class="panel-head"><span class="panel-title">Decoded Payload</span> <span class='length'></span>
+              <span class="panel-tools">
+                <button type="button" class="btn-icon btn-clear" title='clear' data-target='token-decoded-payload'>
+                  <span class="bi bi-trash"></span>
+                </button>
+                <button type="button" id='btn-new-payload' class="btn-icon btn-newjson"
+                        data-jsontype='payload' title='generate a new payload'>
+                  <span class="bi bi-arrow-clockwise"></span>
+                </button>
+                <button type="button" class="btn-icon btn-copy" data-target="token-decoded-payload" title="copy to clipboard">
+                  <span class="bi bi-clipboard"></span>
+                </button>
+              </span>
             </p>
             <textarea rows=12 cols=34 id='token-decoded-payload' class='jwt-payload'></textarea>
           </div>
-          <div id='privatekey' title='paste in your private key, it does not leave your browser'>
-            <p>Private Key
-              <button type="button" class="btn btn-outline-secondary btn-md btn-copy"
-                      data-target="ta_privatekey" title="copy to clipboard">
-                <span class="bi bi-clipboard"></span>
-              </button>
 
-              <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
-                      data-target="dummy"
-                      title='generate a new keypair'>
-                <span class="bi bi-arrow-clockwise"></span>
-              </button>
-
+          <div class="card panel" id='privatekey' title='paste in your private key, it does not leave your browser'>
+            <p class="panel-head"><span class="panel-title">Private Key</span>
+              <span class="panel-tools">
+                <button type="button" class="btn-icon btn-newkey" data-target="dummy" title='generate a new keypair'>
+                  <span class="bi bi-arrow-clockwise"></span>
+                </button>
+                <button type="button" class="btn-icon btn-copy" data-target="ta_privatekey" title="copy to clipboard">
+                  <span class="bi bi-clipboard"></span>
+                </button>
+              </span>
             </p>
             <textarea rows=12 cols=34 id='ta_privatekey'></textarea>
           </div>
-          <div id='publickey'>
-            <p><span id='publickey-label'>Public Key (PEM or JWKS)</span>
-              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
-                      data-target="ta_publickey" title="copy to clipboard">
-                <span class="bi bi-clipboard"></span>
-              </button>
+
+          <div class="card panel" id='publickey'>
+            <p class="panel-head"><span class="panel-title" id='publickey-label'>Public Key (PEM or JWKS)</span>
+              <span class="panel-tools">
+                <button type="button" class="btn-icon btn-copy" data-target="ta_publickey" title="copy to clipboard">
+                  <span class="bi bi-clipboard"></span>
+                </button>
+              </span>
             </p>
             <textarea rows=12 cols=34 id='ta_publickey'></textarea>
           </div>
-          <div id='directkey'>
-            <p>Direct Key <span class='length'></span>
-              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
-                      data-target="ta_directkey" title="copy to clipboard">
-                <span class="bi bi-clipboard"></span>
-              </button>
-              <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
-                      data-keytype="direct"
-                      title='generate a new random key'>
-                <span class="bi bi-arrow-clockwise"></span>
-              </button>
+
+          <div class="card panel" id='directkey'>
+            <p class="panel-head"><span class="panel-title">Direct Key</span> <span class='length'></span>
+              <span class="panel-tools">
+                <button type="button" class="btn-icon btn-newkey" data-keytype="direct" title='generate a new random key'>
+                  <span class="bi bi-arrow-clockwise"></span>
+                </button>
+                <button type="button" class="btn-icon btn-copy" data-target="ta_directkey" title="copy to clipboard">
+                  <span class="bi bi-clipboard"></span>
+                </button>
+              </span>
             </p>
-            <input type='text' id='ta_directkey' class='ta-key' data-coding='sel-dirkey-coding' value='Key-Must-Be-16-or-32-or-64-bytes-exactly' spellcheck="false">
-            <div>
-              <span>Key Encoding:</span>
-              <select id='sel-dirkey-coding' data-target='ta_directkey' class="form-control form-control-sm sel-key-coding">
-                <option value='UTF-8'>UTF-8</option>
-                <option value='Hex'>Hex</option>
-                <option value='Base64'>Base64</option>
-              </select>
+            <input type='text' id='ta_directkey' class='field field-mono ta-key' data-coding='sel-dirkey-coding' value='Key-Must-Be-16-or-32-or-64-bytes-exactly' spellcheck="false">
+            <div class="key-options">
+              <div>
+                <label class="field-label" for="sel-dirkey-coding">Key Encoding</label>
+                <select id='sel-dirkey-coding' data-target='ta_directkey' class="field sel-key-coding">
+                  <option value='UTF-8'>UTF-8</option>
+                  <option value='Hex'>Hex</option>
+                  <option value='Base64'>Base64</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div id='symmetrickey'>
-            <p>Symmetric Key <span class='length'></span>
-              <button type="button" title="copy to clipboard" class="btn btn-outline-secondary btn-md btn-copy"
-                      data-target="ta_symmetrickey" title="copy to clipboard">
-                <span class="bi bi-clipboard"></span>
-              </button>
-              <button type="button" class="btn btn-outline-secondary btn-md btn-newkey"
-                      data-keytype="symmetric"
-                      title='generate a new random key'>
-                <span class="bi bi-arrow-clockwise"></span>
-              </button>
+
+          <div class="card panel" id='symmetrickey'>
+            <p class="panel-head"><span class="panel-title">Symmetric Key</span> <span class='length'></span>
+              <span class="panel-tools">
+                <button type="button" class="btn-icon btn-newkey" data-keytype="symmetric" title='generate a new random key'>
+                  <span class="bi bi-arrow-clockwise"></span>
+                </button>
+                <button type="button" class="btn-icon btn-copy" data-target="ta_symmetrickey" title="copy to clipboard">
+                  <span class="bi bi-clipboard"></span>
+                </button>
+              </span>
             </p>
-            <input type='text' id='ta_symmetrickey' class='ta-key' data-coding='sel-symkey-coding' value='Key-Must-Be-at-least-32-bytes-in-length!' spellcheck="false">
-            <div>
-              <span>Key Encoding:</span>
-              <select id='sel-symkey-coding' data-target='ta_symmetrickey' class="form-control form-control-sm sel-key-coding">
-                <option value='UTF-8'>UTF-8</option>
-                <option value='Hex'>Hex</option>
-                <option value='Base64'>Base64</option>
-                <option value='PBKDF2'>PBKDF2</option>
-              </select>
-            </div>
-            <div id='pbkdf2_params'>
-            <div>
-              <span>iterations:</span>
-              <input type='number' id='ta_pbkdf2_iterations' value='10000'>
-            </div>
-            <div>
-              <span>salt:</span>
-              <input type='text' id='ta_pbkdf2_salt' data-coding='sel-symkey-pbkdf2-salt-coding' value='abcdefghijkl'>
-            </div>
-            <div>
-              <span>salt encoding:</span>
-              <select id='sel-symkey-pbkdf2-salt-coding' data-target='ta_pbkdf2_salt' class="form-control form-control-sm sel-symkey-pbkdf2-salt-coding sel-key-coding">
-                <option value='UTF-8'>UTF-8</option>
-                <option value='Hex'>Hex</option>
-                <option value='Base64'>Base64</option>
-              </select>
-            </div>
+            <input type='text' id='ta_symmetrickey' class='field field-mono ta-key' data-coding='sel-symkey-coding' value='Key-Must-Be-at-least-32-bytes-in-length!' spellcheck="false">
+            <div class="key-options">
+              <div>
+                <label class="field-label" for="sel-symkey-coding">Key Encoding</label>
+                <select id='sel-symkey-coding' data-target='ta_symmetrickey' class="field sel-key-coding">
+                  <option value='UTF-8'>UTF-8</option>
+                  <option value='Hex'>Hex</option>
+                  <option value='Base64'>Base64</option>
+                  <option value='PBKDF2'>PBKDF2</option>
+                </select>
+              </div>
+              <div id='pbkdf2_params'>
+                <div>
+                  <label class="field-label" for="ta_pbkdf2_iterations">Iterations</label>
+                  <input type='number' id='ta_pbkdf2_iterations' class="field" value='10000'>
+                </div>
+                <div>
+                  <label class="field-label" for="ta_pbkdf2_salt">Salt</label>
+                  <input type='text' id='ta_pbkdf2_salt' class="field field-mono" data-coding='sel-symkey-pbkdf2-salt-coding' value='abcdefghijkl'>
+                </div>
+                <div>
+                  <label class="field-label" for="sel-symkey-pbkdf2-salt-coding">Salt Encoding</label>
+                  <select id='sel-symkey-pbkdf2-salt-coding' data-target='ta_pbkdf2_salt' class="field sel-symkey-pbkdf2-salt-coding sel-key-coding">
+                    <option value='UTF-8'>UTF-8</option>
+                    <option value='Hex'>Hex</option>
+                    <option value='Base64'>Base64</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
-      <div class='footer'>
-        <h3>Notes</h3>
+      <section class='card notes-card'>
+        <span class="kicker">Documentation</span>
+        <h2>Notes</h2>
         <p>This tool uses EcmaScript v9, and webcrypto; it will run only on modern, current browsers.</p>
 
-        <h4>Privacy and Security</h4>
+        <h3>Privacy and Security</h3>
 
         <p>Information that you paste here, including JWT and keys, whether secret, private or
         public,<strong> never leaves your browser</strong>. Information from the decoding or
@@ -232,7 +255,7 @@
         or enter private information - including production private keys, or production
         credentials or tokens - into a website you do not own or trust.</p>
 
-        <h4>Algorithms</h4>
+        <h3>Algorithms</h3>
 
         <p>For generating and verifying signed JWT, this page supports RSA, HMAC, or ECDSA
           algorithms. For generating or verifying encrypted JWT, it supports RSA keys with
@@ -241,7 +264,7 @@
           Key approach. For details on algorithms, see
           <a href='https://tools.ietf.org/html/rfc7518'>the JWA specification</a>.</p>
 
-        <h5>Actions Supported For Signed JWT</h5>
+        <h4>Actions Supported For Signed JWT</h4>
 
         <ol>
           <li>decode: paste in the signed JWT in the box on the left-hand side. The header and
@@ -266,7 +289,7 @@
             algorithms. Then, click the encode button (the leftward pointing arrow).</li>
         </ol>
 
-        <h5>Actions Supported For Encrypted JWT</h5>
+        <h4>Actions Supported For Encrypted JWT</h4>
         <ol>
           <li>decode: paste in the encrypted JWT in the box on the left-hand side. The header
             will be decoded and displayed in the appropriate box. The payload is encrypted, so it
@@ -283,13 +306,13 @@
             asymmetric algorithm, paste in your
             <a href='https://tools.ietf.org/html/rfc7468#section-13'>PEM-formatted public key</a>
             into the box labeled "Public Key", or paste a JWKS into
-            that box. (With this second option you need to specify a<tt>kid</tt> or <tt>x5t</tt> field
+            that box. (With this second option you need to specify a <tt>kid</tt> or <tt>x5t</tt> field
             in the JWT header). If you're using a symmetric algorithm, specify the
             password-based key parameters, or the direct key. Then, click the encode button (the
             one with the left-pointing arrow).</li>
         </ol>
 
-        <h4>App Behavior</h4>
+        <h3>App Behavior</h3>
 
         <p>On initial page load, the browser will retrieve your previously used keys and JWT
           from LocalStorage. If none are found, the page will generate new contrived keys, and
@@ -314,26 +337,24 @@
 
         <p>You can choose different coding systems for keys: utf-8, base64, or hex.</p>
 
-        <h4>Display</h4>
+        <h3>Display</h3>
 
         <p>Ths page shows the header and payload "pretty-printed". The actual header and payload
           in a JWT do not have newlines or indents.</p>
 
-        <h4>URL hack</h4>
+        <h3>URL hack</h3>
 
-        <p>There's a shortcut: if you open the url with<tt>&lt;baseurl&gt;?JWT_HERE</tt>, it
+        <p>There's a shortcut: if you open the url with <tt>&lt;baseurl&gt;?JWT_HERE</tt>, it
             will decode *that* JWT. It might save you the step of pasting in your encoded JWT,
             if you open this page from a program. If you're paranoid you can also use the # as a
             separator.</p>
-        </ol>
 
-        <h4>Acknowledgments</h4>
+        <h3>Acknowledgments</h3>
         <p>Thanks to <a href='https://github.com/rdavydov'>@rdavydov</a> for suggesting and implementing the dark mode for this tool.</p>
+      </section>
 
-      </div>
-
-      <div class='footer'>
-        <div>Credits</div>
+      <footer class='card credits-card'>
+        <span class="kicker">Credits</span>
         <p>
           Written by <a href='https://github.com/DinoChiesa/'>@DinoChiesa</a>.  Dark mode contributed by <a href='https://github.com/rdavydov'>@rdavydov</a>. Contact me with questions, suggestions, or kudos via <a href='https://github.com/DinoChiesa/'>Github</a> or <a href="https://bsky.app/profile/ionicshade.bsky.social">BlueSky</a>.
           </p>
@@ -342,13 +363,11 @@
         <p>Dependencies:</p>
         <ul>
           <li><a href='https://github.com/cisco/node-jose'>node-jose v2.2</a> library for JWT decoding, verification, and generation.</li>
-          <li> <a href='https://codemirror.net/doc/manual.html'>CodeMirror v5.65</a> for the interactive editors.</li>
-          <li><a href='https://getbootstrap.com/docs/5.0'>Bootstrap 5</a> for styling and icons.</li>
+          <li><a href='https://codemirror.net/doc/manual.html'>CodeMirror v5.65</a> for the interactive editors.</li>
+          <li><a href='https://icons.getbootstrap.com/'>Bootstrap Icons</a> for icons.</li>
         </ul>
-
-      </div>
-
-    </div>
+      </footer>
+    </main>
     <script type="module" src="./js/main.js"></script>
   </body>
 

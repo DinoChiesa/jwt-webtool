@@ -1,0 +1,113 @@
+// Design tokens. Palette follows the Namari-inspired pages on DinoChiesa.github.io
+// (warm gold accent on slate neutrals). Type sizes deliberately stay close to
+// the previous layout of this tool, for readability.
+
+:root {
+  color-scheme: light;
+
+  --color-canvas: #f8fafc;
+  --color-canvas-glow: #ffffff;
+  --color-card: #ffffff;
+  --color-card-border: rgba(15, 23, 42, 0.07);
+  --color-inset: #f8fafc;
+  --color-editor-bg: #fdfdfc;
+  --color-outdated: #ecebe7;
+
+  --color-primary: #c59d5f;
+  --color-primary-hover: #b0894d;
+  --color-primary-subtle: #fef8ed;
+  --color-primary-ring: rgba(197, 157, 95, 0.25);
+  --color-on-primary: #ffffff;
+  --color-link: #a37a3c;
+
+  --color-text: #1e293b;
+  --color-text-strong: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-faint: #94a3b8;
+  --color-border: #cbd5e1;
+  --color-border-soft: #e2e8f0;
+  --color-hover-bg: #f1f5f9;
+
+  --color-success-bg: #ecfdf3;
+  --color-success-text: #166534;
+  --color-success-border: #86efac;
+  --color-info-bg: #eff6ff;
+  --color-info-text: #1e40af;
+  --color-info-border: #93c5fd;
+  --color-warning-bg: #fef8ed;
+  --color-warning-text: #854d0e;
+  --color-warning-border: #e9c98f;
+
+  --jwt-header: #d1103f;
+  --jwt-payload: #9a00db;
+  --jwt-iv: #e2604f;
+  --jwt-key: #3f8f3a;
+  --jwt-signature: #1f6fe0;
+
+  --radius-card: 16px;
+  --radius-inner: 10px;
+  --radius-input: 8px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 1px rgba(15, 23, 42, 0.12);
+  --shadow-toast: 0 12px 32px -8px rgba(15, 23, 42, 0.25);
+
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  // Root stays at the browser default (16px). These match the prior sizes.
+  --fs-title: 2rem;
+  --fs-editor: 1.2rem;
+  --fs-key: 1rem;
+  --fs-ui: 1rem;
+  --fs-panel-title: 1rem;
+  --fs-label: 0.85rem;
+  --fs-small: 0.8rem;
+}
+
+body.dark-mode {
+  color-scheme: dark;
+
+  --color-canvas: #15130f;
+  --color-canvas-glow: #221e18;
+  --color-card: #1f1c17;
+  --color-card-border: rgba(255, 240, 220, 0.08);
+  --color-inset: #191612;
+  --color-editor-bg: #272822;
+  --color-outdated: #34312a;
+
+  --color-primary: #d4ae72;
+  --color-primary-hover: #e3c38f;
+  --color-primary-subtle: #2c261c;
+  --color-primary-ring: rgba(212, 174, 114, 0.3);
+  --color-on-primary: #1b1813;
+  --color-link: #e0bd84;
+
+  --color-text: #e9e4da;
+  --color-text-strong: #f7f3ec;
+  --color-text-muted: #a99f90;
+  --color-text-faint: #7a7166;
+  --color-border: #4a443a;
+  --color-border-soft: #36312a;
+  --color-hover-bg: #2a261f;
+
+  --color-success-bg: #12291b;
+  --color-success-text: #86efac;
+  --color-success-border: #1f6b3a;
+  --color-info-bg: #14213a;
+  --color-info-text: #a5c8ff;
+  --color-info-border: #2c4f8a;
+  --color-warning-bg: #2f2616;
+  --color-warning-text: #f2d091;
+  --color-warning-border: #7a5d2c;
+
+  --jwt-header: #ff6b88;
+  --jwt-payload: #d79bff;
+  --jwt-iv: #ffab9f;
+  --jwt-key: #a4dc9f;
+  --jwt-signature: #78b4ff;
+
+  --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 240, 220, 0.12);
+  --shadow-toast: 0 12px 32px -8px rgba(0, 0, 0, 0.7);
+}

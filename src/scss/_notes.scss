@@ -1,0 +1,39 @@
+.notes-card,
+.credits-card {
+  padding: 1.75rem 2rem;
+  line-height: 1.65;
+
+  p,
+  li {
+    color: var(--color-text);
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.notes-card {
+  border-left: 4px solid var(--color-primary);
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.6rem;
+  }
+
+  h3 {
+    margin: 1.75rem 0 0.5rem;
+    font-size: 1.3rem;
+  }
+
+  h4 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 1.1rem;
+  }
+}
+
+.credits-card {
+  p {
+    margin: 0.5rem 0;
+  }
+}

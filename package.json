@@ -22,8 +22,6 @@
   "author": "Dino Chiesa <dchiesa@google.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@popperjs/core": "^2.11.8",
-    "bootstrap": "^5.3.8",
     "codemirror": "^5.65.2",
     "javascript-time-ago": "^2.5.12",
     "node-jose": "^2.2.0"

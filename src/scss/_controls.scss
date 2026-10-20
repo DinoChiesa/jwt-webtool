@@ -1,0 +1,273 @@
+// ---------------- Form fields ----------------
+.field-label {
+  display: block;
+  margin: 0;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.field {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-size: var(--fs-ui);
+  line-height: 1.4;
+  color: var(--color-text);
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+
+  &:disabled {
+    background-color: var(--color-hover-bg);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+  }
+}
+
+.action-group > .field {
+  margin-top: 0;
+}
+
+.field-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-key);
+}
+
+// ---------------- Buttons ----------------
+@mixin lift-on-hover {
+  &:hover {
+    transform: translateY(-1px);
+  }
+  &:active {
+    transform: none;
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  @include lift-on-hover;
+
+  &:hover {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+.btn-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  @include lift-on-hover;
+
+  .bi {
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  &:hover {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+  }
+}
+
+.btn-action-primary {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+
+  &:hover {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+}
+
+// ---------------- Toggle switches (native checkbox, restyled) ----------------
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 2.6rem;
+  height: 1.5rem;
+  margin: 0;
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0.2rem;
+    left: 0.2rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+  }
+
+  &:checked {
+    background: var(--color-primary);
+  }
+
+  &:checked::before {
+    transform: translateX(1.1rem);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+}
+
+// ---------------- Toast alert ----------------
+#mainalert {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: min(32rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  padding: 0.65rem 0.65rem 0.65rem 1.25rem;
+  font-weight: 600;
+  border: 1px solid;
+  border-radius: var(--radius-inner);
+  box-shadow: var(--shadow-toast);
+  transition: opacity 0.85s linear;
+
+  &.fade {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.show {
+    opacity: 1;
+  }
+
+  > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
+
+@mixin alert-variant($name) {
+  .alert-#{$name} {
+    color: var(--color-#{$name}-text);
+    background: var(--color-#{$name}-bg);
+    border-color: var(--color-#{$name}-border);
+  }
+}
+@include alert-variant(warning);
+@include alert-variant(success);
+@include alert-variant(info);
+
+.dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(127, 127, 127, 0.18);
+  }
+}
+
+// ---------------- Time tooltip for exp / iat / nbf ----------------
+.time-tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: min(36rem, calc(100vw - 1rem));
+  padding: 0.5rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  color: var(--color-card);
+  background: var(--color-text-strong);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-toast);
+}
+
+// ---------------- Copy feedback ----------------
+.copy-to-clipboard-flash-bg {
+  animation: flashbg 1s ease-out;
+}
+
+@keyframes flashbg {
+  0% {
+    background-color: var(--color-primary-ring);
+  }
+  100% {
+    background-color: transparent;
+  }
+}

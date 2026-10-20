@@ -13,7 +13,6 @@
 // limitations under the License.
 //
 
-import { Popover } from "bootstrap";
 import CodeMirror from "codemirror/lib/codemirror.js";
 import "codemirror/mode/javascript/javascript";
 import "codemirror/addon/mode/simple";
@@ -921,12 +920,8 @@ function setAlert(html, alertClass) {
     clearTimeout(Number(tid));
   }
   $mainalert.innerHTML = `<div>${html}\n${buttonHtml}</div>`;
-  if (alertClass) {
-    $mainalert.classList.remove("alert-warning"); // this is the default
-    $mainalert.classList.add("alert-" + alertClass); // success, primary, warning, etc
-  } else {
-    $mainalert.classList.add("alert-warning");
-  }
+  $mainalert.classList.remove("alert-warning", "alert-success", "alert-info");
+  $mainalert.classList.add("alert-" + (alertClass || "warning")); // success, info, warning
 
   const dismiss = () => {
     $mainalert.classList.add("fade");
@@ -947,14 +942,6 @@ function setAlert(html, alertClass) {
     dismiss();
     clearTimeout(tid);
   });
-}
-
-function closeAlert(_event) {
-  const $mainalert = $sel("#mainalert");
-  $mainalert.classList.add("fade");
-  $mainalert.classList.remove("show");
-  setTimeout(() => $mainalert.setAttribute("style", "z-index: -1"), 800);
-  return false; // Keep close.bs.alert event from removing from DOM
 }
 
 function updateAsymmetricKeyValue(flavor /* public || private */, keyvalue) {
@@ -1665,58 +1652,74 @@ function decoratePayload(_instance) {
       const valueSpan = element.nextElementSibling;
       if (valueSpan && valueSpan.tagName == "SPAN") {
         const value = valueSpan.textContent.replace(lastComma, ""); // just in case
-        // Set attributes for use with bootstrap popover.
-        // Cannot use .data() here; it does not update the DOM.
-        valueSpan.setAttribute("data-toggle", "popover");
+        // The time tooltip (see setupTimeTooltip) keys off this attribute.
         valueSpan.setAttribute("data-time", value);
       }
     }
   });
+}
 
-  /*
-   * For each time value, on hover, show a tooltip with dynamic content,
-   * displaying an ISO8601 time string, and a relative time. "5 minutes ago",
-   * etc.  The popover element is styled with .bs-popover-right, and it is
-   * appended near the end of the DOM. It shows and hides automatically on
-   * hover. This is basically a better, more nicely styled title attribute.
-   **/
+function describeTimeValue(value) {
+  try {
+    const time = new Date(Number(value) * 1000);
+    return formatTimeString(time) + " - " + timeAgo(time);
+  } catch (_e) {
+    // possibly an invalid time
+    console.log(`found invalid time value while decoding ${value}`);
+    return "looks like an invalid time value";
+  }
+}
 
-  $all('#payload span[data-toggle="popover"]').forEach((span) => {
-    const pop = new Popover(span, {
-      placement: "right",
-      trigger: "manual", // could not get 'hover' to work properly
-      html: true,
-      content: function () {
-        const value = Number(span.getAttribute("data-time"));
-        try {
-          const time = new Date(Number(value) * 1000);
-          return formatTimeString(time) + " - " + timeAgo(time);
-        } catch (_e) {
-          // possibly an invalid time
-          console.log(`found invalid time value while decoding ${value}`);
-          return "looks like an invalid time value";
-        }
-      },
-    });
+/*
+ * On hover over a time value in the decoded payload, show a tooltip with an
+ * ISO8601 time string and a relative time ("5 minutes ago"). This is
+ * basically a better, more nicely styled title attribute. Uses one delegated
+ * listener, because CodeMirror re-renders the spans on every update.
+ **/
+function setupTimeTooltip() {
+  const $tooltip = document.createElement("div");
+  $tooltip.className = "time-tooltip hidden";
+  $tooltip.setAttribute("role", "tooltip");
+  document.body.appendChild($tooltip);
 
-    const maybeDismiss = () =>
-      setTimeout(() => {
-        const hoveringOnSpanOrPopover =
-          $sel(".popover:hover") || span.querySelector(":hover");
-        if (!hoveringOnSpanOrPopover) {
-          pop.hide();
-        } else {
-          maybeDismiss();
-        }
-      }, 450);
+  let hideTimer;
+  const cancelHide = () => clearTimeout(hideTimer);
+  const scheduleHide = () => {
+    cancelHide();
+    hideTimer = setTimeout(() => hide($tooltip), 450);
+  };
 
-    span.addEventListener("mouseenter", () => {
-      pop.show();
-      $sel(".popover").addEventListener("mouseleave", maybeDismiss);
-    });
+  const placeNextTo = (span) => {
+    const r = span.getBoundingClientRect(),
+      gap = 10,
+      fitsOnRight =
+        r.right + gap + $tooltip.offsetWidth < window.innerWidth - gap;
+    if (fitsOnRight) {
+      $tooltip.style.left = `${r.right + gap}px`;
+      $tooltip.style.top = `${r.top + r.height / 2 - $tooltip.offsetHeight / 2}px`;
+    } else {
+      $tooltip.style.left = `${Math.max(gap, window.innerWidth - $tooltip.offsetWidth - gap)}px`;
+      $tooltip.style.top = `${r.bottom + gap / 2}px`;
+    }
+  };
 
-    span.addEventListener("mouseleave", maybeDismiss);
+  const $payload = $sel("#payload");
+  $payload.addEventListener("mouseover", (event) => {
+    const span = event.target.closest("span[data-time]");
+    if (span) {
+      cancelHide();
+      $tooltip.textContent = describeTimeValue(span.getAttribute("data-time"));
+      show($tooltip);
+      placeNextTo(span);
+    }
   });
+  $payload.addEventListener("mouseout", (event) => {
+    if (event.target.closest("span[data-time]")) {
+      scheduleHide();
+    }
+  });
+  $tooltip.addEventListener("mouseenter", cancelHide);
+  $tooltip.addEventListener("mouseleave", scheduleHide);
 }
 
 function looksLikeJwt(possibleJwt) {
@@ -1878,7 +1881,7 @@ document.addEventListener("DOMContentLoaded", function () {
     sel.addEventListener("change", changeKeyCoding),
   );
   $sel("#mainalert").classList.add("fade");
-  $sel("#mainalert").addEventListener("close.bs.alert", closeAlert);
+  setupTimeTooltip();
 
   // editor for the encoded JWT (left hand column)
   editors.encodedjwt = CodeMirror.fromTextArea(

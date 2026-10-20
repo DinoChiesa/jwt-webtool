@@ -1,0 +1,143 @@
+// CodeMirror 5 editors. The JS switches the theme between "default" (light)
+// and "monokai" (dark); backgrounds come from the palette tokens in both.
+
+.CodeMirror {
+  height: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-editor);
+  line-height: 1.45;
+  color: var(--color-text);
+  background: var(--color-editor-bg);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-inner);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+// CodeMirror ignores padding on .CodeMirror when measuring; pad the lines instead.
+.CodeMirror-lines {
+  padding: 0.4rem 0;
+}
+
+.CodeMirror pre.CodeMirror-line {
+  padding: 0 0.5rem;
+}
+
+.CodeMirror-focused {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
+}
+
+// Wrap really long JWTs and keys instead of scrolling sideways.
+pre.CodeMirror-line > span {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+#privatekey,
+#publickey {
+  > .CodeMirror {
+    font-size: var(--fs-key);
+  }
+}
+
+#privatekey .CodeMirror-scroll {
+  max-height: 11rem;
+}
+
+#publickey .CodeMirror-scroll {
+  max-height: 14rem;
+}
+
+// The keys are not known to correspond to the current JWT.
+.CodeMirror:has(.CodeMirror-code.outdated) {
+  background: var(--color-outdated);
+}
+
+.cm-jwt-header {
+  color: var(--jwt-header);
+}
+.cm-jwt-payload {
+  color: var(--jwt-payload);
+}
+.cm-jwt-iv {
+  color: var(--jwt-iv);
+}
+.cm-jwt-key {
+  color: var(--jwt-key);
+}
+.cm-jwt-signature,
+.cm-jwt-authtag {
+  color: var(--jwt-signature);
+}
+
+span[data-time] {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+/* Based on Sublime Text's Monokai theme */
+.cm-s-monokai {
+  &.CodeMirror {
+    color: #f8f8f2;
+  }
+  div.CodeMirror-selected {
+    background: #49483e;
+  }
+  .CodeMirror-line::selection,
+  .CodeMirror-line > span::selection,
+  .CodeMirror-line > span > span::selection {
+    background: rgba(73, 72, 62, 0.99);
+  }
+  .CodeMirror-cursor {
+    border-left: 1px solid #f8f8f0;
+  }
+  span.cm-comment {
+    color: #75715e;
+  }
+  span.cm-atom,
+  span.cm-number {
+    color: #ae81ff;
+  }
+  span.cm-property,
+  span.cm-attribute {
+    color: #a6e22e;
+  }
+  span.cm-keyword {
+    color: #f92672;
+  }
+  span.cm-builtin {
+    color: #66d9ef;
+  }
+  span.cm-string {
+    color: #e6db74;
+  }
+  span.cm-variable {
+    color: #f8f8f2;
+  }
+  span.cm-variable-2 {
+    color: #9effff;
+  }
+  span.cm-variable-3,
+  span.cm-type {
+    color: #66d9ef;
+  }
+  span.cm-def {
+    color: #fd971f;
+  }
+  span.cm-bracket {
+    color: #f8f8f2;
+  }
+  span.cm-error {
+    background: #f92672;
+    color: #f8f8f0;
+  }
+  .CodeMirror-matchingbracket {
+    text-decoration: underline;
+    color: white !important;
+  }
+}
