@@ -1736,11 +1736,10 @@ function looksLikeJwt(possibleJwt) {
 function retrieveLocalState() {
   Object.keys(datamodel).forEach((key) => {
     const value = storage.get(key);
-    if (key.startsWith("chk-")) {
-      datamodel[key] = String(value) == "true";
-    } else {
-      datamodel[key] = value;
+    if (value === null) {
+      return; // nothing stored yet; keep the default
     }
+    datamodel[key] = key.startsWith("chk-") ? value == "true" : value;
   });
 }
 
