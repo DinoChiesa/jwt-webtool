@@ -1415,10 +1415,17 @@ function getHeaderFromForm() {
 async function onKeyTextChange(_event) {
   const target = _event.target,
     id = target.id,
-    alg = $sel(".sel-alg").selectedOptions[0].text,
-    variant = $sel(".sel-variant").selectedOptions[0].text.toLowerCase();
+    selectedAlg = $sel(".sel-alg").selectedOptions[0];
 
   saveSetting(id, target.value);
+
+  // On a first visit this runs during startup, before the alg options exist.
+  // It runs again once they are populated (see onChangeAlg).
+  if (!selectedAlg) {
+    return;
+  }
+  const alg = selectedAlg.text,
+    variant = $sel(".sel-variant").selectedOptions[0].text.toLowerCase();
 
   // If the key will be used in a symmetric alg (signing or encrypting), show
   // some helpful text on the actual size of the key, and the required size of
