@@ -977,6 +977,24 @@ function getGenKeyParams(alg) {
   throw new Error("invalid key flavor");
 }
 
+// Asymmetric key generation is async. During startup, maybeNewKey can be
+// called again before the first generation finishes; sharing the in-flight
+// promise avoids generating (and signing with) two different keypairs.
+let keyGenerationInFlight = null; // { alg, promise }
+
+function generateAsymmetricKeyOnce(alg) {
+  if (keyGenerationInFlight && keyGenerationInFlight.alg === alg) {
+    return keyGenerationInFlight.promise;
+  }
+  const promise = newKey(null).finally(() => {
+    if (keyGenerationInFlight && keyGenerationInFlight.promise === promise) {
+      keyGenerationInFlight = null;
+    }
+  });
+  keyGenerationInFlight = { alg, promise };
+  return promise;
+}
+
 function maybeNewKey() {
   const sel = $sel(".sel-alg"),
     options = sel.selectedOptions,
@@ -1002,7 +1020,7 @@ function maybeNewKey() {
       const privatekey = $sel("#ta_privatekey").value.trim(),
         publickey = $sel("#ta_publickey").value.trim();
       if (!privatekey || !publickey) {
-        return newKey(null);
+        return generateAsymmetricKeyOnce(alg);
       }
     }
   }
