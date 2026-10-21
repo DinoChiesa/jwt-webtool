@@ -37,3 +37,33 @@
     margin: 0.5rem 0;
   }
 }
+
+// The longer how-to notes, collapsed by default.
+.more-notes {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-soft);
+
+  summary {
+    cursor: pointer;
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+
+    &:hover {
+      color: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-radius: var(--radius-input);
+      box-shadow: 0 0 0 3px var(--color-primary-ring);
+    }
+  }
+
+  > h3:first-of-type {
+    margin-top: 1rem;
+  }
+}
