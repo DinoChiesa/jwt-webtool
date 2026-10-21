@@ -379,10 +379,6 @@ function copyToClipboard(event) {
     editors[sourceElement].save();
   }
 
-  gtag("event", "copyToClipboard", {
-    event_category: "click",
-    event_label: sourceElement,
-  });
 
   const sourceType = $source.tagName;
   const textToCopy =
@@ -551,7 +547,6 @@ function encodeJwt(_event) {
       }
     }
   });
-  gtag("event", "encodeJwt");
 
   if (parseError) {
     setAlert("cannot parse JSON (" + parseError + ")", "warning");
@@ -755,10 +750,6 @@ function verifyJwt(event) {
       header = JSON.parse(json);
     let p = null;
 
-    gtag("event", "verifyJwt", {
-      event_category: "click",
-      event_label: `signed ${header.alg}`,
-    });
 
     if (isSymmetric(header.alg)) {
       p = getBufferForSymmetricKey("symmetrickey", header.alg)
@@ -830,10 +821,6 @@ function verifyJwt(event) {
   if (matches && matches.length == 6) {
     const json = Buffer.from(matches[1], "base64").toString("utf8");
     const header = JSON.parse(json);
-    gtag("event", "verifyJwt", {
-      event_category: "click",
-      event_label: `encrypted ${header.alg}`,
-    });
 
     return retrieveCryptoKey(header, { direction: "decrypt" })
       .then(async (decryptionKey) => {
@@ -1033,10 +1020,6 @@ const getKeyUse = (alg) =>
 function newKey(event) {
   const alg = $sel(".sel-alg").selectedOptions[0].text;
 
-  gtag("event", "newKey", {
-    event_category: event ? "click" : "implicit",
-    event_label: alg,
-  });
 
   if (
     alg.startsWith("HS") ||
@@ -1135,9 +1118,6 @@ function showDecoded(skipEncryptedPayload) {
   const tokenString = editors.encodedjwt.getValue();
   let matches = re.signed.jwt.exec(tokenString);
 
-  gtag("event", "decode", {
-    event_category: "click",
-  });
 
   saveSetting("encodedjwt", tokenString); // for reload
   $sel("#panel_encoded > p > span.length").textContent =
@@ -1458,10 +1438,6 @@ function onChangeEnc(event) {
   if (!initialized()) {
     return;
   }
-  gtag("event", "changeEnc", {
-    event_category: "click",
-    event_label: `${previousSelection} -> ${newSelection}`,
-  });
   if (alg == "dir" || alg.startsWith("PB")) {
     $all(".ta-key").forEach(($ta) => $ta.dispatchEvent(new Event("change")));
   }
@@ -1502,10 +1478,6 @@ function onChangeAlg(event) {
   if (!initialized()) {
     return;
   }
-  gtag("event", "changeAlg", {
-    event_category: "click",
-    event_label: `${previousSelection} -> ${newSelection}`,
-  });
 
   editors["token-decoded-header"].save();
   headerObj = getHeaderFromForm();
@@ -1565,10 +1537,6 @@ function onChangeVariant(event) {
 
   editors["token-decoded-header"].save();
 
-  gtag("event", "changeVariant", {
-    event_category: "click",
-    event_label: `${previousSelection} -> ${newSelection}`,
-  });
   if (newSelection != previousSelection) {
     try {
       const headerObj = getHeaderFromForm();
@@ -1654,14 +1622,12 @@ function newJson(event) {
     segment = target.getAttribute("data-jsontype"),
     jsonBlob = contriveJson(segment),
     elementId = `token-decoded-${segment}`;
-  gtag("event", "newJson", { segment });
   editors[elementId].setValue(JSON.stringify(jsonBlob, null, 2));
 }
 
 function contriveJwt(event) {
   const payload = contriveJson("payload"),
     header = contriveJson("header");
-  gtag("event", "contriveJwt");
   editors["token-decoded-header"].setValue(JSON.stringify(header));
   editors["token-decoded-payload"].setValue(JSON.stringify(payload));
   encodeJwt(event);
@@ -1927,9 +1893,6 @@ document.addEventListener("DOMContentLoaded", function () {
        text: array of pasted strings
        } */
     if (event.origin == "paste") {
-      gtag("event", "paste", {
-        event_category: "encodedJwt",
-      });
 
       setTimeout(() => {
         removeNewlines(editors.encodedjwt);
@@ -1952,9 +1915,6 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     );
     editors[keytype].on("inputRead", function (_cm, event) {
-      gtag("event", "paste", {
-        event_category: keytype,
-      });
       if (event.origin == "paste") {
         setTimeout(function () {
           const fieldvalue = reformNewlines(editors[keytype]);
